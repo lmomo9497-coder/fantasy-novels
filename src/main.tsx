@@ -138,6 +138,10 @@ function App() {
     useState("العربية");
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
+  const [novelCoverPath, setNovelCoverPath] =
+    useState("");
+  const [uploadingCover, setUploadingCover] =
+    useState(false);
   const [novelMessage, setNovelMessage] = useState("");
 
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
@@ -416,6 +420,8 @@ function App() {
     setNovelStatus("ongoing");
     setNovelLanguage("العربية");
     setNovelDirection("rtl");
+    setNovelCoverPath("");
+    setUploadingCover(false);
     setNovelMessage("");
     setShowNovelForm(false);
   }
@@ -432,6 +438,9 @@ function App() {
     setNovelStatus(novel.status);
     setNovelLanguage(novel.language);
     setNovelDirection(novel.direction);
+    setNovelCoverPath(
+      novel.cover_path ?? ""
+    );
     setNovelMessage("");
     setShowNovelForm(true);
 
@@ -439,6 +448,70 @@ function App() {
       top: 0,
       behavior: "smooth",
     });
+  }
+
+  async function uploadNovelCover(
+    file: File
+  ) {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("اختاري ملف صورة للغلاف.");
+      return;
+    }
+
+    setUploadingCover(true);
+    setNovelMessage("");
+
+    try {
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "jpg";
+
+      const path =
+        `covers/${makeStorageId()}.${extension}`;
+
+      const { error } =
+        await supabase.storage
+          .from("covers")
+          .upload(
+            path,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                file.type || undefined,
+            }
+          );
+
+      if (error) {
+        alert(
+          `فشل رفع الغلاف:\n${error.message}`
+        );
+        return;
+      }
+
+      const { data } =
+        supabase.storage
+          .from("covers")
+          .getPublicUrl(path);
+
+      if (!data.publicUrl) {
+        alert(
+          "تم رفع الغلاف لكن تعذر الحصول على رابطه."
+        );
+        return;
+      }
+
+      setNovelCoverPath(
+        data.publicUrl
+      );
+    } finally {
+      setUploadingCover(false);
+    }
   }
 
   async function saveNovel(publish: boolean) {
@@ -459,6 +532,13 @@ function App() {
     if (!novelCategory.trim()) {
       setNovelMessage(
         "اكتبي تصنيف الرواية."
+      );
+      return;
+    }
+
+    if (uploadingCover) {
+      setNovelMessage(
+        "انتظري حتى يكتمل رفع الغلاف."
       );
       return;
     }
@@ -516,6 +596,9 @@ function App() {
               description:
                 novelDescription.trim() ||
                 null,
+              cover_path:
+                novelCoverPath.trim() ||
+                null,
               category_id: categoryId,
               status: novelStatus,
               language: novelLanguage,
@@ -550,7 +633,9 @@ function App() {
             description:
               novelDescription.trim() ||
               null,
-            cover_path: null,
+            cover_path:
+              novelCoverPath.trim() ||
+              null,
             category_id: categoryId,
             status: novelStatus,
             language: novelLanguage,
@@ -2523,6 +2608,26 @@ function App() {
                         ""
                       );
 
+                      setNovelStatus(
+                        "ongoing"
+                      );
+
+                      setNovelLanguage(
+                        "العربية"
+                      );
+
+                      setNovelDirection(
+                        "rtl"
+                      );
+
+                      setNovelCoverPath(
+                        ""
+                      );
+
+                      setNovelMessage(
+                        ""
+                      );
+
                       setShowNovelForm(
                         true
                       );
@@ -2572,6 +2677,85 @@ function App() {
                       }
                     />
                   </label>
+
+                  <label>
+                    غلاف الرواية
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={
+                        uploadingCover
+                      }
+                      onChange={(e) => {
+                        const file =
+                          e.target
+                            .files?.[0];
+
+                        if (file) {
+                          uploadNovelCover(
+                            file
+                          );
+                        }
+
+                        e.target.value =
+                          "";
+                      }}
+                    />
+                  </label>
+
+                  {uploadingCover && (
+                    <div className="panel">
+                      ⏳ جارٍ رفع الغلاف...
+                    </div>
+                  )}
+
+                  {novelCoverPath && (
+                    <div className="panel">
+                      <strong>
+                        ✅ تم اختيار الغلاف
+                      </strong>
+
+                      <div
+                        style={{
+                          marginTop: 12,
+                          maxWidth: 220,
+                        }}
+                      >
+                        <img
+                          src={
+                            novelCoverPath
+                          }
+                          alt="غلاف الرواية"
+                          style={{
+                            width:
+                              "100%",
+                            maxHeight:
+                              300,
+                            objectFit:
+                              "cover",
+                            borderRadius:
+                              8,
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        style={{
+                          marginTop: 10,
+                        }}
+                        onClick={() =>
+                          setNovelCoverPath(
+                            ""
+                          )
+                        }
+                      >
+                        إزالة الغلاف
+                      </button>
+                    </div>
+                  )}
 
                   <label>
                     التصنيف
@@ -2665,7 +2849,8 @@ function App() {
                     <button
                       className="secondary-button"
                       disabled={
-                        savingNovel
+                        savingNovel ||
+                        uploadingCover
                       }
                       onClick={() =>
                         saveNovel(
@@ -2679,7 +2864,8 @@ function App() {
                     <button
                       className="primary-button"
                       disabled={
-                        savingNovel
+                        savingNovel ||
+                        uploadingCover
                       }
                       onClick={() =>
                         saveNovel(
