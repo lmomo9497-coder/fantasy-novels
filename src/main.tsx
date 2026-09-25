@@ -6,10 +6,11 @@ import { supabase } from "./lib/supabase";
 type Role = "owner" | "staff" | "reader";
 
 type Profile = {
-  role: Role;
+  id: string;
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  role: Role;
 };
 
 type Category = {
@@ -31,28 +32,28 @@ type Novel = {
   published: boolean;
   created_by: string | null;
   created_at: string;
+  categories?: Category | null;
 };
 
 type StaffMember = {
   id: string;
-  email: string;
-  display_name: string;
-  avatar_url: string | null;
-  created_at: string;
+  display_name: string | null;
+  role: Role;
+  email?: string | null;
 };
 
 type AccountSection =
+  | "profile"
   | "favorites"
   | "history"
-  | "notifications"
-  | null;
+  | "notifications";
 
-function makeSlug(title: string) {
-  return title
+function makeSlug(value: string) {
+  return value
     .trim()
     .toLowerCase()
+    .replace(/[^\u0600-\u06FFa-zA-Z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/[^\u0600-\u06FFa-z0-9-]/g, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 }
@@ -63,155 +64,124 @@ function App() {
 
   const [showAccount, setShowAccount] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [showNovels, setShowNovels] = useState(false);
+  const [showNovels, setShowNovels] = useState(true);
 
-  const [selectedNovel, setSelectedNovel] =
-    useState<Novel | null>(null);
+  const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
 
   const [activeSection, setActiveSection] =
-    useState<AccountSection>(null);
+    useState<AccountSection>("profile");
 
   const [favorites, setFavorites] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [notifications, setNotifications] =
-    useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
-  const [loadingAccountData, setLoadingAccountData] =
-    useState(false);
+  const [loadingAccountData, setLoadingAccountData] = useState(false);
 
   const [novels, setNovels] = useState<Novel[]>([]);
-  const [publishedNovels, setPublishedNovels] =
-    useState<Novel[]>([]);
+  const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [categories, setCategories] =
-    useState<Category[]>([]);
-
-  const [showNovelForm, setShowNovelForm] =
-    useState(false);
-
-  const [savingNovel, setSavingNovel] =
-    useState(false);
+  const [showNovelForm, setShowNovelForm] = useState(false);
+  const [savingNovel, setSavingNovel] = useState(false);
 
   const [novelTitle, setNovelTitle] = useState("");
-  const [novelDescription, setNovelDescription] =
-    useState("");
-  const [novelCategory, setNovelCategory] =
-    useState("");
-
+  const [novelDescription, setNovelDescription] = useState("");
+  const [novelCategory, setNovelCategory] = useState("");
   const [novelStatus, setNovelStatus] =
     useState<"ongoing" | "completed">("ongoing");
-
-  const [novelLanguage, setNovelLanguage] =
-    useState("ar");
-
+  const [novelLanguage, setNovelLanguage] = useState("العربية");
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
 
-  const [novelPublished, setNovelPublished] =
-    useState(false);
+  const [novelMessage, setNovelMessage] = useState("");
 
-  const [novelMessage, setNovelMessage] =
-    useState("");
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffMessage, setStaffMessage] = useState("");
+  const [managingStaff, setManagingStaff] = useState(false);
 
-  /* =========================
-     إدارة المشرفين
-  ========================= */
-
-  const [staffMembers, setStaffMembers] =
-    useState<StaffMember[]>([]);
-
-  const [loadingStaff, setLoadingStaff] =
-    useState(false);
-
-  const [staffEmail, setStaffEmail] =
-    useState("");
-
-  const [staffMessage, setStaffMessage] =
-    useState("");
-
-  const [managingStaff, setManagingStaff] =
-    useState(false);
-
-  /* =========================
-     البداية والجلسة
-  ========================= */
+  const isOwner = profile?.role === "owner";
+  const isStaff = profile?.role === "staff";
+  const canManageNovels = isOwner || isStaff;
 
   useEffect(() => {
     loadSession();
-    loadPublishedNovels();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          loadProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-    );
+    });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    loadPublishedNovels();
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    if (canManageNovels) {
+      loadAdminData();
+    }
+  }, [profile?.role]);
 
   useEffect(() => {
     if (user) {
       loadAccountData();
-    } else {
-      setFavorites([]);
-      setHistory([]);
-      setNotifications([]);
     }
   }, [user]);
 
-  useEffect(() => {
-    if (
-      showAdmin &&
-      (profile?.role === "owner" ||
-        profile?.role === "staff")
-    ) {
-      loadAdminData();
-    }
-  }, [showAdmin, profile]);
-
   async function loadSession() {
-    const { data } =
-      await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    const currentUser =
-      data.session?.user ?? null;
+    setUser(session?.user ?? null);
 
-    setUser(currentUser);
-
-    if (currentUser) {
-      await loadProfile(currentUser.id);
+    if (session?.user) {
+      await loadProfile(session.user.id);
     }
   }
 
   async function loadProfile(userId: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("profiles")
-      .select(
-        "role, display_name, avatar_url, bio"
-      )
+      .select("id,display_name,avatar_url,bio,role")
       .eq("id", userId)
       .maybeSingle();
 
-    if (error) {
-      console.error("Profile:", error);
-      return;
+    if (data) {
+      setProfile(data as Profile);
     }
+  }
 
-    setProfile(data);
+  async function loadCategories() {
+    const { data } = await supabase
+      .from("categories")
+      .select("id,name,slug")
+      .order("name");
+
+    if (data) {
+      setCategories(data as Category[]);
+    }
   }
 
   async function loadPublishedNovels() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("novels")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -223,96 +193,60 @@ function App() {
         direction,
         published,
         created_by,
-        created_at
-      `)
+        created_at,
+        categories(id,name,slug)
+      `
+      )
       .eq("published", true)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(
-        "Published novels:",
-        error
-      );
-      return;
+    if (data) {
+      setPublishedNovels(data as Novel[]);
     }
-
-    setPublishedNovels(data || []);
   }
 
   async function loadAdminData() {
-    const [
-      novelsResult,
-      categoriesResult,
-    ] = await Promise.all([
-      supabase
-        .from("novels")
-        .select(`
-          id,
-          title,
-          slug,
-          description,
-          cover_path,
-          category_id,
-          status,
-          language,
-          direction,
-          published,
-          created_by,
-          created_at
-        `)
-        .order("created_at", {
-          ascending: false,
-        }),
+    if (!canManageNovels) return;
 
-      supabase
-        .from("categories")
-        .select("id, name, slug")
-        .order("name"),
-    ]);
+    const { data } = await supabase
+      .from("novels")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        description,
+        cover_path,
+        category_id,
+        status,
+        language,
+        direction,
+        published,
+        created_by,
+        created_at,
+        categories(id,name,slug)
+      `
+      )
+      .order("created_at", { ascending: false });
 
-    if (novelsResult.error) {
-      console.error(
-        "Novels:",
-        novelsResult.error
-      );
-    } else {
-      setNovels(
-        novelsResult.data || []
-      );
+    if (data) {
+      setNovels(data as Novel[]);
     }
 
-    if (categoriesResult.error) {
-      console.error(
-        "Categories:",
-        categoriesResult.error
-      );
-    } else {
-      setCategories(
-        categoriesResult.data || []
-      );
-    }
+    await loadCategories();
 
-    if (profile?.role === "owner") {
-      loadStaffMembers();
+    if (isOwner) {
+      await loadStaffMembers();
     }
   }
 
-  /* =========================
-     المشرفون
-  ========================= */
-
   async function loadStaffMembers() {
-    if (!user || profile?.role !== "owner") {
-      return;
-    }
+    if (!isOwner) return;
 
     setLoadingStaff(true);
-    setStaffMessage("");
 
-    const { data, error } =
-      await supabase.functions.invoke(
+    try {
+      const { data, error } = await supabase.functions.invoke(
         "manage-staff",
         {
           body: {
@@ -321,121 +255,285 @@ function App() {
         }
       );
 
+      if (!error && data?.staff) {
+        setStaffMembers(data.staff);
+      }
+    } finally {
+      setLoadingStaff(false);
+    }
+  }
+
+  async function loadAccountData() {
+    if (!user) return;
+
+    setLoadingAccountData(true);
+
+    try {
+      const [fav, hist, notif] = await Promise.all([
+        supabase
+          .from("favorites")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("reading_progress")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false }),
+
+        supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      setFavorites(fav.data ?? []);
+      setHistory(hist.data ?? []);
+      setNotifications(notif.data ?? []);
+    } finally {
+      setLoadingAccountData(false);
+    }
+  }
+
+  async function saveNovel(publish: boolean) {
+    if (!user || !canManageNovels) {
+      setNovelMessage("ليس لديك صلاحية لإضافة الروايات.");
+      return;
+    }
+
+    if (!novelTitle.trim()) {
+      setNovelMessage("اكتبي اسم الرواية أولًا.");
+      return;
+    }
+
+    if (!novelCategory.trim()) {
+      setNovelMessage("اكتبي تصنيف الرواية.");
+      return;
+    }
+
+    setSavingNovel(true);
+    setNovelMessage("");
+
+    try {
+      let categoryId: string | null = null;
+
+      const existingCategory = categories.find(
+        (category) =>
+          category.name.trim().toLowerCase() ===
+          novelCategory.trim().toLowerCase()
+      );
+
+      if (existingCategory) {
+        categoryId = existingCategory.id;
+      } else {
+        const { data: newCategory, error: categoryError } =
+          await supabase
+            .from("categories")
+            .insert({
+              name: novelCategory.trim(),
+              slug: makeSlug(novelCategory),
+            })
+            .select("id,name,slug")
+            .single();
+
+        if (categoryError) {
+          setNovelMessage(
+            categoryError.message ||
+              "حدث خطأ أثناء إنشاء التصنيف."
+          );
+          return;
+        }
+
+        categoryId = newCategory.id;
+        setCategories((current) => [
+          ...current,
+          newCategory as Category,
+        ]);
+      }
+
+      const baseSlug = makeSlug(novelTitle) || `novel-${Date.now()}`;
+
+      const { error } = await supabase.from("novels").insert({
+        title: novelTitle.trim(),
+        slug: `${baseSlug}-${Date.now()}`,
+        description: novelDescription.trim() || null,
+        cover_path: null,
+        category_id: categoryId,
+        status: novelStatus,
+        language: novelLanguage,
+        direction: novelDirection,
+        published: publish,
+        created_by: user.id,
+      });
+
+      if (error) {
+        setNovelMessage(error.message);
+        return;
+      }
+
+      setNovelTitle("");
+      setNovelDescription("");
+      setNovelCategory("");
+      setNovelStatus("ongoing");
+      setNovelLanguage("العربية");
+      setNovelDirection("rtl");
+      setShowNovelForm(false);
+
+      setNovelMessage(
+        publish
+          ? "تم حفظ الرواية ونشرها بنجاح."
+          : "تم حفظ الرواية كمسودة. لن تظهر للقراء."
+      );
+
+      await loadAdminData();
+      await loadPublishedNovels();
+    } finally {
+      setSavingNovel(false);
+    }
+  }
+
+  async function toggleNovelPublished(novel: Novel) {
+    if (!canManageNovels) {
+      setNovelMessage("ليس لديك صلاحية لتغيير حالة الرواية.");
+      return;
+    }
+
+    const nextPublished = !novel.published;
+
+    const { error } = await supabase
+      .from("novels")
+      .update({
+        published: nextPublished,
+      })
+      .eq("id", novel.id);
+
     if (error) {
-      console.error(
-        "Staff list:",
-        error
-      );
-
-      setStaffMessage(
-        "تعذر تحميل قائمة المشرفين."
-      );
-
-      setLoadingStaff(false);
+      setNovelMessage(error.message);
       return;
     }
 
-    if (data?.error) {
-      setStaffMessage(data.error);
-      setLoadingStaff(false);
-      return;
-    }
-
-    setStaffMembers(
-      data?.staff || []
+    setNovels((current) =>
+      current.map((item) =>
+        item.id === novel.id
+          ? { ...item, published: nextPublished }
+          : item
+      )
     );
 
-    setLoadingStaff(false);
+    setPublishedNovels((current) => {
+      if (nextPublished) {
+        return current.some((item) => item.id === novel.id)
+          ? current
+          : [...current, { ...novel, published: true }];
+      }
+
+      return current.filter((item) => item.id !== novel.id);
+    });
+
+    setNovelMessage(
+      nextPublished
+        ? `تم نشر «${novel.title}».`
+        : `تم إلغاء نشر «${novel.title}» وحفظها كمسودة.`
+    );
+
+    await loadPublishedNovels();
+  }
+
+  async function deleteNovel(novel: Novel) {
+    if (!isOwner) {
+      setNovelMessage("حذف الروايات متاح للمالك فقط.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `هل أنت متأكدة من حذف رواية «${novel.title}»؟\n\nهذا الحذف للرواية نفسها.`
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("novels")
+      .delete()
+      .eq("id", novel.id);
+
+    if (error) {
+      setNovelMessage(error.message);
+      return;
+    }
+
+    setNovels((current) =>
+      current.filter((item) => item.id !== novel.id)
+    );
+
+    setPublishedNovels((current) =>
+      current.filter((item) => item.id !== novel.id)
+    );
+
+    if (selectedNovel?.id === novel.id) {
+      setSelectedNovel(null);
+    }
+
+    setNovelMessage("تم حذف الرواية.");
   }
 
   async function addStaff() {
-    if (
-      !user ||
-      profile?.role !== "owner"
-    ) {
-      return;
-    }
+    if (!isOwner) return;
 
-    const email =
-      staffEmail.trim().toLowerCase();
-
-    if (!email) {
-      setStaffMessage(
-        "اكتبي البريد الإلكتروني للحساب."
-      );
+    if (!staffEmail.trim()) {
+      setStaffMessage("اكتبي بريد المشرف.");
       return;
     }
 
     setManagingStaff(true);
     setStaffMessage("");
 
-    const { data, error } =
-      await supabase.functions.invoke(
+    try {
+      const { data, error } = await supabase.functions.invoke(
         "manage-staff",
         {
           body: {
             action: "set_role",
-            email,
+            email: staffEmail.trim(),
             role: "staff",
           },
         }
       );
 
-    if (error) {
-      console.error(
-        "Add staff:",
-        error
-      );
+      if (error) {
+        setStaffMessage(error.message);
+        return;
+      }
 
-      setStaffMessage(
-        "حدث خطأ أثناء إضافة المشرف."
-      );
+      if (data?.error) {
+        setStaffMessage(data.error);
+        return;
+      }
 
+      setStaffEmail("");
+      setStaffMessage("تمت إضافة المشرف بنجاح.");
+      await loadStaffMembers();
+    } finally {
       setManagingStaff(false);
-      return;
     }
-
-    if (data?.error) {
-      setStaffMessage(data.error);
-      setManagingStaff(false);
-      return;
-    }
-
-    setStaffEmail("");
-
-    setStaffMessage(
-      "✅ تمت إضافة المشرف بنجاح. يجب على الحساب تسجيل الخروج ثم الدخول مرة أخرى لتفعيل الصلاحية."
-    );
-
-    await loadStaffMembers();
-
-    setManagingStaff(false);
   }
 
-  async function removeStaff(
-    staff: StaffMember
-  ) {
-    if (
-      !user ||
-      profile?.role !== "owner"
-    ) {
-      return;
-    }
+  async function removeStaff(staff: StaffMember) {
+    if (!isOwner) return;
 
-    const confirmed =
-      window.confirm(
-        `هل تريدين إعادة حساب "${staff.email}" إلى قارئ؟`
-      );
+    const confirmed = window.confirm(
+      `هل تريدين إزالة صلاحية المشرف من ${
+        staff.display_name || "هذا المستخدم"
+      }؟`
+    );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setManagingStaff(true);
-    setStaffMessage("");
 
-    const { data, error } =
-      await supabase.functions.invoke(
+    try {
+      const { data, error } = await supabase.functions.invoke(
         "manage-staff",
         {
           body: {
@@ -446,1062 +544,226 @@ function App() {
         }
       );
 
-    if (error) {
-      console.error(
-        "Remove staff:",
-        error
-      );
-
-      setStaffMessage(
-        "حدث خطأ أثناء إزالة صلاحية المشرف."
-      );
-
-      setManagingStaff(false);
-      return;
-    }
-
-    if (data?.error) {
-      setStaffMessage(data.error);
-      setManagingStaff(false);
-      return;
-    }
-
-    setStaffMessage(
-      "✅ تمت إعادة الحساب إلى قارئ."
-    );
-
-    await loadStaffMembers();
-
-    setManagingStaff(false);
-  }
-
-  /* =========================
-     بيانات الحساب
-  ========================= */
-
-  async function loadAccountData() {
-    if (!user) return;
-
-    setLoadingAccountData(true);
-
-    const [
-      favoritesResult,
-      historyResult,
-      notificationsResult,
-    ] = await Promise.all([
-      supabase
-        .from("favorites")
-        .select(`
-          created_at,
-          novels (
-            id,
-            title,
-            description,
-            cover_path,
-            status,
-            language
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", {
-          ascending: false,
-        }),
-
-      supabase
-        .from("reading_progress")
-        .select(`
-          novel_id,
-          chapter_id,
-          progress_percent,
-          updated_at,
-          novels (
-            id,
-            title,
-            description,
-            cover_path,
-            status,
-            language
-          ),
-          chapters (
-            id,
-            chapter_number,
-            title
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("updated_at", {
-          ascending: false,
-        }),
-
-      supabase
-        .from("notifications")
-        .select(`
-          id,
-          title,
-          message,
-          created_at,
-          read_at,
-          novels (
-            id,
-            title
-          ),
-          chapters (
-            id,
-            chapter_number,
-            title
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", {
-          ascending: false,
-        }),
-    ]);
-
-    if (!favoritesResult.error) {
-      setFavorites(
-        favoritesResult.data || []
-      );
-    }
-
-    if (!historyResult.error) {
-      setHistory(
-        historyResult.data || []
-      );
-    }
-
-    if (!notificationsResult.error) {
-      setNotifications(
-        notificationsResult.data || []
-      );
-    }
-
-    setLoadingAccountData(false);
-  }
-
-  /* =========================
-     إضافة رواية
-  ========================= */
-
-  async function saveNovel() {
-    if (!user) return;
-
-    if (
-      profile?.role !== "owner" &&
-      profile?.role !== "staff"
-    ) {
-      return;
-    }
-
-    setNovelMessage("");
-
-    const title =
-      novelTitle.trim();
-
-    const description =
-      novelDescription.trim();
-
-    const categoryName =
-      novelCategory.trim();
-
-    if (!title) {
-      setNovelMessage(
-        "اكتبي اسم الرواية أولًا."
-      );
-      return;
-    }
-
-    if (!categoryName) {
-      setNovelMessage(
-        "اكتبي تصنيف الرواية."
-      );
-      return;
-    }
-
-    const slug =
-      makeSlug(title);
-
-    if (!slug) {
-      setNovelMessage(
-        "تعذر إنشاء رابط للرواية."
-      );
-      return;
-    }
-
-    setSavingNovel(true);
-
-    try {
-      let categoryId:
-        | string
-        | null = null;
-
-      const existingCategory =
-        categories.find(
-          (category) =>
-            category.name.trim() ===
-            categoryName
-        );
-
-      if (existingCategory) {
-        categoryId =
-          existingCategory.id;
-      } else {
-        const categorySlug =
-          makeSlug(categoryName) ||
-          `category-${Date.now()}`;
-
-        const {
-          data: newCategory,
-          error: categoryError,
-        } = await supabase
-          .from("categories")
-          .insert({
-            name: categoryName,
-            slug: categorySlug,
-          })
-          .select(
-            "id, name, slug"
-          )
-          .single();
-
-        if (categoryError) {
-          console.error(
-            "Category:",
-            categoryError
-          );
-
-          setNovelMessage(
-            "حدث خطأ أثناء إنشاء التصنيف."
-          );
-
-          return;
-        }
-
-        categoryId =
-          newCategory.id;
-
-        setCategories(
-          (current) => [
-            ...current,
-            newCategory,
-          ]
-        );
-      }
-
-      const {
-        data: createdNovel,
-        error: novelError,
-      } = await supabase
-        .from("novels")
-        .insert({
-          title,
-          slug,
-          description:
-            description || null,
-          category_id:
-            categoryId,
-          status:
-            novelStatus,
-          language:
-            novelLanguage,
-          direction:
-            novelDirection,
-          published:
-            novelPublished,
-          created_by:
-            user.id,
-        })
-        .select(`
-          id,
-          title,
-          slug,
-          description,
-          cover_path,
-          category_id,
-          status,
-          language,
-          direction,
-          published,
-          created_by,
-          created_at
-        `)
-        .single();
-
-      if (novelError) {
-        console.error(
-          "Novel:",
-          novelError
-        );
-
-        if (
-          novelError.code ===
-          "23505"
-        ) {
-          setNovelMessage(
-            "يوجد بالفعل رواية تستخدم هذا الرابط."
-          );
-        } else {
-          setNovelMessage(
-            "حدث خطأ أثناء حفظ الرواية."
-          );
-        }
-
+      if (error) {
+        setStaffMessage(error.message);
         return;
       }
 
-      setNovels(
-        (current) => [
-          createdNovel,
-          ...current,
-        ]
-      );
+      if (data?.error) {
+        setStaffMessage(data.error);
+        return;
+      }
 
-      setNovelTitle("");
-      setNovelDescription("");
-      setNovelCategory("");
-      setNovelStatus("ongoing");
-      setNovelLanguage("ar");
-      setNovelDirection("rtl");
-      setNovelPublished(false);
-
-      await loadPublishedNovels();
-
-      setNovelMessage(
-        "✅ تم حفظ الرواية بنجاح."
-      );
-    } catch (error) {
-      console.error(error);
-
-      setNovelMessage(
-        "حدث خطأ أثناء حفظ الرواية."
-      );
+      setStaffMessage("تمت إزالة صلاحية المشرف.");
+      await loadStaffMembers();
     } finally {
-      setSavingNovel(false);
+      setManagingStaff(false);
     }
   }
 
-  /* =========================
-     حذف رواية
-  ========================= */
-
-  async function deleteNovel(
-    novel: Novel
-  ) {
-    if (
-      !user ||
-      profile?.role !== "owner"
-    ) {
-      return;
-    }
-
-    const confirmed =
-      window.confirm(
-        `هل أنتِ متأكدة من حذف رواية "${novel.title}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const { error } =
-      await supabase
-        .from("novels")
-        .delete()
-        .eq("id", novel.id);
-
-    if (error) {
-      console.error(
-        "Delete novel:",
-        error
-      );
-
-      alert(
-        "حدث خطأ أثناء حذف الرواية."
-      );
-
-      return;
-    }
-
-    setNovels(
-      (current) =>
-        current.filter(
-          (item) =>
-            item.id !== novel.id
-        )
-    );
-
-    setPublishedNovels(
-      (current) =>
-        current.filter(
-          (item) =>
-            item.id !== novel.id
-        )
-    );
-
-    if (
-      selectedNovel?.id ===
-      novel.id
-    ) {
-      setSelectedNovel(null);
-    }
-
-    alert(
-      "تم حذف الرواية."
-    );
+  async function loginWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
   }
 
-  /* =========================
-     Google
-  ========================= */
-
-  async function signInWithGoogle() {
-    const { error } =
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo:
-            window.location.origin,
-        },
-      });
-
-    if (error) {
-      alert(
-        "حدث خطأ أثناء تسجيل الدخول"
-      );
-
-      console.error(error);
-    }
-  }
-
-  async function signOut() {
+  async function logout() {
     await supabase.auth.signOut();
 
     setUser(null);
     setProfile(null);
     setShowAccount(false);
     setShowAdmin(false);
-    setShowNovels(false);
     setSelectedNovel(null);
-    setActiveSection(null);
   }
 
-  /* =========================
-     الإشعارات
-  ========================= */
+  async function markNotificationRead(id: string) {
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", id);
 
-  async function markNotificationAsRead(
-    id: string
-  ) {
-    if (!user) return;
-
-    const now =
-      new Date().toISOString();
-
-    const { error } =
-      await supabase
-        .from("notifications")
-        .update({
-          read_at: now,
-        })
-        .eq("id", id)
-        .eq("user_id", user.id);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setNotifications(
-      (current) =>
-        current.map(
-          (notification) =>
-            notification.id === id
-              ? {
-                  ...notification,
-                  read_at: now,
-                }
-              : notification
-        )
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === id
+          ? { ...notification, read: true }
+          : notification
+      )
     );
   }
 
-  /* =========================
-     المساعدات
-  ========================= */
-
-  const userName =
-    profile?.display_name ||
-    user?.user_metadata
-      ?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email ||
-    "حسابي";
-
-  const userAvatar =
-    profile?.avatar_url ||
-    user?.user_metadata
-      ?.avatar_url ||
-    user?.user_metadata?.picture ||
-    null;
-
-  const isOwner =
-    profile?.role === "owner";
-
-  const isStaff =
-    profile?.role === "staff";
-
-  const admin =
-    isOwner || isStaff;
-
-  const unreadNotifications =
-    notifications.filter(
-      (notification) =>
-        !notification.read_at
-    ).length;
-
-  function formatDate(
-    date: string
-  ) {
-    return new Intl.DateTimeFormat(
-      "ar-SA",
-      {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }
-    ).format(new Date(date));
-  }
-
-  function toggleSection(
-    section: AccountSection
-  ) {
-    setActiveSection(
-      (current) =>
-        current === section
-          ? null
-          : section
-    );
-  }
-
-  function goHome() {
-    setShowAccount(false);
-    setShowAdmin(false);
-    setShowNovels(false);
-    setSelectedNovel(null);
-    setActiveSection(null);
-  }
-
-  function openNovels() {
-    setShowAccount(false);
-    setShowAdmin(false);
-    setSelectedNovel(null);
-    setShowNovels(true);
-    setActiveSection(null);
-    loadPublishedNovels();
-  }
-
-  function openNovel(
-    novel: Novel
-  ) {
-    setShowNovels(true);
-    setShowAccount(false);
-    setShowAdmin(false);
+  function openNovel(novel: Novel) {
     setSelectedNovel(novel);
+    setShowNovels(false);
   }
 
-  function getCategoryName(
-    categoryId: string | null
-  ) {
-    if (!categoryId) {
-      return null;
-    }
-
-    return (
-      categories.find(
-        (category) =>
-          category.id ===
-          categoryId
-      )?.name || null
-    );
+  function backToNovels() {
+    setSelectedNovel(null);
+    setShowNovels(true);
   }
 
-  /* =========================
-     الواجهة
-  ========================= */
+  const unreadNotifications = notifications.filter(
+    (notification) => !notification.read
+  ).length;
 
   return (
-    <div className="app">
-      <header className="header">
-        <div>
-          <h1>
-            روايات خيالية
-          </h1>
-
-          <span>
-            Fantasy Novels
-          </span>
-        </div>
-
-        <nav>
-          <button onClick={goHome}>
-            الرئيسية
+    <div
+      dir="rtl"
+      className="app"
+    >
+      <header className="site-header">
+        <div className="header-inner">
+          <button
+            className="brand"
+            onClick={() => {
+              setShowAccount(false);
+              setShowAdmin(false);
+              setSelectedNovel(null);
+              setShowNovels(true);
+            }}
+          >
+            <strong>روايات خيالية</strong>
+            <span>عالم من الحكايات</span>
           </button>
 
-          <button onClick={openNovels}>
-            الروايات
-          </button>
+          <nav className="main-nav">
+            <button
+              className={showNovels ? "active" : ""}
+              onClick={() => {
+                setShowNovels(true);
+                setShowAccount(false);
+                setShowAdmin(false);
+                setSelectedNovel(null);
+              }}
+            >
+              الروايات
+            </button>
 
-          {user ? (
-            <>
-              {admin && (
-                <button
-                  onClick={() => {
-                    setShowAdmin(true);
-                    setShowAccount(false);
-                    setShowNovels(false);
-                    setSelectedNovel(null);
-                    setActiveSection(null);
-                  }}
-                >
-                  🛠️ لوحة الإدارة
-                </button>
-              )}
-
+            {user && (
               <button
+                className={showAccount ? "active" : ""}
                 onClick={() => {
                   setShowAccount(true);
                   setShowAdmin(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
-                  setActiveSection(null);
                 }}
               >
-                👤 حسابي
+                حسابي
+                {unreadNotifications > 0 && (
+                  <span className="notification-badge">
+                    {unreadNotifications}
+                  </span>
+                )}
               </button>
+            )}
 
+            {canManageNovels && (
               <button
-                onClick={signOut}
+                className={showAdmin ? "active" : ""}
+                onClick={() => {
+                  setShowAdmin(true);
+                  setShowAccount(false);
+                  setShowNovels(false);
+                  setSelectedNovel(null);
+                }}
               >
-                تسجيل الخروج
+                الإدارة
               </button>
-            </>
-          ) : (
-            <button
-              onClick={
-                signInWithGoogle
-              }
-            >
-              تسجيل الدخول بحساب Google
-            </button>
-          )}
-        </nav>
+            )}
+          </nav>
+
+          <div className="header-actions">
+            {user ? (
+              <button
+                className="account-button"
+                onClick={() => {
+                  setShowAccount(true);
+                  setShowAdmin(false);
+                  setShowNovels(false);
+                }}
+              >
+                {profile?.display_name ||
+                  user.email ||
+                  "حسابي"}
+              </button>
+            ) : (
+              <button
+                className="account-button"
+                onClick={loginWithGoogle}
+              >
+                تسجيل الدخول
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <main>
-        {/* ================= الروايات ================= */}
-
-        {showNovels ? (
-          <section className="novels">
+        {selectedNovel ? (
+          <section className="novel-reader">
             <button
-              onClick={goHome}
-              style={{
-                marginBottom: "25px",
-              }}
+              className="back-button"
+              onClick={backToNovels}
             >
-              ← الرئيسية
+              ← العودة للروايات
             </button>
 
-            {selectedNovel ? (
-              <div
-                className="account-card"
-                style={{
-                  maxWidth: "850px",
-                  margin: "0 auto",
-                }}
-              >
-                <button
-                  onClick={() =>
-                    setSelectedNovel(null)
-                  }
-                >
-                  ← العودة للروايات
-                </button>
-
-                <div
-                  style={{
-                    marginTop: "25px",
-                  }}
-                >
-                  <div
-                    className="cover"
-                    style={{
-                      maxWidth: "300px",
-                      margin:
-                        "0 auto 25px",
-                    }}
-                  >
-                    {selectedNovel.cover_path ? (
-                      <img
-                        src={
-                          selectedNovel.cover_path
-                        }
-                        alt={
-                          selectedNovel.title
-                        }
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          borderRadius:
-                            "12px",
-                        }}
-                      />
-                    ) : (
-                      "📖"
-                    )}
-                  </div>
-
-                  <h2
-                    style={{
-                      textAlign: "center",
-                    }}
-                  >
-                    {
-                      selectedNovel.title
-                    }
-                  </h2>
-
-                  {getCategoryName(
-                    selectedNovel.category_id
-                  ) && (
-                    <div
-                      style={{
-                        textAlign:
-                          "center",
-                        marginBottom:
-                          "15px",
-                      }}
-                    >
-                      <span className="category">
-                        {getCategoryName(
-                          selectedNovel.category_id
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                  <p
-                    style={{
-                      lineHeight: "2",
-                      color: "#aaa",
-                      textAlign:
-                        "center",
-                    }}
-                  >
-                    {selectedNovel.description ||
-                      "لا يوجد وصف للرواية بعد."}
-                  </p>
-
-                  <div
-                    className="panel"
-                    style={{
-                      marginTop: "25px",
-                      textAlign:
-                        "center",
-                    }}
-                  >
-                    <strong>
-                      {selectedNovel.status ===
-                      "ongoing"
-                        ? "مستمرة"
-                        : "مكتملة"}
-                    </strong>
-
-                    <br />
-
-                    <small>
-                      سيتم إضافة الفصول
-                      وصفحة القراءة في
-                      الخطوة التالية.
-                    </small>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h2>
-                  📚 الروايات
-                </h2>
-
-                {publishedNovels.length ===
-                0 ? (
-                  <div className="panel">
-                    لا توجد روايات منشورة
-                    حاليًا.
-                  </div>
+            <div className="novel-detail">
+              <div className="novel-cover-large">
+                {selectedNovel.cover_path ? (
+                  <img
+                    src={selectedNovel.cover_path}
+                    alt={selectedNovel.title}
+                  />
                 ) : (
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: "20px",
-                    }}
-                  >
-                    {publishedNovels.map(
-                      (novel) => (
-                        <div
-                          className="novel-card"
-                          key={
-                            novel.id
-                          }
-                          style={{
-                            maxWidth:
-                              "100%",
-                          }}
-                        >
-                          <div className="cover">
-                            {novel.cover_path ? (
-                              <img
-                                src={
-                                  novel.cover_path
-                                }
-                                alt={
-                                  novel.title
-                                }
-                                style={{
-                                  width:
-                                    "100%",
-                                  height:
-                                    "100%",
-                                  objectFit:
-                                    "cover",
-                                  borderRadius:
-                                    "12px",
-                                }}
-                              />
-                            ) : (
-                              "📖"
-                            )}
-                          </div>
-
-                          <div>
-                            {getCategoryName(
-                              novel.category_id
-                            ) && (
-                              <span className="category">
-                                {getCategoryName(
-                                  novel.category_id
-                                )}
-                              </span>
-                            )}
-
-                            <h3>
-                              {
-                                novel.title
-                              }
-                            </h3>
-
-                            <p>
-                              {novel.description ||
-                                "لا يوجد وصف للرواية بعد."}
-                            </p>
-
-                            <small
-                              style={{
-                                display:
-                                  "block",
-                                marginBottom:
-                                  "15px",
-                                color:
-                                  "#888",
-                              }}
-                            >
-                              {novel.status ===
-                              "ongoing"
-                                ? "مستمرة"
-                                : "مكتملة"}
-                            </small>
-
-                            <button
-                              onClick={() =>
-                                openNovel(
-                                  novel
-                                )
-                              }
-                            >
-                              قراءة الرواية
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    )}
+                  <div className="cover-placeholder">
+                    📖
                   </div>
                 )}
-              </>
-            )}
-          </section>
-
-        /* ================= لوحة الإدارة ================= */
-
-        ) : showAdmin &&
-          user &&
-          admin ? (
-          <section className="account-page">
-            <button
-              onClick={() =>
-                setShowAdmin(false)
-              }
-            >
-              ← العودة
-            </button>
-
-            <div className="account-card">
-              <h2>
-                {isOwner
-                  ? "👑 لوحة المالك"
-                  : "🛠️ لوحة المشرف"}
-              </h2>
-
-              <p className="account-muted">
-                مرحبًا {userName}
-              </p>
-
-              <div className="account-section">
-                <div className="panel account-role">
-                  <strong>
-                    {isOwner
-                      ? "Owner — مالك الموقع"
-                      : "Staff — مشرف"}
-                  </strong>
-
-                  <span>
-                    {isOwner
-                      ? "لديك صلاحيات المالك."
-                      : "لديك صلاحيات المشرف."}
-                  </span>
-                </div>
               </div>
 
-              {/* ================= إدارة المشرفين ================= */}
+              <div className="novel-detail-content">
+                <span className="novel-category">
+                  {selectedNovel.categories?.name ||
+                    "رواية"}
+                </span>
 
-              {isOwner && (
-                <div className="account-section">
-                  <div className="section-heading">
-                    <h2>
-                      🛡️ إدارة المشرفين
-                    </h2>
+                <h1>{selectedNovel.title}</h1>
 
-                    <span>
-                      {staffMembers.length}
-                    </span>
-                  </div>
+                <p>
+                  {selectedNovel.description ||
+                    "لا يوجد وصف لهذه الرواية حاليًا."}
+                </p>
 
-                  <div
-                    className="account-card"
-                    style={{
-                      marginTop: "15px",
-                    }}
-                  >
-                    <h3>
-                      ➕ إضافة مشرف
-                    </h3>
+                <div className="novel-meta">
+                  <span>
+                    {selectedNovel.status === "completed"
+                      ? "مكتملة"
+                      : "مستمرة"}
+                  </span>
+                  <span>{selectedNovel.language}</span>
+                </div>
 
-                    <p className="account-muted">
-                      اكتبي البريد الإلكتروني
-                      لحساب موجود بالفعل في
-                      الموقع.
-                    </p>
+                <button className="primary-button">
+                  بدء القراءة
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : showAdmin && canManageNovels ? (
+          <section className="account-page">
+            <div className="page-heading">
+              <span>لوحة الإدارة</span>
+              <h1>إدارة الروايات</h1>
+              <p>
+                هنا يمكنك حفظ الروايات كمسودات ثم نشرها
+                عندما تصبح جاهزة.
+              </p>
+            </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: "12px",
-                      }}
-                    >
-                      <input
-                        type="email"
-                        value={staffEmail}
-                        onChange={(e) =>
-                          setStaffEmail(
-                            e.target.value
-                          )
-                        }
-                        placeholder="example@gmail.com"
-                        style={{
-                          width: "100%",
-                          padding: "12px",
-                          borderRadius:
-                            "8px",
-                          border:
-                            "1px solid #444",
-                          background:
-                            "#111",
-                          color: "#fff",
-                          fontFamily:
-                            "inherit",
-                          direction:
-                            "ltr",
-                          textAlign:
-                            "left",
-                        }}
-                      />
-
-                      <button
-                        className="main-button"
-                        disabled={
-                          managingStaff
-                        }
-                        onClick={
-                          addStaff
-                        }
-                      >
-                        {managingStaff
-                          ? "جارٍ التنفيذ..."
-                          : "🛡️ إضافة كمشرف"}
-                      </button>
-                    </div>
-
-                    {staffMessage && (
-                      <div
-                        className="panel"
-                        style={{
-                          marginTop:
-                            "15px",
-                          lineHeight:
-                            "1.8",
-                        }}
-                      >
-                        {staffMessage}
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className="account-card"
-                    style={{
-                      marginTop: "15px",
-                    }}
-                  >
-                    <h3>
-                      👥 المشرفون الحاليون
-                    </h3>
-
-                    {loadingStaff ? (
-                      <div className="account-loading">
-                        جارٍ تحميل المشرفين...
-                      </div>
-                    ) : staffMembers.length ===
-                      0 ? (
-                      <div className="panel">
-                        لا يوجد مشرفون حاليًا.
-                      </div>
-                    ) : (
-                      <div className="account-list">
-                        {staffMembers.map(
-                          (staff) => (
-                            <div
-                              className="account-novel"
-                              key={
-                                staff.id
-                              }
-                              style={{
-                                gridTemplateColumns:
-                                  "70px
+            <div className="account-card">
+              <div className="admin-heading
