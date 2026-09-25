@@ -1007,7 +1007,7 @@ function App() {
     if (!isOwner) return;
 
     const confirmed = window.confirm(
-      `هل أنت متأكدة من حذف الفصل ${chapter.chapter_number؟}`
+      `هل أنتِ متأكدة من حذف الفصل ${chapter.chapter_number}؟`
     );
 
     if (!confirmed) return;
