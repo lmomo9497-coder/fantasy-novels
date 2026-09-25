@@ -1153,14 +1153,20 @@ function App() {
       }
 
       setNewBlockMediaPath(path);
-      const publicUrl = getPublicMediaUrl(bucket, path);
-      if (publicUrl) {
-        setNewBlockMediaPreviewUrl(publicUrl);
+      // Keep the local preview for images/GIFs so the preview never
+      // disappears just because the public storage URL is slow or blocked.
+      // The uploaded path is stored separately and is what gets saved.
+      if (newBlockType === "audio") {
+        const publicUrl = getPublicMediaUrl(bucket, path);
+        if (publicUrl) {
+          setNewBlockMediaPreviewUrl(publicUrl);
+        }
       }
+
       setChapterMessage(
         newBlockType === "gif"
-          ? "تم رفع الـGIF بنجاح. راجعي المعاينة ثم اضغطي حفظ الصورة."
-          : "تم رفع الملف بنجاح. راجعي المعاينة ثم اضغطي زر الحفظ."
+          ? "تم رفع الـGIF بنجاح — المعاينة جاهزة، اضغطي حفظ الـGIF في الفصل."
+          : "تم رفع الملف بنجاح — المعاينة جاهزة، اضغطي زر الحفظ."
       );
     } catch (error: any) {
       setChapterMessage(
@@ -2374,6 +2380,20 @@ function App() {
                               : "معاينة الصورة"
                           }
                           className="chapter-image"
+                          onError={() => {
+                            if (
+                              newBlockLocalPreviewUrl &&
+                              newBlockMediaPreviewUrl !==
+                                newBlockLocalPreviewUrl
+                            ) {
+                              setNewBlockMediaPreviewUrl(
+                                newBlockLocalPreviewUrl
+                              );
+                              setChapterMessage(
+                                "المعاينة المحلية تعمل. الملف مرفوع وجاهز للحفظ."
+                              );
+                            }
+                          }}
                         />
                       )}
                       <div className="uploaded-file">
