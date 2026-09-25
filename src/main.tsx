@@ -119,6 +119,10 @@ function App() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
+  const [readerProgress, setReaderProgress] = useState(0);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -189,6 +193,43 @@ function App() {
     () => notifications.filter((item) => !item.read_at).length,
     [notifications]
   );
+
+  const filteredNovels = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase("ar");
+    return publishedNovels.filter((novel) => {
+      const matchesQuery =
+        !query ||
+        novel.title.toLocaleLowerCase("ar").includes(query) ||
+        (novel.description || "").toLocaleLowerCase("ar").includes(query);
+      const matchesCategory =
+        selectedCategoryFilter === "all" ||
+        novel.category_id === selectedCategoryFilter;
+      const matchesStatus =
+        selectedStatusFilter === "all" ||
+        novel.status === selectedStatusFilter;
+      return matchesQuery && matchesCategory && matchesStatus;
+    });
+  }, [
+    publishedNovels,
+    searchQuery,
+    selectedCategoryFilter,
+    selectedStatusFilter,
+  ]);
+
+  const currentChapterIndex = useMemo(
+    () =>
+      selectedChapter
+        ? chapters.findIndex((chapter) => chapter.id === selectedChapter.id)
+        : -1,
+    [chapters, selectedChapter]
+  );
+
+  const previousChapter =
+    currentChapterIndex > 0 ? chapters[currentChapterIndex - 1] : null;
+  const nextChapter =
+    currentChapterIndex >= 0 && currentChapterIndex < chapters.length - 1
+      ? chapters[currentChapterIndex + 1]
+      : null;
 
   const readerBlocks = useMemo(() => {
     const sorted = [...chapterBlocks].sort(
@@ -1039,6 +1080,7 @@ function App() {
     if (!selectedNovel) return;
 
     setSelectedChapter(chapter);
+    setReaderProgress(0);
     setLoadingChapterBlocks(true);
     setChapterMessage("");
     setShowChapterForm(false);
@@ -1057,11 +1099,33 @@ function App() {
 
       setChapterBlocks((data ?? []) as ChapterBlock[]);
 
+      let savedProgress = 0;
       if (!selectedNovelAdminView && user) {
-        await saveReadingProgress(
-          selectedNovel.id,
-          chapter.id
-        );
+        const { data: progress } = await supabase
+          .from("reading_progress")
+          .select("progress_percent")
+          .eq("user_id", user.id)
+          .eq("novel_id", selectedNovel.id)
+          .maybeSingle();
+
+        savedProgress = Number(progress?.progress_percent || 0);
+        setReaderProgress(savedProgress);
+        await saveReadingProgress(selectedNovel.id, chapter.id, savedProgress);
+      }
+
+      if (!selectedNovelAdminView) {
+        window.setTimeout(() => {
+          if (savedProgress > 2) {
+            window.scrollTo({
+              top:
+                (document.documentElement.scrollHeight - window.innerHeight) *
+                (savedProgress / 100),
+              behavior: "smooth",
+            });
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }, 80);
       }
     } finally {
       setLoadingChapterBlocks(false);
@@ -1070,7 +1134,8 @@ function App() {
 
   async function saveReadingProgress(
     novelId: string,
-    chapterId: string
+    chapterId: string,
+    progressPercent = 0
   ) {
     if (!user) return;
 
@@ -1090,6 +1155,7 @@ function App() {
         .from("reading_progress")
         .update({
           chapter_id: chapterId,
+          progress_percent: progressPercent,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
@@ -1098,12 +1164,73 @@ function App() {
         user_id: user.id,
         novel_id: novelId,
         chapter_id: chapterId,
+        progress_percent: progressPercent,
         updated_at: new Date().toISOString(),
       });
     }
 
     loadAccountData();
   }
+
+  async function saveReaderScrollProgress() {
+    if (!user || !selectedNovel || !selectedChapter || selectedNovelAdminView) return;
+    const maxScroll = Math.max(
+      1,
+      document.documentElement.scrollHeight - window.innerHeight
+    );
+    const percent = Math.min(
+      100,
+      Math.max(0, Math.round((window.scrollY / maxScroll) * 100))
+    );
+    setReaderProgress(percent);
+
+    await supabase
+      .from("reading_progress")
+      .update({
+        chapter_id: selectedChapter.id,
+        progress_percent: percent,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id)
+      .eq("novel_id", selectedNovel.id);
+  }
+
+  useEffect(() => {
+    if (!selectedChapter || selectedNovelAdminView || !user) return;
+
+    let timer = 0;
+    const onScroll = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        void saveReaderScrollProgress();
+      }, 500);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [selectedChapter?.id, selectedNovel?.id, selectedNovelAdminView, user?.id]);
+
+  function continueReading(novel: Novel) {
+    const progress = history.find((item) => item.novel_id === novel.id);
+    openNovel(novel, false);
+    if (progress?.chapter_id) {
+      window.setTimeout(async () => {
+        const { data } = await supabase
+          .from("chapters")
+          .select("*")
+          .eq("id", progress.chapter_id)
+          .eq("novel_id", novel.id)
+          .maybeSingle();
+        if (data) {
+          await openChapter(data as Chapter);
+        }
+      }, 120);
+    }
+  }
+
 
   function resetBlockForm() {
     setNewBlockType("text");
@@ -1926,13 +2053,50 @@ function App() {
           </div>
         </div>
 
+        <div className="library-tools card">
+          <div className="library-search">
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="ابحثي عن رواية أو وصف..."
+              aria-label="بحث في الروايات"
+            />
+            <span>⌕</span>
+          </div>
+
+          <div className="library-filters">
+            <select
+              value={selectedCategoryFilter}
+              onChange={(event) => setSelectedCategoryFilter(event.target.value)}
+              aria-label="التصنيف"
+            >
+              <option value="all">كل التصنيفات</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStatusFilter}
+              onChange={(event) => setSelectedStatusFilter(event.target.value)}
+              aria-label="حالة الرواية"
+            >
+              <option value="all">كل الحالات</option>
+              <option value="ongoing">مستمرة</option>
+              <option value="completed">مكتملة</option>
+            </select>
+          </div>
+        </div>
+
         {siteMessage && (
           <div className="message-box">
             {siteMessage}
           </div>
         )}
 
-        {publishedNovels.length === 0 ? (
+        {filteredNovels.length === 0 ? (
           <div className="empty-state card">
             <div className="empty-icon">✦</div>
             <h2>لا توجد روايات منشورة بعد</h2>
@@ -1942,7 +2106,7 @@ function App() {
           </div>
         ) : (
           <div className="novels-grid">
-            {publishedNovels.map(renderNovelCard)}
+            {filteredNovels.map(renderNovelCard)}
           </div>
         )}
       </section>
@@ -2673,6 +2837,18 @@ function App() {
             )}
         </div>
 
+        {!selectedNovelAdminView && (
+          <div className="reader-progress-shell">
+            <div className="reader-progress-label">
+              <span>تقدم القراءة</span>
+              <span>{readerProgress}%</span>
+            </div>
+            <div className="reader-progress-track">
+              <div className="reader-progress-bar" style={{ width: `${readerProgress}%` }} />
+            </div>
+          </div>
+        )}
+
         <article className="chapter-reader">
           <div className="chapter-reader-header">
             <span className="eyebrow">
@@ -2704,6 +2880,23 @@ function App() {
             </div>
           )}
         </article>
+
+        {!selectedNovelAdminView && (
+          <div className="chapter-navigation">
+            <button
+              disabled={!previousChapter}
+              onClick={() => previousChapter && openChapter(previousChapter)}
+            >
+              ← {previousChapter ? `الفصل ${previousChapter.chapter_number}` : "لا يوجد فصل سابق"}
+            </button>
+            <button
+              disabled={!nextChapter}
+              onClick={() => nextChapter && openChapter(nextChapter)}
+            >
+              {nextChapter ? `الفصل ${nextChapter.chapter_number}` : "آخر فصل"} →
+            </button>
+          </div>
+        )}
 
         {selectedNovelAdminView &&
           canManage &&
@@ -2769,6 +2962,15 @@ function App() {
             </div>
 
             <div className="button-row">
+              {user && history.some((item) => item.novel_id === selectedNovel.id) && (
+                <button
+                  className="primary-button"
+                  onClick={() => continueReading(selectedNovel)}
+                >
+                  متابعة القراءة
+                </button>
+              )}
+
               {user && (
                 <button
                   className="secondary-button"
@@ -2828,6 +3030,26 @@ function App() {
                 </button>
               )}
           </div>
+
+          {user && !selectedNovelAdminView && history.some((item) => item.novel_id === selectedNovel.id) && (
+            <div className="continue-reading-banner">
+              <div>
+                <span className="eyebrow">متابعة القراءة</span>
+                <strong>
+                  {(() => {
+                    const item = history.find((entry) => entry.novel_id === selectedNovel.id);
+                    const chapter = chapters.find((entry) => entry.id === item?.chapter_id);
+                    return chapter
+                      ? `الفصل ${chapter.chapter_number}${chapter.title ? ` — ${chapter.title}` : ""}`
+                      : "آخر فصل قرأته";
+                  })()}
+                </strong>
+              </div>
+              <button className="primary-button" onClick={() => continueReading(selectedNovel)}>
+                متابعة
+              </button>
+            </div>
+          )}
 
           {loadingChapters ? (
             <div className="loading-state">
