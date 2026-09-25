@@ -194,3 +194,27 @@ footer {
 .account-muted {
   color: #999;
 }
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 14px 0;
+  border-bottom: 1px solid #303030;
+}
+
+.account-row strong {
+  min-width: 110px;
+}
+
+.account-row span {
+  color: #aaa;
+  text-align: left;
+  flex: 1;
+}
+
+.account-info {
+  display: grid;
+  gap: 0;
+  margin-top: 20px;
+}
