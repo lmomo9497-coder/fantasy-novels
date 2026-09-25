@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
@@ -93,9 +93,7 @@ function makeStorageId() {
     return crypto.randomUUID();
   }
 
-  return `${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function App() {
@@ -106,8 +104,7 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showNovels, setShowNovels] = useState(true);
 
-  const [selectedNovel, setSelectedNovel] =
-    useState<Novel | null>(null);
+  const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
 
   const [activeSection, setActiveSection] =
     useState<AccountSection>("profile");
@@ -115,33 +112,26 @@ function App() {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [loadingAccountData, setLoadingAccountData] =
-    useState(false);
+  const [loadingAccountData, setLoadingAccountData] = useState(false);
 
   const [novels, setNovels] = useState<Novel[]>([]);
-  const [publishedNovels, setPublishedNovels] =
-    useState<Novel[]>([]);
+  const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
-  const [editingNovelId, setEditingNovelId] =
-    useState<string | null>(null);
+  const [editingNovelId, setEditingNovelId] = useState<string | null>(null);
 
   const [novelTitle, setNovelTitle] = useState("");
-  const [novelDescription, setNovelDescription] =
-    useState("");
+  const [novelDescription, setNovelDescription] = useState("");
   const [novelCategory, setNovelCategory] = useState("");
   const [novelStatus, setNovelStatus] =
     useState<"ongoing" | "completed">("ongoing");
-  const [novelLanguage, setNovelLanguage] =
-    useState("العربية");
+  const [novelLanguage, setNovelLanguage] = useState("العربية");
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
-  const [novelCoverPath, setNovelCoverPath] =
-    useState("");
-  const [uploadingCover, setUploadingCover] =
-    useState(false);
+  const [novelCoverPath, setNovelCoverPath] = useState("");
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [novelMessage, setNovelMessage] = useState("");
 
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
@@ -151,53 +141,31 @@ function App() {
   const [managingStaff, setManagingStaff] = useState(false);
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [loadingChapters, setLoadingChapters] =
-    useState(false);
+  const [loadingChapters, setLoadingChapters] = useState(false);
 
-  const [showChapterForm, setShowChapterForm] =
-    useState(false);
-
+  const [showChapterForm, setShowChapterForm] = useState(false);
   const [savingChapter, setSavingChapter] = useState(false);
-
-  const [editingChapterId, setEditingChapterId] =
-    useState<string | null>(null);
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
 
   const [chapterNumber, setChapterNumber] = useState("");
   const [chapterTitle, setChapterTitle] = useState("");
   const [chapterMessage, setChapterMessage] = useState("");
 
-  const [selectedChapter, setSelectedChapter] =
-    useState<Chapter | null>(null);
-
-  const [chapterBlocks, setChapterBlocks] =
-    useState<ChapterBlock[]>([]);
-
-  const [loadingChapterBlocks, setLoadingChapterBlocks] =
-    useState(false);
-
-  const [savingChapterBlocks, setSavingChapterBlocks] =
-    useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [chapterBlocks, setChapterBlocks] = useState<ChapterBlock[]>([]);
+  const [loadingChapterBlocks, setLoadingChapterBlocks] = useState(false);
+  const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
 
   const [newBlockType, setNewBlockType] =
     useState<ChapterBlockType>("text");
-
-  const [newBlockContent, setNewBlockContent] =
-    useState("");
-
-  const [newBlockMediaPath, setNewBlockMediaPath] =
-    useState("");
-
-  const [newBlockMediaLabel, setNewBlockMediaLabel] =
-    useState("");
-
+  const [newBlockContent, setNewBlockContent] = useState("");
+  const [newBlockMediaPath, setNewBlockMediaPath] = useState("");
+  const [newBlockMediaLabel, setNewBlockMediaLabel] = useState("");
   const [newBlockAlign, setNewBlockAlign] =
     useState<ChapterBlock["align"]>("right");
-
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
-
-  const [uploadingMedia, setUploadingMedia] =
-    useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const isOwner = profile?.role === "owner";
   const isStaff = profile?.role === "staff";
@@ -208,17 +176,15 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          await loadProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -255,9 +221,7 @@ function App() {
   async function loadProfile(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select(
-        "id,display_name,avatar_url,bio,role"
-      )
+      .select("id,display_name,avatar_url,bio,role")
       .eq("id", userId)
       .maybeSingle();
 
@@ -300,9 +264,7 @@ function App() {
         )
       `)
       .eq("published", true)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     if (data) {
       setPublishedNovels(data as Novel[]);
@@ -333,9 +295,7 @@ function App() {
           slug
         )
       `)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     if (data) {
       setNovels(data as Novel[]);
@@ -354,15 +314,14 @@ function App() {
     setLoadingStaff(true);
 
     try {
-      const { data, error } =
-        await supabase.functions.invoke(
-          "manage-staff",
-          {
-            body: {
-              action: "list",
-            },
-          }
-        );
+      const { data, error } = await supabase.functions.invoke(
+        "manage-staff",
+        {
+          body: {
+            action: "list",
+          },
+        }
+      );
 
       if (!error && data?.staff) {
         setStaffMembers(data.staff);
@@ -383,25 +342,19 @@ function App() {
           .from("favorites")
           .select("*")
           .eq("user_id", user.id)
-          .order("created_at", {
-            ascending: false,
-          }),
+          .order("created_at", { ascending: false }),
 
         supabase
           .from("reading_progress")
           .select("*")
           .eq("user_id", user.id)
-          .order("updated_at", {
-            ascending: false,
-          }),
+          .order("updated_at", { ascending: false }),
 
         supabase
           .from("notifications")
           .select("*")
           .eq("user_id", user.id)
-          .order("created_at", {
-            ascending: false,
-          }),
+          .order("created_at", { ascending: false }),
       ]);
 
       setFavorites(fav.data ?? []);
@@ -429,18 +382,12 @@ function App() {
   function editNovel(novel: Novel) {
     setEditingNovelId(novel.id);
     setNovelTitle(novel.title);
-    setNovelDescription(
-      novel.description ?? ""
-    );
-    setNovelCategory(
-      novel.categories?.name || ""
-    );
+    setNovelDescription(novel.description ?? "");
+    setNovelCategory(novel.categories?.name || "");
     setNovelStatus(novel.status);
     setNovelLanguage(novel.language);
     setNovelDirection(novel.direction);
-    setNovelCoverPath(
-      novel.cover_path ?? ""
-    );
+    setNovelCoverPath(novel.cover_path ?? "");
     setNovelMessage("");
     setShowNovelForm(true);
 
@@ -450,9 +397,7 @@ function App() {
     });
   }
 
-  async function uploadNovelCover(
-    file: File
-  ) {
+  async function uploadNovelCover(file: File) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -465,50 +410,33 @@ function App() {
 
     try {
       const extension =
-        file.name
-          .split(".")
-          .pop()
-          ?.toLowerCase() || "jpg";
+        file.name.split(".").pop()?.toLowerCase() || "jpg";
 
-      const path =
-        `covers/${makeStorageId()}.${extension}`;
+      const path = `covers/${makeStorageId()}.${extension}`;
 
-      const { error } =
-        await supabase.storage
-          .from("covers")
-          .upload(
-            path,
-            file,
-            {
-              cacheControl: "3600",
-              upsert: false,
-              contentType:
-                file.type || undefined,
-            }
-          );
+      const { error } = await supabase.storage
+        .from("covers")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type || undefined,
+        });
 
       if (error) {
-        alert(
-          `فشل رفع الغلاف:\n${error.message}`
-        );
+        alert(`فشل رفع الغلاف:\n${error.message}`);
         return;
       }
 
-      const { data } =
-        supabase.storage
-          .from("covers")
-          .getPublicUrl(path);
+      const { data } = supabase.storage
+        .from("covers")
+        .getPublicUrl(path);
 
       if (!data.publicUrl) {
-        alert(
-          "تم رفع الغلاف لكن تعذر الحصول على رابطه."
-        );
+        alert("تم رفع الغلاف لكن تعذر الحصول على رابطه.");
         return;
       }
 
-      setNovelCoverPath(
-        data.publicUrl
-      );
+      setNovelCoverPath(data.publicUrl);
     } finally {
       setUploadingCover(false);
     }
@@ -516,30 +444,22 @@ function App() {
 
   async function saveNovel(publish: boolean) {
     if (!user || !canManageNovels) {
-      setNovelMessage(
-        "ليس لديك صلاحية لإدارة الروايات."
-      );
+      setNovelMessage("ليس لديك صلاحية لإدارة الروايات.");
       return;
     }
 
     if (!novelTitle.trim()) {
-      setNovelMessage(
-        "اكتبي اسم الرواية أولًا."
-      );
+      setNovelMessage("اكتبي اسم الرواية أولًا.");
       return;
     }
 
     if (!novelCategory.trim()) {
-      setNovelMessage(
-        "اكتبي تصنيف الرواية."
-      );
+      setNovelMessage("اكتبي تصنيف الرواية.");
       return;
     }
 
     if (uploadingCover) {
-      setNovelMessage(
-        "انتظري حتى يكتمل رفع الغلاف."
-      );
+      setNovelMessage("انتظري حتى يكتمل رفع الغلاف.");
       return;
     }
 
@@ -551,28 +471,21 @@ function App() {
 
       const existingCategory = categories.find(
         (category) =>
-          category.name
-            .trim()
-            .toLowerCase() ===
-          novelCategory
-            .trim()
-            .toLowerCase()
+          category.name.trim().toLowerCase() ===
+          novelCategory.trim().toLowerCase()
       );
 
       if (existingCategory) {
         categoryId = existingCategory.id;
       } else {
-        const { data, error } =
-          await supabase
-            .from("categories")
-            .insert({
-              name: novelCategory.trim(),
-              slug: makeSlug(novelCategory),
-            })
-            .select(
-              "id,name,slug"
-            )
-            .single();
+        const { data, error } = await supabase
+          .from("categories")
+          .insert({
+            name: novelCategory.trim(),
+            slug: makeSlug(novelCategory),
+          })
+          .select("id,name,slug")
+          .single();
 
         if (error) {
           setNovelMessage(error.message);
@@ -588,24 +501,19 @@ function App() {
       }
 
       if (editingNovelId) {
-        const { error } =
-          await supabase
-            .from("novels")
-            .update({
-              title: novelTitle.trim(),
-              description:
-                novelDescription.trim() ||
-                null,
-              cover_path:
-                novelCoverPath.trim() ||
-                null,
-              category_id: categoryId,
-              status: novelStatus,
-              language: novelLanguage,
-              direction: novelDirection,
-              published: publish,
-            })
-            .eq("id", editingNovelId);
+        const { error } = await supabase
+          .from("novels")
+          .update({
+            title: novelTitle.trim(),
+            description: novelDescription.trim() || null,
+            cover_path: novelCoverPath.trim() || null,
+            category_id: categoryId,
+            status: novelStatus,
+            language: novelLanguage,
+            direction: novelDirection,
+            published: publish,
+          })
+          .eq("id", editingNovelId);
 
         if (error) {
           setNovelMessage(error.message);
@@ -613,36 +521,26 @@ function App() {
         }
 
         resetNovelForm();
-
         await loadAdminData();
         await loadPublishedNovels();
-
         return;
       }
 
       const baseSlug =
-        makeSlug(novelTitle) ||
-        `novel-${Date.now()}`;
+        makeSlug(novelTitle) || `novel-${Date.now()}`;
 
-      const { error } =
-        await supabase
-          .from("novels")
-          .insert({
-            title: novelTitle.trim(),
-            slug: `${baseSlug}-${Date.now()}`,
-            description:
-              novelDescription.trim() ||
-              null,
-            cover_path:
-              novelCoverPath.trim() ||
-              null,
-            category_id: categoryId,
-            status: novelStatus,
-            language: novelLanguage,
-            direction: novelDirection,
-            published: publish,
-            created_by: user.id,
-          });
+      const { error } = await supabase.from("novels").insert({
+        title: novelTitle.trim(),
+        slug: `${baseSlug}-${Date.now()}`,
+        description: novelDescription.trim() || null,
+        cover_path: novelCoverPath.trim() || null,
+        category_id: categoryId,
+        status: novelStatus,
+        language: novelLanguage,
+        direction: novelDirection,
+        published: publish,
+        created_by: user.id,
+      });
 
       if (error) {
         setNovelMessage(error.message);
@@ -650,7 +548,6 @@ function App() {
       }
 
       resetNovelForm();
-
       await loadAdminData();
       await loadPublishedNovels();
     } finally {
@@ -658,18 +555,13 @@ function App() {
     }
   }
 
-  async function toggleNovelPublished(
-    novel: Novel
-  ) {
+  async function toggleNovelPublished(novel: Novel) {
     if (!canManageNovels) return;
-
-    const nextPublished =
-      !novel.published;
 
     const { error } = await supabase
       .from("novels")
       .update({
-        published: nextPublished,
+        published: !novel.published,
       })
       .eq("id", novel.id);
 
@@ -704,15 +596,11 @@ function App() {
     }
 
     setNovels((current) =>
-      current.filter(
-        (item) => item.id !== novel.id
-      )
+      current.filter((item) => item.id !== novel.id)
     );
 
     setPublishedNovels((current) =>
-      current.filter(
-        (item) => item.id !== novel.id
-      )
+      current.filter((item) => item.id !== novel.id)
     );
   }
 
@@ -742,17 +630,12 @@ function App() {
         });
 
       if (!adminView) {
-        query = query.eq(
-          "published",
-          true
-        );
+        query = query.eq("published", true);
       }
 
       const { data } = await query;
 
-      setChapters(
-        (data ?? []) as Chapter[]
-      );
+      setChapters((data ?? []) as Chapter[]);
     } finally {
       setLoadingChapters(false);
     }
@@ -768,47 +651,31 @@ function App() {
 
   function editChapter(chapter: Chapter) {
     setEditingChapterId(chapter.id);
-    setChapterNumber(
-      String(chapter.chapter_number)
-    );
-    setChapterTitle(
-      chapter.title ?? ""
-    );
+    setChapterNumber(String(chapter.chapter_number));
+    setChapterTitle(chapter.title ?? "");
+    setChapterMessage("");
     setShowChapterForm(true);
   }
 
-  async function saveChapter(
-    publish: boolean
-  ) {
-    if (
-      !selectedNovel ||
-      !user ||
-      !canManageNovels
-    ) {
+  async function saveChapter(publish: boolean) {
+    if (!selectedNovel || !user || !canManageNovels) {
       return;
     }
 
-    const number =
-      Number(chapterNumber);
+    const number = Number(chapterNumber);
 
-    if (
-      !Number.isInteger(number) ||
-      number <= 0
-    ) {
-      setChapterMessage(
-        "اكتبي رقم فصل صحيحًا."
-      );
+    if (!Number.isInteger(number) || number <= 0) {
+      setChapterMessage("اكتبي رقم فصل صحيحًا.");
       return;
     }
 
     if (!chapterTitle.trim()) {
-      setChapterMessage(
-        "اكتبي عنوان الفصل."
-      );
+      setChapterMessage("اكتبي عنوان الفصل.");
       return;
     }
 
     setSavingChapter(true);
+    setChapterMessage("");
 
     try {
       const chapterData = {
@@ -820,78 +687,56 @@ function App() {
         published_at: publish
           ? new Date().toISOString()
           : null,
-        updated_at:
-          new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       const result = editingChapterId
         ? await supabase
             .from("chapters")
             .update(chapterData)
-            .eq(
-              "id",
-              editingChapterId
-            )
+            .eq("id", editingChapterId)
         : await supabase
             .from("chapters")
             .insert(chapterData);
 
       if (result.error) {
-        setChapterMessage(
-          result.error.message
-        );
+        setChapterMessage(result.error.message);
         return;
       }
 
       resetChapterForm();
 
-      await loadChapters(
-        selectedNovel.id,
-        true
-      );
+      await loadChapters(selectedNovel.id, true);
     } finally {
       setSavingChapter(false);
     }
   }
 
-  async function toggleChapterPublished(
-    chapter: Chapter
-  ) {
-    const next =
-      !chapter.published;
+  async function toggleChapterPublished(chapter: Chapter) {
+    if (!canManageNovels) return;
 
-    const { error } =
-      await supabase
-        .from("chapters")
-        .update({
-          published: next,
-          published_at: next
-            ? new Date().toISOString()
-            : null,
-          updated_at:
-            new Date().toISOString(),
-        })
-        .eq(
-          "id",
-          chapter.id
-        );
+    const next = !chapter.published;
+
+    const { error } = await supabase
+      .from("chapters")
+      .update({
+        published: next,
+        published_at: next
+          ? new Date().toISOString()
+          : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", chapter.id);
 
     if (error) {
-      setChapterMessage(
-        error.message
-      );
+      setChapterMessage(error.message);
       return;
     }
 
-    await loadChapters(
-      selectedNovel!.id,
-      true
-    );
+    await loadChapters(selectedNovel!.id, true);
   }
 
-  async function deleteChapter(
-    chapter: Chapter
-  ) {
+  async function deleteChapter(chapter: Chapter) {
     if (!isOwner) return;
 
     if (
@@ -902,68 +747,47 @@ function App() {
       return;
     }
 
-    const { error } =
-      await supabase
-        .from("chapters")
-        .delete()
-        .eq(
-          "id",
-          chapter.id
-        );
+    const { error } = await supabase
+      .from("chapters")
+      .delete()
+      .eq("id", chapter.id);
 
     if (error) {
-      setChapterMessage(
-        error.message
-      );
+      setChapterMessage(error.message);
       return;
     }
 
     setChapters((current) =>
-      current.filter(
-        (item) =>
-          item.id !== chapter.id
-      )
+      current.filter((item) => item.id !== chapter.id)
     );
 
-    if (
-      selectedChapter?.id ===
-      chapter.id
-    ) {
+    if (selectedChapter?.id === chapter.id) {
       closeChapterEditor();
     }
   }
 
-  async function loadChapterBlocks(
-    chapterId: string
-  ) {
+  async function loadChapterBlocks(chapterId: string) {
     setLoadingChapterBlocks(true);
 
     try {
-      const { data, error } =
-        await supabase
-          .from("chapter_blocks")
-          .select(`
-            id,
-            chapter_id,
-            block_order,
-            block_type,
-            content,
-            media_path,
-            media_label,
-            align,
-            width,
-            height
-          `)
-          .eq(
-            "chapter_id",
-            chapterId
-          )
-          .order(
-            "block_order",
-            {
-              ascending: true,
-            }
-          );
+      const { data, error } = await supabase
+        .from("chapter_blocks")
+        .select(`
+          id,
+          chapter_id,
+          block_order,
+          block_type,
+          content,
+          media_path,
+          media_label,
+          align,
+          width,
+          height
+        `)
+        .eq("chapter_id", chapterId)
+        .order("block_order", {
+          ascending: true,
+        });
 
       if (error) {
         alert(error.message);
@@ -971,9 +795,7 @@ function App() {
         return;
       }
 
-      setChapterBlocks(
-        (data ?? []) as ChapterBlock[]
-      );
+      setChapterBlocks((data ?? []) as ChapterBlock[]);
     } finally {
       setLoadingChapterBlocks(false);
     }
@@ -989,20 +811,14 @@ function App() {
     setNewBlockHeight("");
   }
 
-  async function uploadChapterMedia(
-    file: File
-  ) {
-    if (!file || !selectedChapter) {
-      return;
-    }
+  async function uploadChapterMedia(file: File) {
+    if (!file || !selectedChapter) return;
 
     if (
       newBlockType === "gif" &&
       file.type !== "image/gif"
     ) {
-      alert(
-        "اختاري ملف GIF فقط لهذا النوع."
-      );
+      alert("اختاري ملف GIF فقط لهذا النوع.");
       return;
     }
 
@@ -1010,9 +826,7 @@ function App() {
       newBlockType === "image" &&
       !file.type.startsWith("image/")
     ) {
-      alert(
-        "اختاري ملف صورة."
-      );
+      alert("اختاري ملف صورة.");
       return;
     }
 
@@ -1020,25 +834,17 @@ function App() {
       newBlockType === "audio" &&
       !file.type.startsWith("audio/")
     ) {
-      alert(
-        "اختاري ملف صوتي."
-      );
+      alert("اختاري ملف صوتي.");
       return;
     }
 
-    const isAudio =
-      newBlockType === "audio";
-
-    const bucket = isAudio
-      ? "audio"
-      : "chapter-media";
+    const bucket =
+      newBlockType === "audio"
+        ? "audio"
+        : "chapter-media";
 
     const extension =
-      file.name
-        .split(".")
-        .pop()
-        ?.toLowerCase() ||
-      "bin";
+      file.name.split(".").pop()?.toLowerCase() || "bin";
 
     const path =
       `${selectedChapter.id}/` +
@@ -1047,52 +853,36 @@ function App() {
     setUploadingMedia(true);
 
     try {
-      const { error } =
-        await supabase.storage
-          .from(bucket)
-          .upload(
-            path,
-            file,
-            {
-              cacheControl: "3600",
-              upsert: false,
-              contentType:
-                file.type ||
-                undefined,
-            }
-          );
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type || undefined,
+        });
 
       if (error) {
-        alert(
-          `فشل رفع الملف:\n${error.message}`
-        );
+        alert(`فشل رفع الملف:\n${error.message}`);
         return;
       }
 
-      const { data } =
-        supabase.storage
-          .from(bucket)
-          .getPublicUrl(path);
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path);
 
       if (!data.publicUrl) {
-        alert(
-          "تم رفع الملف لكن تعذر الحصول على الرابط."
-        );
+        alert("تم رفع الملف لكن تعذر الحصول على الرابط.");
         return;
       }
 
-      setNewBlockMediaPath(
-        data.publicUrl
-      );
+      setNewBlockMediaPath(data.publicUrl);
     } finally {
       setUploadingMedia(false);
     }
   }
 
   async function addChapterBlock() {
-    if (!selectedChapter) {
-      return;
-    }
+    if (!selectedChapter) return;
 
     const textType =
       newBlockType === "text" ||
@@ -1108,9 +898,7 @@ function App() {
       textType &&
       !newBlockContent.trim()
     ) {
-      alert(
-        "اكتبي المحتوى أولًا."
-      );
+      alert("اكتبي المحتوى أولًا.");
       return;
     }
 
@@ -1118,9 +906,7 @@ function App() {
       mediaType &&
       !newBlockMediaPath.trim()
     ) {
-      alert(
-        "ارفعي الملف أولًا."
-      );
+      alert("ارفعي الملف أولًا.");
       return;
     }
 
@@ -1128,7 +914,7 @@ function App() {
       chapterBlocks.length > 0
         ? Math.max(
             ...chapterBlocks.map(
-              (b) => b.block_order
+              (block) => block.block_order
             )
           ) + 1
         : 1;
@@ -1146,54 +932,42 @@ function App() {
           ? Number(newBlockHeight)
           : null;
 
-      const { data, error } =
-        await supabase
-          .from("chapter_blocks")
-          .insert({
-            chapter_id:
-              selectedChapter.id,
-            block_order: order,
-            block_type:
-              newBlockType,
-            content:
-              newBlockContent.trim() ||
-              null,
-            media_path:
-              newBlockMediaPath.trim() ||
-              null,
-            media_label:
-              newBlockMediaLabel.trim() ||
-              null,
-            align:
-              newBlockAlign,
-            width,
-            height,
-          })
-          .select(`
-            id,
-            chapter_id,
-            block_order,
-            block_type,
-            content,
-            media_path,
-            media_label,
-            align,
-            width,
-            height
-          `)
-          .single();
+      const { data, error } = await supabase
+        .from("chapter_blocks")
+        .insert({
+          chapter_id: selectedChapter.id,
+          block_order: order,
+          block_type: newBlockType,
+          content: newBlockContent.trim() || null,
+          media_path: newBlockMediaPath.trim() || null,
+          media_label: newBlockMediaLabel.trim() || null,
+          align: newBlockAlign,
+          width,
+          height,
+        })
+        .select(`
+          id,
+          chapter_id,
+          block_order,
+          block_type,
+          content,
+          media_path,
+          media_label,
+          align,
+          width,
+          height
+        `)
+        .single();
 
       if (error) {
         alert(error.message);
         return;
       }
 
-      setChapterBlocks(
-        (current) => [
-          ...current,
-          data as ChapterBlock,
-        ]
-      );
+      setChapterBlocks((current) => [
+        ...current,
+        data as ChapterBlock,
+      ]);
 
       resetBlockForm();
     } finally {
@@ -1201,9 +975,7 @@ function App() {
     }
   }
 
-  async function deleteChapterBlock(
-    block: ChapterBlock
-  ) {
+  async function deleteChapterBlock(block: ChapterBlock) {
     if (!isOwner) return;
 
     if (
@@ -1214,14 +986,10 @@ function App() {
       return;
     }
 
-    const { error } =
-      await supabase
-        .from("chapter_blocks")
-        .delete()
-        .eq(
-          "id",
-          block.id
-        );
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .delete()
+      .eq("id", block.id);
 
     if (error) {
       alert(error.message);
@@ -1229,10 +997,7 @@ function App() {
     }
 
     setChapterBlocks((current) =>
-      current.filter(
-        (item) =>
-          item.id !== block.id
-      )
+      current.filter((item) => item.id !== block.id)
     );
   }
 
@@ -1240,10 +1005,9 @@ function App() {
     block: ChapterBlock,
     direction: "up" | "down"
   ) {
-    const index =
-      chapterBlocks.findIndex(
-        (b) => b.id === block.id
-      );
+    const index = chapterBlocks.findIndex(
+      (item) => item.id === block.id
+    );
 
     if (index < 0) return;
 
@@ -1254,68 +1018,51 @@ function App() {
 
     if (
       newIndex < 0 ||
-      newIndex >=
-        chapterBlocks.length
+      newIndex >= chapterBlocks.length
     ) {
       return;
     }
 
-    const target =
-      chapterBlocks[newIndex];
+    const target = chapterBlocks[newIndex];
 
     setSavingChapterBlocks(true);
 
     try {
-      await supabase
-        .from("chapter_blocks")
-        .update({
-          block_order: -Date.now(),
-        })
-        .eq(
-          "id",
-          block.id
-        );
+      const temporaryOrder = -Date.now();
 
       await supabase
         .from("chapter_blocks")
         .update({
-          block_order:
-            block.block_order,
+          block_order: temporaryOrder,
         })
-        .eq(
-          "id",
-          target.id
-        );
+        .eq("id", block.id);
 
       await supabase
         .from("chapter_blocks")
         .update({
-          block_order:
-            target.block_order,
+          block_order: block.block_order,
         })
-        .eq(
-          "id",
-          block.id
-        );
+        .eq("id", target.id);
 
-      await loadChapterBlocks(
-        selectedChapter!.id
-      );
+      await supabase
+        .from("chapter_blocks")
+        .update({
+          block_order: target.block_order,
+        })
+        .eq("id", block.id);
+
+      await loadChapterBlocks(selectedChapter!.id);
     } finally {
       setSavingChapterBlocks(false);
     }
   }
 
-  function openChapterEditor(
-    chapter: Chapter
-  ) {
+  function openChapterEditor(chapter: Chapter) {
     setSelectedChapter(chapter);
     setChapterBlocks([]);
     resetBlockForm();
 
-    loadChapterBlocks(
-      chapter.id
-    );
+    loadChapterBlocks(chapter.id);
   }
 
   function closeChapterEditor() {
@@ -1324,13 +1071,8 @@ function App() {
     resetBlockForm();
   }
 
-  function getBlockTypeLabel(
-    type: ChapterBlockType
-  ) {
-    const labels: Record<
-      ChapterBlockType,
-      string
-    > = {
+  function getBlockTypeLabel(type: ChapterBlockType) {
+    const labels: Record<ChapterBlockType, string> = {
       text: "📝 نص",
       heading: "🔤 عنوان",
       image: "🖼️ صورة",
@@ -1343,20 +1085,41 @@ function App() {
     return labels[type];
   }
 
-  function renderChapterBlock(
-    block: ChapterBlock
-  ) {
+  /*
+    الصوت يظهر دائمًا أولًا عند القراءة،
+    بينما الصور والنصوص وباقي العناصر تحافظ على ترتيبها.
+  */
+  const readerBlocks = useMemo(() => {
+    const audioBlocks = chapterBlocks.filter(
+      (block) => block.block_type === "audio"
+    );
+
+    const otherBlocks = chapterBlocks.filter(
+      (block) => block.block_type !== "audio"
+    );
+
+    return [...audioBlocks, ...otherBlocks];
+  }, [chapterBlocks]);
+
+  function renderChapterBlock(block: ChapterBlock) {
+    const alignment =
+      block.align === "full"
+        ? "center"
+        : block.align;
+
     const style: React.CSSProperties = {
-      textAlign:
-        block.align === "full"
-          ? "center"
-          : block.align,
+      textAlign: alignment,
     };
 
     switch (block.block_type) {
       case "heading":
         return (
-          <h2 style={style}>
+          <h2
+            style={{
+              ...style,
+              margin: "20px 0 14px",
+            }}
+          >
             {block.content}
           </h2>
         );
@@ -1366,9 +1129,9 @@ function App() {
           <p
             style={{
               ...style,
-              lineHeight: 2.1,
-              whiteSpace:
-                "pre-wrap",
+              lineHeight: 2.15,
+              whiteSpace: "pre-wrap",
+              margin: "0 0 18px",
             }}
           >
             {block.content}
@@ -1381,6 +1144,7 @@ function App() {
             style={{
               ...style,
               lineHeight: 2,
+              margin: "20px 0",
             }}
           >
             {block.content}
@@ -1399,26 +1163,29 @@ function App() {
       case "image":
       case "gif":
         return block.media_path ? (
-          <div style={style}>
+          <div
+            style={{
+              textAlign: alignment,
+              width: "100%",
+              margin: "18px 0",
+            }}
+          >
             <img
-              src={
-                block.media_path
-              }
-              alt={
-                block.content || ""
-              }
+              src={block.media_path}
+              alt={block.content || ""}
               style={{
-                width:
-                  block.width
-                    ? `${block.width}px`
-                    : "auto",
-                height:
-                  block.height
-                    ? `${block.height}px`
-                    : "auto",
+                display: "inline-block",
+                width: block.width
+                  ? `${block.width}px`
+                  : block.align === "full"
+                  ? "100%"
+                  : "auto",
+                height: block.height
+                  ? `${block.height}px`
+                  : "auto",
                 maxWidth: "100%",
-                objectFit:
-                  "contain",
+                objectFit: "contain",
+                borderRadius: 12,
               }}
             />
           </div>
@@ -1426,13 +1193,23 @@ function App() {
 
       case "audio":
         return block.media_path ? (
-          <div style={style}>
+          <div
+            style={{
+              width: "100%",
+              margin: "0 0 24px",
+              padding: 16,
+              borderRadius: 14,
+            }}
+          >
             {block.media_label && (
-              <p>
+              <p
+                style={{
+                  marginTop: 0,
+                  marginBottom: 10,
+                }}
+              >
                 <strong>
-                  {
-                    block.media_label
-                  }
+                  {block.media_label}
                 </strong>
               </p>
             )}
@@ -1440,9 +1217,7 @@ function App() {
             <audio
               controls
               preload="none"
-              src={
-                block.media_path
-              }
+              src={block.media_path}
               style={{
                 width: "100%",
               }}
@@ -1456,12 +1231,7 @@ function App() {
   }
 
   async function addStaff() {
-    if (
-      !isOwner ||
-      !staffEmail.trim()
-    ) {
-      return;
-    }
+    if (!isOwner || !staffEmail.trim()) return;
 
     setManagingStaff(true);
 
@@ -1472,31 +1242,24 @@ function App() {
           {
             body: {
               action: "set_role",
-              email:
-                staffEmail.trim(),
+              email: staffEmail.trim(),
               role: "staff",
             },
           }
         );
 
       if (error) {
-        setStaffMessage(
-          error.message
-        );
+        setStaffMessage(error.message);
         return;
       }
 
       if (data?.error) {
-        setStaffMessage(
-          data.error
-        );
+        setStaffMessage(data.error);
         return;
       }
 
       setStaffEmail("");
-      setStaffMessage(
-        "تمت إضافة المشرف بنجاح."
-      );
+      setStaffMessage("تمت إضافة المشرف بنجاح.");
 
       await loadStaffMembers();
     } finally {
@@ -1504,9 +1267,7 @@ function App() {
     }
   }
 
-  async function removeStaff(
-    staff: any
-  ) {
+  async function removeStaff(staff: any) {
     if (!isOwner) return;
 
     if (
@@ -1533,16 +1294,12 @@ function App() {
         );
 
       if (error) {
-        setStaffMessage(
-          error.message
-        );
+        setStaffMessage(error.message);
         return;
       }
 
       if (data?.error) {
-        setStaffMessage(
-          data.error
-        );
+        setStaffMessage(data.error);
         return;
       }
 
@@ -1553,15 +1310,12 @@ function App() {
   }
 
   async function loginWithGoogle() {
-    await supabase.auth.signInWithOAuth(
-      {
-        provider: "google",
-        options: {
-          redirectTo:
-            window.location.origin,
-        },
-      }
-    );
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
   }
 
   async function logout() {
@@ -1581,32 +1335,25 @@ function App() {
     resetBlockForm();
   }
 
-  async function markNotificationRead(
-    id: string
-  ) {
-    const now =
-      new Date().toISOString();
+  async function markNotificationRead(id: string) {
+    const now = new Date().toISOString();
 
     await supabase
       .from("notifications")
       .update({
         read_at: now,
       })
-      .eq(
-        "id",
-        id
-      );
+      .eq("id", id);
 
-    setNotifications(
-      (current) =>
-        current.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                read_at: now,
-              }
-            : item
-        )
+    setNotifications((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              read_at: now,
+            }
+          : item
+      )
     );
   }
 
@@ -1621,8 +1368,7 @@ function App() {
 
     await loadChapters(
       novel.id,
-      adminView &&
-        canManageNovels
+      adminView && canManageNovels
     );
   }
 
@@ -1640,8 +1386,7 @@ function App() {
 
   const unreadNotifications =
     notifications.filter(
-      (item) =>
-        !item.read_at
+      (item) => !item.read_at
     ).length;
 
   return (
@@ -1663,22 +1408,13 @@ function App() {
               setShowNovels(true);
             }}
           >
-            <strong>
-              روايات خيالية
-            </strong>
-
-            <span>
-              عالم من الحكايات
-            </span>
+            <strong>روايات خيالية</strong>
+            <span>عالم من الحكايات</span>
           </button>
 
           <nav className="main-nav">
             <button
-              className={
-                showNovels
-                  ? "active"
-                  : ""
-              }
+              className={showNovels ? "active" : ""}
               onClick={() => {
                 setShowNovels(true);
                 setShowAccount(false);
@@ -1695,9 +1431,7 @@ function App() {
             {user && (
               <button
                 className={
-                  showAccount
-                    ? "active"
-                    : ""
+                  showAccount ? "active" : ""
                 }
                 onClick={() => {
                   setShowAccount(true);
@@ -1708,12 +1442,9 @@ function App() {
               >
                 حسابي
 
-                {unreadNotifications >
-                  0 && (
+                {unreadNotifications > 0 && (
                   <span className="notification-badge">
-                    {
-                      unreadNotifications
-                    }
+                    {unreadNotifications}
                   </span>
                 )}
               </button>
@@ -1722,9 +1453,7 @@ function App() {
             {canManageNovels && (
               <button
                 className={
-                  showAdmin
-                    ? "active"
-                    : ""
+                  showAdmin ? "active" : ""
                 }
                 onClick={() => {
                   setShowAdmin(true);
@@ -1759,9 +1488,7 @@ function App() {
             ) : (
               <button
                 className="account-button"
-                onClick={
-                  loginWithGoogle
-                }
+                onClick={loginWithGoogle}
               >
                 تسجيل الدخول
               </button>
@@ -1775,9 +1502,7 @@ function App() {
           <section className="novel-reader">
             <button
               className="back-button"
-              onClick={
-                backToNovels
-              }
+              onClick={backToNovels}
             >
               ← العودة للروايات
             </button>
@@ -1786,12 +1511,8 @@ function App() {
               <div className="novel-cover-large">
                 {selectedNovel.cover_path ? (
                   <img
-                    src={
-                      selectedNovel.cover_path
-                    }
-                    alt={
-                      selectedNovel.title
-                    }
+                    src={selectedNovel.cover_path}
+                    alt={selectedNovel.title}
                   />
                 ) : (
                   <div className="cover-placeholder">
@@ -1802,16 +1523,11 @@ function App() {
 
               <div className="novel-detail-content">
                 <span className="novel-category">
-                  {selectedNovel.categories
-                    ?.name ||
+                  {selectedNovel.categories?.name ||
                     "رواية"}
                 </span>
 
-                <h1>
-                  {
-                    selectedNovel.title
-                  }
-                </h1>
+                <h1>{selectedNovel.title}</h1>
 
                 <p>
                   {selectedNovel.description ||
@@ -1827,9 +1543,7 @@ function App() {
                   </span>
 
                   <span>
-                    {
-                      selectedNovel.language
-                    }
+                    {selectedNovel.language}
                   </span>
                 </div>
               </div>
@@ -1837,19 +1551,14 @@ function App() {
 
             <div
               className="account-card"
-              style={{
-                marginTop: 25,
-              }}
+              style={{ marginTop: 25 }}
             >
               <div className="admin-heading-row">
                 <div>
-                  <h2>
-                    📚 الفصول
-                  </h2>
+                  <h2>📚 الفصول</h2>
 
                   <p>
-                    {canManageNovels &&
-                    showAdmin
+                    {canManageNovels && showAdmin
                       ? "إدارة فصول الرواية ومحتواها."
                       : "الفصول المنشورة فقط."}
                   </p>
@@ -1860,23 +1569,14 @@ function App() {
                     <button
                       className="primary-button"
                       onClick={() => {
-                        if (
-                          showChapterForm
-                        ) {
+                        if (showChapterForm) {
                           resetChapterForm();
                         } else {
-                          setEditingChapterId(
-                            null
-                          );
-                          setChapterNumber(
-                            ""
-                          );
-                          setChapterTitle(
-                            ""
-                          );
-                          setShowChapterForm(
-                            true
-                          );
+                          setEditingChapterId(null);
+                          setChapterNumber("");
+                          setChapterTitle("");
+                          setChapterMessage("");
+                          setShowChapterForm(true);
                         }
                       }}
                     >
@@ -1899,13 +1599,10 @@ function App() {
 
                     <label>
                       رقم الفصل
-
                       <input
                         type="number"
                         min="1"
-                        value={
-                          chapterNumber
-                        }
+                        value={chapterNumber}
                         onChange={(e) =>
                           setChapterNumber(
                             e.target.value
@@ -1916,11 +1613,8 @@ function App() {
 
                     <label>
                       عنوان الفصل
-
                       <input
-                        value={
-                          chapterTitle
-                        }
+                        value={chapterTitle}
                         onChange={(e) =>
                           setChapterTitle(
                             e.target.value
@@ -1931,22 +1625,16 @@ function App() {
 
                     {chapterMessage && (
                       <div className="panel">
-                        {
-                          chapterMessage
-                        }
+                        {chapterMessage}
                       </div>
                     )}
 
                     <div className="form-actions">
                       <button
                         className="secondary-button"
-                        disabled={
-                          savingChapter
-                        }
+                        disabled={savingChapter}
                         onClick={() =>
-                          saveChapter(
-                            false
-                          )
+                          saveChapter(false)
                         }
                       >
                         📝 حفظ كمسودة
@@ -1954,13 +1642,9 @@ function App() {
 
                       <button
                         className="primary-button"
-                        disabled={
-                          savingChapter
-                        }
+                        disabled={savingChapter}
                         onClick={() =>
-                          saveChapter(
-                            true
-                          )
+                          saveChapter(true)
                         }
                       >
                         🟢 حفظ ونشر
@@ -1973,104 +1657,94 @@ function App() {
                 <div className="account-loading">
                   جارٍ تحميل الفصول...
                 </div>
-              ) : chapters.length ===
-                0 ? (
+              ) : chapters.length === 0 ? (
                 <div className="panel">
                   لا توجد فصول حاليًا.
                 </div>
               ) : (
                 <div className="account-list">
-                  {chapters.map(
-                    (chapter) => (
-                      <div
-                        className="account-novel"
-                        key={
-                          chapter.id
-                        }
-                      >
-                        <div className="novel-list-info">
-                          <h3>
-                            الفصل{" "}
-                            {
-                              chapter.chapter_number
-                            }
+                  {chapters.map((chapter) => (
+                    <div
+                      className="account-novel"
+                      key={chapter.id}
+                    >
+                      <div className="novel-list-info">
+                        <h3>
+                          الفصل{" "}
+                          {chapter.chapter_number}
+                          {chapter.title
+                            ? ` — ${chapter.title}`
+                            : ""}
+                        </h3>
 
-                            {chapter.title
-                              ? ` — ${chapter.title}`
-                              : ""}
-                          </h3>
+                        <span>مجاني</span>
 
-                          <span>
-                            مجاني
-                          </span>
-
-                          <small>
-                            {chapter.published
-                              ? "🟢 منشور"
-                              : "📝 مسودة"}
-                          </small>
-                        </div>
-
-                        <div className="novel-list-actions">
-                          <button
-                            className="primary-button"
-                            onClick={() =>
-                              openChapterEditor(
-                                chapter
-                              )
-                            }
-                          >
-                            {canManageNovels &&
-                            showAdmin
-                              ? "✏️ تحرير المحتوى"
-                              : "📖 قراءة"}
-                          </button>
-
-                          {canManageNovels &&
-                            showAdmin && (
-                              <>
-                                <button
-                                  className="secondary-button"
-                                  onClick={() =>
-                                    editChapter(
-                                      chapter
-                                    )
-                                  }
-                                >
-                                  ✏️ تعديل البيانات
-                                </button>
-
-                                <button
-                                  className="secondary-button"
-                                  onClick={() =>
-                                    toggleChapterPublished(
-                                      chapter
-                                    )
-                                  }
-                                >
-                                  {chapter.published
-                                    ? "⚪ إلغاء النشر"
-                                    : "🟢 نشر الفصل"}
-                                </button>
-
-                                {isOwner && (
-                                  <button
-                                    className="danger-button"
-                                    onClick={() =>
-                                      deleteChapter(
-                                        chapter
-                                      )
-                                    }
-                                  >
-                                    🗑️ حذف
-                                  </button>
-                                )}
-                              </>
-                            )}
-                        </div>
+                        <small>
+                          {chapter.published
+                            ? "🟢 منشور"
+                            : "📝 مسودة"}
+                        </small>
                       </div>
-                    )
-                  )}
+
+                      <div className="novel-list-actions">
+                        <button
+                          className="primary-button"
+                          onClick={() =>
+                            openChapterEditor(
+                              chapter
+                            )
+                          }
+                        >
+                          {canManageNovels &&
+                          showAdmin
+                            ? "✏️ تحرير المحتوى"
+                            : "📖 قراءة"}
+                        </button>
+
+                        {canManageNovels &&
+                          showAdmin && (
+                            <>
+                              <button
+                                className="secondary-button"
+                                onClick={() =>
+                                  editChapter(
+                                    chapter
+                                  )
+                                }
+                              >
+                                ✏️ تعديل البيانات
+                              </button>
+
+                              <button
+                                className="secondary-button"
+                                onClick={() =>
+                                  toggleChapterPublished(
+                                    chapter
+                                  )
+                                }
+                              >
+                                {chapter.published
+                                  ? "⚪ إلغاء النشر"
+                                  : "🟢 نشر الفصل"}
+                              </button>
+
+                              {isOwner && (
+                                <button
+                                  className="danger-button"
+                                  onClick={() =>
+                                    deleteChapter(
+                                      chapter
+                                    )
+                                  }
+                                >
+                                  🗑️ حذف
+                                </button>
+                              )}
+                            </>
+                          )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -2078,9 +1752,7 @@ function App() {
             {selectedChapter && (
               <div
                 className="account-card"
-                style={{
-                  marginTop: 25,
-                }}
+                style={{ marginTop: 25 }}
               >
                 <div className="admin-heading-row">
                   <div>
@@ -2093,10 +1765,7 @@ function App() {
 
                     <h2>
                       الفصل{" "}
-                      {
-                        selectedChapter.chapter_number
-                      }
-
+                      {selectedChapter.chapter_number}
                       {selectedChapter.title
                         ? ` — ${selectedChapter.title}`
                         : ""}
@@ -2105,9 +1774,7 @@ function App() {
 
                   <button
                     className="secondary-button"
-                    onClick={
-                      closeChapterEditor
-                    }
+                    onClick={closeChapterEditor}
                   >
                     إغلاق
                   </button>
@@ -2129,74 +1796,59 @@ function App() {
                         نوع العنصر
 
                         <select
-                          value={
-                            newBlockType
-                          }
+                          value={newBlockType}
                           onChange={(e) =>
                             setNewBlockType(
-                              e.target.value as ChapterBlockType
+                              e.target
+                                .value as ChapterBlockType
                             )
                           }
                         >
                           <option value="text">
                             📝 نص
                           </option>
-
                           <option value="heading">
                             🔤 عنوان
                           </option>
-
                           <option value="quote">
                             💬 اقتباس
                           </option>
-
                           <option value="divider">
                             ─ فاصل
                           </option>
-
                           <option value="image">
                             🖼️ صورة
                           </option>
-
                           <option value="gif">
                             🎞️ GIF
                           </option>
-
                           <option value="audio">
                             🎧 صوت
                           </option>
                         </select>
                       </label>
 
-                      {(newBlockType ===
-                        "text" ||
-                        newBlockType ===
-                          "heading" ||
-                        newBlockType ===
-                          "quote") && (
+                      {(newBlockType === "text" ||
+                        newBlockType === "heading" ||
+                        newBlockType === "quote") && (
                         <label>
                           المحتوى
 
                           <textarea
-                            value={
-                              newBlockContent
-                            }
+                            value={newBlockContent}
                             onChange={(e) =>
                               setNewBlockContent(
                                 e.target.value
                               )
                             }
-                            rows={6}
+                            rows={7}
                           />
                         </label>
                       )}
 
-                      {(newBlockType ===
-                        "image" ||
-                        newBlockType ===
-                          "gif" ||
-                        newBlockType ===
-                          "audio") && (
+                      {(newBlockType === "image" ||
+                        newBlockType === "gif" ||
+                        newBlockType === "audio") && (
                         <>
                           <label>
                             رفع الملف
@@ -2226,8 +1878,7 @@ function App() {
                                   );
                                 }
 
-                                e.target.value =
-                                  "";
+                                e.target.value = "";
                               }}
                             />
                           </label>
@@ -2240,23 +1891,68 @@ function App() {
 
                           {newBlockMediaPath && (
                             <div className="panel">
-                              ✅ تم رفع الملف بنجاح.
+                              <strong>
+                                ✅ تم رفع الملف بنجاح
+                              </strong>
+
+                              {newBlockType ===
+                                "image" && (
+                                <div
+                                  style={{
+                                    marginTop: 12,
+                                  }}
+                                >
+                                  <img
+                                    src={
+                                      newBlockMediaPath
+                                    }
+                                    alt=""
+                                    style={{
+                                      maxWidth:
+                                        "100%",
+                                      maxHeight:
+                                        280,
+                                      borderRadius:
+                                        12,
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {newBlockType ===
+                                "gif" && (
+                                <div
+                                  style={{
+                                    marginTop: 12,
+                                  }}
+                                >
+                                  <img
+                                    src={
+                                      newBlockMediaPath
+                                    }
+                                    alt=""
+                                    style={{
+                                      maxWidth:
+                                        "100%",
+                                      maxHeight:
+                                        280,
+                                      borderRadius:
+                                        12,
+                                    }}
+                                  />
+                                </div>
+                              )}
 
                               <div
                                 style={{
-                                  marginTop:
-                                    8,
+                                  marginTop: 8,
                                   wordBreak:
                                     "break-all",
-                                  fontSize:
-                                    12,
-                                  opacity:
-                                    0.7,
+                                  fontSize: 12,
+                                  opacity: 0.7,
                                 }}
                               >
-                                {
-                                  newBlockMediaPath
-                                }
+                                {newBlockMediaPath}
                               </div>
                             </div>
                           )}
@@ -2287,6 +1983,7 @@ function App() {
                             <>
                               <label>
                                 وصف الصورة
+
                                 <input
                                   value={
                                     newBlockContent
@@ -2345,22 +2042,20 @@ function App() {
                                   }
                                   onChange={(e) =>
                                     setNewBlockAlign(
-                                      e.target.value as ChapterBlock["align"]
+                                      e.target
+                                        .value as ChapterBlock["align"]
                                     )
                                   }
                                 >
                                   <option value="right">
                                     يمين
                                   </option>
-
                                   <option value="center">
                                     وسط
                                   </option>
-
                                   <option value="left">
                                     يسار
                                   </option>
-
                                   <option value="full">
                                     كامل
                                   </option>
@@ -2400,13 +2095,21 @@ function App() {
 
                     <div
                       className="panel"
-                      style={{
-                        marginTop: 20,
-                      }}
+                      style={{ marginTop: 20 }}
                     >
                       <h3>
                         📑 محتوى الفصل
                       </h3>
+
+                      <p
+                        style={{
+                          opacity: 0.7,
+                          fontSize: 14,
+                        }}
+                      >
+                        رتّبي النصوص والصور والفواصل كما تريدين.
+                        الملفات الصوتية تظهر تلقائيًا في بداية الفصل.
+                      </p>
 
                       {chapterBlocks.length ===
                       0 ? (
@@ -2421,20 +2124,15 @@ function App() {
                           ) => (
                             <div
                               className="account-novel"
-                              key={
-                                block.id
-                              }
+                              key={block.id}
                               style={{
-                                marginBottom:
-                                  15,
-                                display:
-                                  "block",
+                                marginBottom: 15,
+                                display: "block",
                               }}
                             >
                               <div
                                 style={{
-                                  display:
-                                    "flex",
+                                  display: "flex",
                                   justifyContent:
                                     "space-between",
                                   alignItems:
@@ -2445,9 +2143,7 @@ function App() {
                                 }}
                               >
                                 <strong>
-                                  {index +
-                                    1}{" "}
-                                  —{" "}
+                                  {index + 1} —{" "}
                                   {getBlockTypeLabel(
                                     block.block_type
                                   )}
@@ -2458,8 +2154,7 @@ function App() {
                                     className="secondary-button"
                                     disabled={
                                       savingChapterBlocks ||
-                                      index ===
-                                        0
+                                      index === 0
                                     }
                                     onClick={() =>
                                       moveChapterBlock(
@@ -2526,21 +2221,18 @@ function App() {
                       lineHeight: 2,
                     }}
                   >
-                    {chapterBlocks.length ===
+                    {readerBlocks.length ===
                     0 ? (
                       <p>
                         لا يوجد محتوى منشور لهذا الفصل حاليًا.
                       </p>
                     ) : (
-                      chapterBlocks.map(
+                      readerBlocks.map(
                         (block) => (
                           <div
-                            key={
-                              block.id
-                            }
+                            key={block.id}
                             style={{
-                              marginBottom:
-                                25,
+                              marginBottom: 25,
                             }}
                           >
                             {renderChapterBlock(
@@ -2559,13 +2251,9 @@ function App() {
           canManageNovels ? (
           <section className="account-page">
             <div className="page-heading">
-              <span>
-                لوحة الإدارة
-              </span>
+              <span>لوحة الإدارة</span>
 
-              <h1>
-                إدارة الروايات
-              </h1>
+              <h1>إدارة الروايات</h1>
 
               <p>
                 إدارة الروايات والفصول والمحتوى.
@@ -2575,9 +2263,7 @@ function App() {
             <div className="account-card">
               <div className="admin-heading-row">
                 <div>
-                  <h2>
-                    الروايات
-                  </h2>
+                  <h2>الروايات</h2>
 
                   <p>
                     المسودة لا تظهر للقراء.
@@ -2587,50 +2273,19 @@ function App() {
                 <button
                   className="primary-button"
                   onClick={() => {
-                    if (
-                      showNovelForm
-                    ) {
+                    if (showNovelForm) {
                       resetNovelForm();
                     } else {
-                      setEditingNovelId(
-                        null
-                      );
-
-                      setNovelTitle(
-                        ""
-                      );
-
-                      setNovelDescription(
-                        ""
-                      );
-
-                      setNovelCategory(
-                        ""
-                      );
-
-                      setNovelStatus(
-                        "ongoing"
-                      );
-
-                      setNovelLanguage(
-                        "العربية"
-                      );
-
-                      setNovelDirection(
-                        "rtl"
-                      );
-
-                      setNovelCoverPath(
-                        ""
-                      );
-
-                      setNovelMessage(
-                        ""
-                      );
-
-                      setShowNovelForm(
-                        true
-                      );
+                      setEditingNovelId(null);
+                      setNovelTitle("");
+                      setNovelDescription("");
+                      setNovelCategory("");
+                      setNovelStatus("ongoing");
+                      setNovelLanguage("العربية");
+                      setNovelDirection("rtl");
+                      setNovelCoverPath("");
+                      setNovelMessage("");
+                      setShowNovelForm(true);
                     }
                   }}
                 >
@@ -2652,9 +2307,7 @@ function App() {
                     اسم الرواية
 
                     <input
-                      value={
-                        novelTitle
-                      }
+                      value={novelTitle}
                       onChange={(e) =>
                         setNovelTitle(
                           e.target.value
@@ -2667,9 +2320,7 @@ function App() {
                     الوصف
 
                     <textarea
-                      value={
-                        novelDescription
-                      }
+                      value={novelDescription}
                       onChange={(e) =>
                         setNovelDescription(
                           e.target.value
@@ -2684,13 +2335,10 @@ function App() {
                     <input
                       type="file"
                       accept="image/*"
-                      disabled={
-                        uploadingCover
-                      }
+                      disabled={uploadingCover}
                       onChange={(e) => {
                         const file =
-                          e.target
-                            .files?.[0];
+                          e.target.files?.[0];
 
                         if (file) {
                           uploadNovelCover(
@@ -2698,8 +2346,7 @@ function App() {
                           );
                         }
 
-                        e.target.value =
-                          "";
+                        e.target.value = "";
                       }}
                     />
                   </label>
@@ -2723,19 +2370,13 @@ function App() {
                         }}
                       >
                         <img
-                          src={
-                            novelCoverPath
-                          }
+                          src={novelCoverPath}
                           alt="غلاف الرواية"
                           style={{
-                            width:
-                              "100%",
-                            maxHeight:
-                              300,
-                            objectFit:
-                              "cover",
-                            borderRadius:
-                              8,
+                            width: "100%",
+                            maxHeight: 300,
+                            objectFit: "cover",
+                            borderRadius: 12,
                           }}
                         />
                       </div>
@@ -2747,9 +2388,7 @@ function App() {
                           marginTop: 10,
                         }}
                         onClick={() =>
-                          setNovelCoverPath(
-                            ""
-                          )
+                          setNovelCoverPath("")
                         }
                       >
                         إزالة الغلاف
@@ -2761,9 +2400,7 @@ function App() {
                     التصنيف
 
                     <input
-                      value={
-                        novelCategory
-                      }
+                      value={novelCategory}
                       onChange={(e) =>
                         setNovelCategory(
                           e.target.value
@@ -2776,12 +2413,11 @@ function App() {
                     الحالة
 
                     <select
-                      value={
-                        novelStatus
-                      }
+                      value={novelStatus}
                       onChange={(e) =>
                         setNovelStatus(
-                          e.target.value as
+                          e.target
+                            .value as
                             | "ongoing"
                             | "completed"
                         )
@@ -2801,9 +2437,7 @@ function App() {
                     اللغة
 
                     <input
-                      value={
-                        novelLanguage
-                      }
+                      value={novelLanguage}
                       onChange={(e) =>
                         setNovelLanguage(
                           e.target.value
@@ -2816,12 +2450,11 @@ function App() {
                     اتجاه القراءة
 
                     <select
-                      value={
-                        novelDirection
-                      }
+                      value={novelDirection}
                       onChange={(e) =>
                         setNovelDirection(
-                          e.target.value as
+                          e.target
+                            .value as
                             | "rtl"
                             | "ltr"
                         )
@@ -2839,9 +2472,7 @@ function App() {
 
                   {novelMessage && (
                     <div className="panel">
-                      {
-                        novelMessage
-                      }
+                      {novelMessage}
                     </div>
                   )}
 
@@ -2853,9 +2484,7 @@ function App() {
                         uploadingCover
                       }
                       onClick={() =>
-                        saveNovel(
-                          false
-                        )
+                        saveNovel(false)
                       }
                     >
                       📝 حفظ كمسودة
@@ -2868,9 +2497,7 @@ function App() {
                         uploadingCover
                       }
                       onClick={() =>
-                        saveNovel(
-                          true
-                        )
+                        saveNovel(true)
                       }
                     >
                       🟢 حفظ ونشر
@@ -2880,95 +2507,82 @@ function App() {
               )}
 
               <div className="account-list">
-                {novels.map(
-                  (novel) => (
-                    <div
-                      className="account-novel"
-                      key={
-                        novel.id
-                      }
-                    >
-                      <div className="novel-list-info">
-                        <h3>
-                          {
-                            novel.title
-                          }
-                        </h3>
+                {novels.map((novel) => (
+                  <div
+                    className="account-novel"
+                    key={novel.id}
+                  >
+                    <div className="novel-list-info">
+                      <h3>{novel.title}</h3>
 
-                        <span>
-                          {novel.categories
-                            ?.name ||
-                            "بدون تصنيف"}
-                        </span>
+                      <span>
+                        {novel.categories?.name ||
+                          "بدون تصنيف"}
+                      </span>
 
-                        <small>
-                          {novel.published
-                            ? "🟢 منشورة"
-                            : "📝 مسودة"}
-                        </small>
-                      </div>
-
-                      <div className="novel-list-actions">
-                        <button
-                          className="secondary-button"
-                          onClick={() =>
-                            editNovel(
-                              novel
-                            )
-                          }
-                        >
-                          ✏️ تعديل
-                        </button>
-
-                        <button
-                          className="secondary-button"
-                          onClick={() =>
-                            toggleNovelPublished(
-                              novel
-                            )
-                          }
-                        >
-                          {novel.published
-                            ? "⚪ إلغاء النشر"
-                            : "🟢 نشر الرواية"}
-                        </button>
-
-                        <button
-                          className="primary-button"
-                          onClick={() =>
-                            openNovel(
-                              novel,
-                              true
-                            )
-                          }
-                        >
-                          📚 الفصول
-                        </button>
-
-                        {isOwner && (
-                          <button
-                            className="danger-button"
-                            onClick={() =>
-                              deleteNovel(
-                                novel
-                              )
-                            }
-                          >
-                            🗑️ حذف
-                          </button>
-                        )}
-                      </div>
+                      <small>
+                        {novel.published
+                          ? "🟢 منشورة"
+                          : "📝 مسودة"}
+                      </small>
                     </div>
-                  )
-                )}
+
+                    <div className="novel-list-actions">
+                      <button
+                        className="secondary-button"
+                        onClick={() =>
+                          editNovel(novel)
+                        }
+                      >
+                        ✏️ تعديل
+                      </button>
+
+                      <button
+                        className="secondary-button"
+                        onClick={() =>
+                          toggleNovelPublished(
+                            novel
+                          )
+                        }
+                      >
+                        {novel.published
+                          ? "⚪ إلغاء النشر"
+                          : "🟢 نشر الرواية"}
+                      </button>
+
+                      <button
+                        className="primary-button"
+                        onClick={() =>
+                          openNovel(
+                            novel,
+                            true
+                          )
+                        }
+                      >
+                        📚 الفصول
+                      </button>
+
+                      {isOwner && (
+                        <button
+                          className="danger-button"
+                          onClick={() =>
+                            deleteNovel(
+                              novel
+                            )
+                          }
+                        >
+                          🗑️ حذف
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {isOwner && (
               <div className="account-card">
-                <h2>
-                  👥 إدارة المشرفين
-                </h2>
+                <h2>👥 إدارة المشرفين</h2>
 
                 <div className="panel">
                   <label>
@@ -2976,9 +2590,7 @@ function App() {
 
                     <input
                       type="email"
-                      value={
-                        staffEmail
-                      }
+                      value={staffEmail}
                       onChange={(e) =>
                         setStaffEmail(
                           e.target.value
@@ -2989,21 +2601,15 @@ function App() {
 
                   <button
                     className="primary-button"
-                    disabled={
-                      managingStaff
-                    }
-                    onClick={
-                      addStaff
-                    }
+                    disabled={managingStaff}
+                    onClick={addStaff}
                   >
                     إضافة كمشرف
                   </button>
 
                   {staffMessage && (
                     <div className="panel">
-                      {
-                        staffMessage
-                      }
+                      {staffMessage}
                     </div>
                   )}
                 </div>
@@ -3018,9 +2624,7 @@ function App() {
                       (staff) => (
                         <div
                           className="account-novel"
-                          key={
-                            staff.id
-                          }
+                          key={staff.id}
                         >
                           <div className="novel-list-info">
                             <h3>
@@ -3052,20 +2656,15 @@ function App() {
               </div>
             )}
           </section>
-        ) : showAccount &&
-          user ? (
+        ) : showAccount && user ? (
           <section className="account-page">
             <div className="page-heading">
-              <span>
-                حسابك
-              </span>
+              <span>حسابك</span>
 
               <h1>
                 مرحبًا{" "}
                 {profile?.display_name ||
-                  user.email?.split(
-                    "@"
-                  )[0] ||
+                  user.email?.split("@")[0] ||
                   ""}
               </h1>
             </div>
@@ -3080,9 +2679,7 @@ function App() {
                       : ""
                   }
                   onClick={() =>
-                    setActiveSection(
-                      "profile"
-                    )
+                    setActiveSection("profile")
                   }
                 >
                   الملف الشخصي
@@ -3112,9 +2709,7 @@ function App() {
                       : ""
                   }
                   onClick={() =>
-                    setActiveSection(
-                      "history"
-                    )
+                    setActiveSection("history")
                   }
                 >
                   سجل القراءة
@@ -3136,9 +2731,7 @@ function App() {
                   الإشعارات
                 </button>
 
-                <button
-                  onClick={logout}
-                >
+                <button onClick={logout}>
                   تسجيل الخروج
                 </button>
               </aside>
@@ -3173,9 +2766,7 @@ function App() {
                             </h3>
 
                             <p>
-                              {
-                                user.email
-                              }
+                              {user.email}
                             </p>
 
                             <small>
@@ -3193,9 +2784,7 @@ function App() {
 
                         {profile?.bio && (
                           <p>
-                            {
-                              profile.bio
-                            }
+                            {profile.bio}
                           </p>
                         )}
                       </div>
@@ -3204,9 +2793,7 @@ function App() {
                     {activeSection ===
                       "favorites" && (
                       <div className="account-card">
-                        <h2>
-                          المفضلة
-                        </h2>
+                        <h2>المفضلة</h2>
 
                         <div className="panel">
                           {favorites.length
@@ -3262,10 +2849,8 @@ function App() {
                                 >
                                   <div>
                                     <strong>
-                                      {
-                                        notification.title ||
-                                        "إشعار"
-                                      }
+                                      {notification.title ||
+                                        "إشعار"}
                                     </strong>
 
                                     <p>
@@ -3295,9 +2880,7 @@ function App() {
         ) : (
           <section className="novels-page">
             <div className="hero">
-              <span>
-                عالم الروايات
-              </span>
+              <span>عالم الروايات</span>
 
               <h1>
                 اقرئي حكايتك القادمة
@@ -3311,13 +2894,9 @@ function App() {
             <div className="novels-section">
               <div className="section-heading">
                 <div>
-                  <span>
-                    المكتبة
-                  </span>
+                  <span>المكتبة</span>
 
-                  <h2>
-                    الروايات
-                  </h2>
+                  <h2>الروايات</h2>
                 </div>
               </div>
 
@@ -3332,9 +2911,7 @@ function App() {
                     (novel) => (
                       <article
                         className="novel-card"
-                        key={
-                          novel.id
-                        }
+                        key={novel.id}
                         onClick={() =>
                           openNovel(
                             novel,
@@ -3367,9 +2944,7 @@ function App() {
                           </span>
 
                           <h3>
-                            {
-                              novel.title
-                            }
+                            {novel.title}
                           </h3>
 
                           <p>
