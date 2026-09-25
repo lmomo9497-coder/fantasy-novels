@@ -5,6 +5,7 @@ import { supabase } from "./lib/supabase";
 
 function App() {
   const [user, setUser] = useState<any>(null);
+  const [showAccount, setShowAccount] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -31,6 +32,7 @@ function App() {
 
   async function signOut() {
     await supabase.auth.signOut();
+    setShowAccount(false);
   }
 
   const userName =
@@ -38,6 +40,8 @@ function App() {
     user?.user_metadata?.name ||
     user?.email ||
     "حسابي";
+
+  const userAvatar = user?.user_metadata?.avatar_url;
 
   return (
     <div className="app">
@@ -53,7 +57,10 @@ function App() {
 
           {user ? (
             <>
-              <button>👤 {userName}</button>
+              <button onClick={() => setShowAccount(true)}>
+                👤 حسابي
+              </button>
+
               <button onClick={signOut}>تسجيل الخروج</button>
             </>
           ) : (
@@ -65,32 +72,80 @@ function App() {
       </header>
 
       <main>
-        <section className="hero">
-          <p>مرحبًا بك في</p>
-          <h2>عالم الروايات الخيالية</h2>
-          <p>
-            مكان هادئ لقراءة الروايات واكتشاف العوالم والشخصيات والقصص الجديدة.
-          </p>
+        {showAccount && user ? (
+          <section className="account-page">
+            <button onClick={() => setShowAccount(false)}>
+              ← العودة
+            </button>
 
-          <button className="main-button">تصفح الروايات</button>
-        </section>
+            <div className="account-card">
+              {userAvatar ? (
+                <img
+                  src={userAvatar}
+                  alt="صورة الحساب"
+                  className="account-avatar"
+                />
+              ) : (
+                <div className="account-avatar-placeholder">👤</div>
+              )}
 
-        <section className="novels">
-          <h2>أحدث الروايات</h2>
+              <h2>{userName}</h2>
 
-          <div className="novel-card">
-            <div className="cover">📖</div>
+              <p>{user.email}</p>
 
-            <div>
-              <span className="category">فانتازيا</span>
-              <h3>رواية تجريبية</h3>
-              <p>
-                هذه مساحة مؤقتة ستتحول لاحقًا إلى رواياتك الحقيقية.
-              </p>
-              <button>قراءة الرواية</button>
+              <div className="account-info">
+                <div>
+                  <strong>الحساب</strong>
+                  <span>قارئ</span>
+                </div>
+
+                <div>
+                  <strong>المفضلة</strong>
+                  <span>لا توجد روايات بعد</span>
+                </div>
+
+                <div>
+                  <strong>القراءة</strong>
+                  <span>لا يوجد سجل قراءة بعد</span>
+                </div>
+              </div>
+
+              <button onClick={signOut} className="logout-button">
+                تسجيل الخروج
+              </button>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <>
+            <section className="hero">
+              <p>مرحبًا بك في</p>
+              <h2>عالم الروايات الخيالية</h2>
+              <p>
+                مكان هادئ لقراءة الروايات واكتشاف العوالم والشخصيات والقصص
+                الجديدة.
+              </p>
+
+              <button className="main-button">تصفح الروايات</button>
+            </section>
+
+            <section className="novels">
+              <h2>أحدث الروايات</h2>
+
+              <div className="novel-card">
+                <div className="cover">📖</div>
+
+                <div>
+                  <span className="category">فانتازيا</span>
+                  <h3>رواية تجريبية</h3>
+                  <p>
+                    هذه مساحة مؤقتة ستتحول لاحقًا إلى رواياتك الحقيقية.
+                  </p>
+                  <button>قراءة الرواية</button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       <footer>© 2026 روايات خيالية</footer>
