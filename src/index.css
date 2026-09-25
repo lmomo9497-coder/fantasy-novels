@@ -12,6 +12,8 @@ body {
   font-family: Arial, sans-serif;
   background: #0d0d0f;
   color: #f4f1ec;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 button,
@@ -19,6 +21,7 @@ input,
 textarea,
 select {
   font-family: inherit;
+  font-size: inherit;
 }
 
 button {
@@ -28,7 +31,11 @@ button {
 .app {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 50% -10%, #252026 0, transparent 38%),
+    radial-gradient(
+      circle at 50% -10%,
+      #29232b 0,
+      transparent 42%
+    ),
     #0d0d0f;
 }
 
@@ -40,45 +47,68 @@ button {
   position: sticky;
   top: 0;
   z-index: 50;
-  min-height: 70px;
-  padding: 12px clamp(16px, 5vw, 70px);
+
+  min-height: 78px;
+  padding: 16px clamp(18px, 5vw, 80px);
+
   border-bottom: 1px solid #29272b;
-  background: rgba(13, 13, 15, 0.94);
-  backdrop-filter: blur(14px);
+
+  background: rgba(13, 13, 15, 0.96);
+  backdrop-filter: blur(16px);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+
+  gap: 28px;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 21px;
-  line-height: 1.3;
+
+  font-size: 25px;
+  line-height: 1.35;
+  font-weight: 700;
 }
 
 .header span {
   display: block;
-  margin-top: 3px;
-  font-size: 11px;
-  color: #9d9791;
+
+  margin-top: 5px;
+
+  font-size: 14px;
+  line-height: 1.5;
+
+  color: #a9a29b;
 }
 
 .header nav {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 7px;
+
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .header button {
+  min-height: 44px;
+
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 11px;
+
   background: transparent;
   color: #ddd8d2;
-  padding: 9px 13px;
-  transition: 0.2s ease;
+
+  padding: 10px 16px;
+
+  font-size: 15px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .header button:hover {
@@ -87,648 +117,74 @@ button {
   color: #fff;
 }
 
+.header button:active {
+  transform: scale(0.98);
+}
+
 /* =========================
    المحتوى العام
 ========================= */
 
 main {
-  width: min(1100px, calc(100% - 32px));
+  width: min(1150px, calc(100% - 40px));
+
   margin: 0 auto;
 }
+
+/* =========================
+   الواجهة الرئيسية
+========================= */
 
 .hero {
-  padding: clamp(65px, 10vw, 110px) 20px 75px;
-  text-align: center;
-}
+  padding: clamp(80px, 12vw, 135px) 20px 95px;
 
-.hero p {
-  max-width: 650px;
-  margin: 0 auto;
-  line-height: 2;
-  color: #a7a19b;
+  text-align: center;
 }
 
 .hero h2 {
-  margin: 15px 0 20px;
-  font-size: clamp(38px, 8vw, 70px);
-  line-height: 1.1;
+  margin: 0 0 25px;
+
+  font-size: clamp(42px, 8vw, 76px);
+  line-height: 1.15;
+
   letter-spacing: -1px;
 }
 
-.main-button,
-.novel-card button {
+.hero p {
+  max-width: 720px;
+
+  margin: 0 auto 32px;
+
+  font-size: 18px;
+  line-height: 2;
+
+  color: #aaa39d;
+}
+
+.main-button {
+  min-height: 48px;
+
   border: 1px solid #e8e3dc;
-  border-radius: 11px;
-  padding: 12px 20px;
-  background: #eee9e1;
-  color: #111;
-  font-weight: bold;
-  transition: 0.2s ease;
-}
-
-.main-button:hover,
-.novel-card button:hover {
-  transform: translateY(-1px);
-  background: #fff;
-}
-
-/* =========================
-   الروايات
-========================= */
-
-.novels {
-  padding: 35px 0 70px;
-}
-
-.novels > h2 {
-  margin: 0 0 22px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #29272b;
-}
-
-.novel-card {
-  width: 100%;
-  max-width: 850px;
-  display: grid;
-  grid-template-columns: 190px 1fr;
-  gap: 25px;
-  padding: 20px;
-  border: 1px solid #302d32;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #18171a, #121214);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-}
-
-.cover {
-  min-height: 260px;
-  overflow: hidden;
-  border: 1px solid #343137;
-  border-radius: 13px;
-  background: #202024;
-  display: grid;
-  place-items: center;
-  font-size: 60px;
-  color: #777;
-}
-
-.cover img {
-  width: 100%;
-  height: 100%;
-  min-height: 260px;
-  object-fit: cover;
-}
-
-.category {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 5px 10px;
-  border: 1px solid #38343a;
-  border-radius: 20px;
-  background: #211f23;
-  color: #c6bfb8;
-  font-size: 12px;
-}
-
-.novel-card h3 {
-  margin: 14px 0 9px;
-  font-size: 27px;
-}
-
-.novel-card p {
-  margin: 0 0 22px;
-  line-height: 1.95;
-  color: #aaa39d;
-}
-
-/* =========================
-   الفوتر
-========================= */
-
-footer {
-  margin-top: 30px;
-  padding: 55px 20px;
-  border-top: 1px solid #29272b;
-  text-align: center;
-  color: #6f6a66;
-  font-size: 12px;
-}
-
-/* =========================
-   الحساب
-========================= */
-
-.account-page {
-  width: min(850px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 40px 0 70px;
-}
-
-.account-card {
-  padding: 25px;
-  border: 1px solid #302d32;
-  border-radius: 18px;
-  background: #171619;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
-}
-
-.account-info {
-  display: grid;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.account-info p {
-  margin: 0;
-  line-height: 1.8;
-}
-
-.account-section {
-  margin-top: 32px;
-}
-
-.account-section h2 {
-  margin: 0 0 15px;
-}
-
-.account-muted {
-  color: #96908a;
-}
-
-/* =========================
-   أزرار أقسام الحساب
-========================= */
-
-.account-row-button {
-  width: 100%;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 14px 16px;
-  border: 1px solid transparent;
-  border-bottom-color: #2d2a2f;
-  background: transparent;
-  color: #fff;
-  text-align: right;
-  transition: 0.2s ease;
-}
-
-.account-row-button:hover,
-.account-row-button.active {
-  border-radius: 10px;
-  border-color: #353137;
-  background: #1d1b1f;
-}
-
-.account-row-button strong {
-  min-width: 130px;
-}
-
-.account-row-button span {
-  flex: 1;
-  color: #99938e;
-  text-align: left;
-}
-
-/* =========================
-   تحميل بيانات الحساب
-========================= */
-
-.account-loading {
-  margin-top: 25px;
-  padding: 16px;
-  border: 1px solid #302d32;
   border-radius: 12px;
-  background: #1b1a1d;
-  color: #aaa39d;
-  text-align: center;
-}
 
-/* =========================
-   عناوين الأقسام
-========================= */
+  padding: 13px 24px;
 
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 18px;
-}
-
-.section-heading h2 {
-  margin: 0;
-}
-
-.section-heading > span {
-  min-width: 32px;
-  padding: 5px 9px;
-  border: 1px solid #38343a;
-  border-radius: 20px;
-  background: #211f23;
-  color: #c6c0ba;
-  text-align: center;
-  font-size: 12px;
-}
-
-/* =========================
-   قوائم الروايات
-========================= */
-
-.account-list {
-  display: grid;
-  gap: 15px;
-}
-
-.account-novel {
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 18px;
-  padding: 16px;
-  border: 1px solid #302d32;
-  border-radius: 15px;
-  background: #151417;
-  transition: 0.2s ease;
-}
-
-.account-novel:hover {
-  border-color: #48434a;
-  background: #19181b;
-}
-
-.account-novel-cover {
-  width: 100px;
-  height: 135px;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  border: 1px solid #353238;
-  border-radius: 10px;
-  background: #242226;
-  font-size: 35px;
-}
-
-.account-novel-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.account-novel-info h3 {
-  margin: 0 0 8px;
-}
-
-.account-novel-info p {
-  margin: 0 0 10px;
-  line-height: 1.7;
-  color: #aaa39d;
-}
-
-.account-novel-info small {
-  display: block;
-  margin-top: 6px;
-  color: #77716c;
-}
-
-/* =========================
-   أزرار الحساب
-========================= */
-
-.account-action {
-  margin-top: 12px;
-  padding: 9px 14px;
-  border: 1px solid #403b42;
-  border-radius: 9px;
-  background: #e9e4dd;
+  background: #eee9e1;
   color: #111;
+
+  font-size: 16px;
   font-weight: bold;
-  transition: 0.2s ease;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
-.account-action:hover {
+.main-button:hover {
+  transform: translateY(-2px);
   background: #fff;
 }
 
-/* =========================
-   شريط التقدم
-========================= */
-
-.progress-bar {
-  width: 100%;
-  height: 7px;
-  margin-top: 12px;
-  overflow: hidden;
-  border-radius: 10px;
-  background: #302d32;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: #eee9e1;
-  transition: width 0.3s ease;
-}
-
-/* =========================
-   الإشعارات
-========================= */
-
-.notification-list {
-  display: grid;
-  gap: 12px;
-}
-
-.notification-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 16px;
-  border: 1px solid #302d32;
-  border-radius: 13px;
-  background: #151417;
-}
-
-.notification-item.unread {
-  border-color: #4a454c;
-  background: #1d1b1f;
-}
-
-.notification-item h3 {
-  margin: 0 0 7px;
-}
-
-.notification-item p {
-  margin: 0 0 8px;
-  color: #aaa39d;
-  line-height: 1.7;
-}
-
-.notification-item small {
-  display: block;
-  margin-top: 5px;
-  color: #77716c;
-}
-
-.notification-read {
-  flex-shrink: 0;
-  padding: 9px 12px;
-  border: 1px solid #444047;
-  border-radius: 8px;
-  background: transparent;
-  color: #fff;
-}
-
-.read-label {
-  flex-shrink: 0;
-  color: #77716c;
-  font-size: 12px;
-}
-
-/* =========================
-   نوع الحساب
-========================= */
-
-.account-role {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.account-role span {
-  color: #99938e;
-}
-
-/* =========================
-   عناصر النماذج
-========================= */
-
-input,
-textarea,
-select {
-  width: 100%;
-  border: 1px solid #353238;
-  border-radius: 10px;
-  background: #151417;
-  color: #f5f2ee;
-  padding: 11px 13px;
-  outline: none;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: #625b64;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
-}
-
-textarea {
-  min-height: 120px;
-  resize: vertical;
-  line-height: 1.8;
-}
-
-label {
-  display: block;
-  margin-bottom: 7px;
-  color: #b4aea8;
-  font-size: 13px;
-}
-
-/* =========================
-   البطاقات العامة
-========================= */
-
-.card,
-.admin-card,
-.chapter-card {
-  border: 1px solid #302d32;
-  border-radius: 16px;
-  background: #171619;
-}
-
-/* =========================
-   محرر الفصل
-========================= */
-
-.chapter-editor,
-.editor,
-.chapter-content-editor {
-  width: 100%;
-  margin-top: 20px;
-  padding: 20px;
-  border: 1px solid #302d32;
-  border-radius: 16px;
-  background: #151417;
-}
-
-.chapter-editor h2,
-.editor h2,
-.chapter-content-editor h2 {
-  margin-top: 0;
-}
-
-.chapter-editor button,
-.editor button,
-.chapter-content-editor button {
-  border-radius: 9px;
-}
-
-.chapter-block {
-  margin-top: 14px;
-  padding: 16px;
-  border: 1px solid #302d32;
-  border-radius: 13px;
-  background: #1a181c;
-}
-
-.chapter-block p {
-  line-height: 1.95;
-}
-
-.chapter-block img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 10px;
-}
-
-.chapter-block audio {
-  width: 100%;
-  margin-top: 8px;
-}
-
-/* =========================
-   الجوال
-========================= */
-
-@media (max-width: 700px) {
-  main {
-    width: min(100% - 24px, 1100px);
-  }
-
-  .header {
-    position: relative;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px 16px;
-  }
-
-  .header nav {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .header button {
-    padding: 8px 10px;
-  }
-
-  .hero {
-    padding: 60px 8px 50px;
-  }
-
-  .hero h2 {
-    font-size: clamp(36px, 13vw, 54px);
-  }
-
-  .novels {
-    padding: 25px 0 55px;
-  }
-
-  .novel-card {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 15px;
-    border-radius: 15px;
-  }
-
-  .cover {
-    min-height: 250px;
-  }
-
-  .cover img {
-    min-height: 250px;
-  }
-
-  .novel-card h3 {
-    font-size: 23px;
-  }
-
-  .account-page {
-    width: min(100% - 24px, 850px);
-    padding: 25px 0 50px;
-  }
-
-  .account-card {
-    padding: 18px;
-  }
-
-  .account-novel {
-    grid-template-columns: 80px 1fr;
-    gap: 13px;
-    padding: 13px;
-  }
-
-  .account-novel-cover {
-    width: 80px;
-    height: 110px;
-  }
-
-  .account-row-button {
-    gap: 10px;
-    padding: 13px 10px;
-  }
-
-  .account-row-button strong {
-    min-width: auto;
-  }
-
-  .account-row-button span {
-    font-size: 12px;
-  }
-
-  .notification-item {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .notification-read {
-    width: 100%;
-  }
-
-  .chapter-editor,
-  .editor,
-  .chapter-content-editor {
-    padding: 15px;
-  }
-}
-
-@media (max-width: 430px) {
-  .header h1 {
-    font-size: 19px;
-  }
-
-  .header nav {
-    gap: 5px;
-  }
-
-  .header button {
-    font-size: 12px;
-    padding: 7px 9px;
-  }
-
-  .novel-card {
-    padding: 12px;
-  }
-
-  .cover,
-  .cover img {
-    min-height: 220px;
-  }
-
-  .account-novel-info p {
-    font-size: 13px;
-  }
+.main-button:active {
+  transform: translateY(0);
 }
