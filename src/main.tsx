@@ -120,7 +120,8 @@ function App() {
   const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string[]>([]);
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
   const [readerProgress, setReaderProgress] = useState(0);
 
@@ -202,8 +203,9 @@ function App() {
         novel.title.toLocaleLowerCase("ar").includes(query) ||
         (novel.description || "").toLocaleLowerCase("ar").includes(query);
       const matchesCategory =
-        selectedCategoryFilter === "all" ||
-        novel.category_id === selectedCategoryFilter;
+        selectedCategoryFilter.length === 0 ||
+        (novel.category_id !== null &&
+          selectedCategoryFilter.includes(novel.category_id));
       const matchesStatus =
         selectedStatusFilter === "all" ||
         novel.status === selectedStatusFilter;
@@ -2069,21 +2071,53 @@ function App() {
 
           <div className="library-filters">
             <button
-              className={selectedCategoryFilter === "all" ? "category-filter-button active" : "category-filter-button"}
-              onClick={() => setSelectedCategoryFilter("all")}
+              className={selectedCategoryFilter.length === 0 ? "category-filter-button active" : "category-filter-button"}
+              onClick={() => {
+                setSelectedCategoryFilter([]);
+                setShowCategoryFilter(false);
+              }}
             >
               الكل
             </button>
-            <select
-              value={selectedCategoryFilter}
-              onChange={(event) => setSelectedCategoryFilter(event.target.value)}
-              aria-label="التصنيف"
-            >
-              <option value="all">التصنيفات</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-              ))}
-            </select>
+
+            <div className="category-filter-menu">
+              <button
+                className={selectedCategoryFilter.length > 0 ? "category-filter-button active" : "category-filter-button"}
+                onClick={() => setShowCategoryFilter((open) => !open)}
+                aria-expanded={showCategoryFilter}
+                aria-haspopup="true"
+              >
+                {selectedCategoryFilter.length > 0
+                  ? "التصنيفات (" + selectedCategoryFilter.length + ")"
+                  : "التصنيفات"}
+              </button>
+
+              {showCategoryFilter && (
+                <div className="category-filter-dropdown">
+                  <div className="category-filter-dropdown-title">
+                    اختاري أكثر من تصنيف
+                  </div>
+                  {categories.map((category) => (
+                    <label key={category.id} className="category-filter-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedCategoryFilter.includes(category.id)}
+                        onChange={() => {
+                          setSelectedCategoryFilter((current) =>
+                            current.includes(category.id)
+                              ? current.filter((id) => id !== category.id)
+                              : [...current, category.id]
+                          );
+                        }}
+                      />
+                      <span className="category-filter-check">✓</span>
+                      <span>{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <select
               value={selectedStatusFilter}
               onChange={(event) => setSelectedStatusFilter(event.target.value)}
