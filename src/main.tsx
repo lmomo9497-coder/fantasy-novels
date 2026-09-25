@@ -9,9 +9,19 @@ type AccountSection =
   | "notifications"
   | null;
 
+type Profile = {
+  role: "owner" | "staff" | "reader";
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+};
+
 function App() {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
   const [showAccount, setShowAccount] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
   const [activeSection, setActiveSection] =
     useState<AccountSection>(null);
 
@@ -22,20 +32,55 @@ function App() {
     useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-    });
+    loadSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          loadProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  async function loadSession() {
+    const { data } =
+      await supabase.auth.getSession();
+
+    const currentUser =
+      data.session?.user ?? null;
+
+    setUser(currentUser);
+
+    if (currentUser) {
+      await loadProfile(currentUser.id);
+    }
+  }
+
+  async function loadProfile(userId: string) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        "role, display_name, avatar_url, bio"
+      )
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile:", error);
+      return;
+    }
+
+    setProfile(data);
+  }
 
   useEffect(() => {
     if (user) {
@@ -71,7 +116,9 @@ function App() {
           )
         `)
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", {
+          ascending: false,
+        }),
 
       supabase
         .from("reading_progress")
@@ -95,7 +142,9 @@ function App() {
           )
         `)
         .eq("user_id", user.id)
-        .order("updated_at", { ascending: false }),
+        .order("updated_at", {
+          ascending: false,
+        }),
 
       supabase
         .from("notifications")
@@ -116,33 +165,24 @@ function App() {
           )
         `)
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", {
+          ascending: false,
+        }),
     ]);
 
-    if (favoritesResult.error) {
-      console.error(
-        "Favorites:",
-        favoritesResult.error
+    if (!favoritesResult.error) {
+      setFavorites(
+        favoritesResult.data || []
       );
-    } else {
-      setFavorites(favoritesResult.data || []);
     }
 
-    if (historyResult.error) {
-      console.error(
-        "History:",
-        historyResult.error
+    if (!historyResult.error) {
+      setHistory(
+        historyResult.data || []
       );
-    } else {
-      setHistory(historyResult.data || []);
     }
 
-    if (notificationsResult.error) {
-      console.error(
-        "Notifications:",
-        notificationsResult.error
-      );
-    } else {
+    if (!notificationsResult.error) {
       setNotifications(
         notificationsResult.data || []
       );
@@ -161,7 +201,9 @@ function App() {
       });
 
     if (error) {
-      alert("حدث خطأ أثناء تسجيل الدخول");
+      alert(
+        "حدث خطأ أثناء تسجيل الدخول"
+      );
       console.error(error);
     }
   }
@@ -169,7 +211,10 @@ function App() {
   async function signOut() {
     await supabase.auth.signOut();
 
+    setUser(null);
+    setProfile(null);
     setShowAccount(false);
+    setShowAdmin(false);
     setActiveSection(null);
   }
 
@@ -203,15 +248,24 @@ function App() {
   }
 
   const userName =
+    profile?.display_name ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email ||
     "حسابي";
 
   const userAvatar =
+    profile?.avatar_url ||
     user?.user_metadata?.avatar_url ||
     user?.user_metadata?.picture ||
     null;
+
+  const role =
+    profile?.role || "reader";
+
+  const isOwner = role === "owner";
+  const isStaff = role === "staff";
+  const isAdmin = isOwner || isStaff;
 
   const unreadNotifications =
     notifications.filter(
@@ -220,11 +274,14 @@ function App() {
     ).length;
 
   function formatDate(date: string) {
-    return new Intl.DateTimeFormat("ar-SA", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(new Date(date));
+    return new Intl.DateTimeFormat(
+      "ar-SA",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    ).format(new Date(date));
   }
 
   function toggleSection(
@@ -233,6 +290,12 @@ function App() {
     setActiveSection((current) =>
       current === section ? null : section
     );
+  }
+
+  function closeAllPages() {
+    setShowAccount(false);
+    setShowAdmin(false);
+    setActiveSection(null);
   }
 
   return (
@@ -244,29 +307,32 @@ function App() {
         </div>
 
         <nav>
-          <button
-            onClick={() => {
-              setShowAccount(false);
-              setActiveSection(null);
-            }}
-          >
+          <button onClick={closeAllPages}>
             الرئيسية
           </button>
 
-          <button
-            onClick={() => {
-              setShowAccount(false);
-              setActiveSection(null);
-            }}
-          >
+          <button onClick={closeAllPages}>
             الروايات
           </button>
 
           {user ? (
             <>
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setShowAdmin(true);
+                    setShowAccount(false);
+                    setActiveSection(null);
+                  }}
+                >
+                  🛠️ لوحة الإدارة
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   setShowAccount(true);
+                  setShowAdmin(false);
                   setActiveSection(null);
                 }}
               >
@@ -288,10 +354,80 @@ function App() {
       </header>
 
       <main>
-        {showAccount && user ? (
+        {showAdmin && user && isAdmin ? (
           <section className="account-page">
             <button
-              className="secondary"
+              onClick={() => {
+                setShowAdmin(false);
+              }}
+            >
+              ← العودة
+            </button>
+
+            <div className="account-card">
+              <h2>
+                {isOwner
+                  ? "👑 لوحة المالك"
+                  : "🛠️ لوحة المشرف"}
+              </h2>
+
+              <p className="account-muted">
+                مرحبًا {userName}
+              </p>
+
+              <div className="account-section">
+                <div className="panel account-role">
+                  <strong>
+                    {isOwner
+                      ? "Owner — مالك الموقع"
+                      : "Staff — مشرف"}
+                  </strong>
+
+                  <span>
+                    {isOwner
+                      ? "لديك صلاحيات المالك."
+                      : "لديك صلاحيات المشرف التي سيتم تحديدها لاحقًا."}
+                  </span>
+                </div>
+              </div>
+
+              <div className="account-section">
+                <h2>
+                  إدارة الموقع
+                </h2>
+
+                <div className="account-list">
+                  <div className="panel">
+                    📚 إدارة الروايات
+                    <br />
+                    <small>
+                      سنضيفها في الخطوة التالية.
+                    </small>
+                  </div>
+
+                  <div className="panel">
+                    📖 إدارة الفصول
+                    <br />
+                    <small>
+                      إضافة وتعديل ونشر الفصول.
+                    </small>
+                  </div>
+
+                  <div className="panel">
+                    👥 إدارة المستخدمين
+                    <br />
+                    <small>
+                      صلاحيات المالك والمشرفين
+                      والقراء.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : showAccount && user ? (
+          <section className="account-page">
+            <button
               onClick={() => {
                 setShowAccount(false);
                 setActiveSection(null);
@@ -356,7 +492,9 @@ function App() {
                       : ""
                   }`}
                   onClick={() =>
-                    toggleSection("history")
+                    toggleSection(
+                      "history"
+                    )
                   }
                 >
                   <strong>
@@ -393,11 +531,11 @@ function App() {
                 </button>
               </div>
 
-              {loadingAccountData ? (
+              {loadingAccountData && (
                 <div className="account-loading">
                   جارٍ تحميل بيانات حسابك...
                 </div>
-              ) : null}
+              )}
 
               {activeSection ===
                 "favorites" && (
@@ -415,7 +553,7 @@ function App() {
                   {favorites.length ===
                   0 ? (
                     <div className="panel">
-                      لم تضيفي أي رواية إلى
+                      لم تضف أي رواية إلى
                       المفضلة حتى الآن.
                     </div>
                   ) : (
@@ -466,17 +604,6 @@ function App() {
                                     item.created_at
                                   )}
                                 </small>
-
-                                <button
-                                  className="account-action"
-                                  onClick={() =>
-                                    alert(
-                                      "صفحة قراءة الرواية سنربطها في الخطوة التالية."
-                                    )
-                                  }
-                                >
-                                  قراءة الرواية
-                                </button>
                               </div>
                             </div>
                           );
@@ -503,9 +630,8 @@ function App() {
                   {history.length ===
                   0 ? (
                     <div className="panel">
-                      عندما تبدئين بقراءة
-                      رواية، سيظهر تقدمك
-                      هنا.
+                      عندما تبدأ بقراءة رواية،
+                      سيظهر تقدمك هنا.
                     </div>
                   ) : (
                     <div className="account-list">
@@ -513,7 +639,6 @@ function App() {
                         (item) => {
                           const novel =
                             item.novels;
-
                           const chapter =
                             item.chapters;
 
@@ -587,24 +712,6 @@ function App() {
                                   )}
                                   %
                                 </small>
-
-                                <small>
-                                  آخر تحديث:{" "}
-                                  {formatDate(
-                                    item.updated_at
-                                  )}
-                                </small>
-
-                                <button
-                                  className="account-action"
-                                  onClick={() =>
-                                    alert(
-                                      "سنربط زر متابعة القراءة بصفحة الرواية في الخطوة التالية."
-                                    )
-                                  }
-                                >
-                                  متابعة القراءة
-                                </button>
                               </div>
                             </div>
                           );
@@ -624,7 +731,7 @@ function App() {
                     </h2>
 
                     <span>
-                      {unreadNotifications} جديدة
+                      {unreadNotifications}
                     </span>
                   </div>
 
@@ -655,43 +762,13 @@ function App() {
                                 }
                               </h3>
 
-                              {notification.message ? (
+                              {notification.message && (
                                 <p>
                                   {
                                     notification.message
                                   }
                                 </p>
-                              ) : null}
-
-                              {notification
-                                .novels
-                                ?.title ? (
-                                <small>
-                                  الرواية:{" "}
-                                  {
-                                    notification
-                                      .novels
-                                      .title
-                                  }
-                                </small>
-                              ) : null}
-
-                              {notification.chapters ? (
-                                <small>
-                                  الفصل:{" "}
-                                  {
-                                    notification
-                                      .chapters
-                                      .chapter_number
-                                  }
-
-                                  {notification
-                                    .chapters
-                                    .title
-                                    ? ` — ${notification.chapters.title}`
-                                    : ""}
-                                </small>
-                              ) : null}
+                              )}
 
                               <small>
                                 {formatDate(
@@ -725,16 +802,25 @@ function App() {
               )}
 
               <div className="account-section">
-                <h2>نوع الحساب</h2>
+                <h2>
+                  نوع الحساب
+                </h2>
 
                 <div className="panel account-role">
                   <strong>
-                    قارئ
+                    {isOwner
+                      ? "👑 مالك الموقع"
+                      : isStaff
+                      ? "🛠️ مشرف"
+                      : "👤 قارئ"}
                   </strong>
 
                   <span>
-                    حساب قراءة عادي، بدون
-                    صلاحيات الإدارة.
+                    {isOwner
+                      ? "لديك صلاحيات المالك."
+                      : isStaff
+                      ? "لديك صلاحيات المشرف."
+                      : "حساب قراءة عادي."}
                   </span>
                 </div>
               </div>
