@@ -153,6 +153,17 @@ function App() {
 
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [chapterBlocks, setChapterBlocks] = useState<ChapterBlock[]>([]);
+ const orderedReaderBlocks = useMemo(() => {
+  const audioBlocks = chapterBlocks.filter(
+    (block) => block.block_type === "audio"
+  );
+
+  const otherBlocks = chapterBlocks.filter(
+    (block) => block.block_type !== "audio"
+  );
+
+  return [...audioBlocks, ...otherBlocks];
+}, [chapterBlocks]);
   const [loadingChapterBlocks, setLoadingChapterBlocks] = useState(false);
   const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
 
