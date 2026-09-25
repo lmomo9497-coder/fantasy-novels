@@ -33,6 +33,12 @@ function App() {
     await supabase.auth.signOut();
   }
 
+  const userName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email ||
+    "حسابي";
+
   return (
     <div className="app">
       <header className="header">
@@ -46,7 +52,10 @@ function App() {
           <button>الروايات</button>
 
           {user ? (
-            <button onClick={signOut}>تسجيل الخروج</button>
+            <>
+              <button>👤 {userName}</button>
+              <button onClick={signOut}>تسجيل الخروج</button>
+            </>
           ) : (
             <button onClick={signInWithGoogle}>
               تسجيل الدخول بحساب Google
