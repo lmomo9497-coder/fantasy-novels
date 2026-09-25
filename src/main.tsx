@@ -165,6 +165,7 @@ function App() {
   const [newBlockMediaLabel, setNewBlockMediaLabel] = useState("");
   const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
   const [newBlockLocalPreviewUrl, setNewBlockLocalPreviewUrl] = useState("");
+  const [newBlockMediaFile, setNewBlockMediaFile] = useState<File | null>(null);
   const [newBlockAlign, setNewBlockAlign] =
     useState<"right" | "left" | "center" | "full">("center");
   const [newBlockWidth, setNewBlockWidth] = useState("");
@@ -1111,13 +1112,14 @@ function App() {
     setNewBlockMediaLabel("");
     setNewBlockMediaPreviewUrl("");
     setNewBlockLocalPreviewUrl("");
+    setNewBlockMediaFile(null);
     setNewBlockAlign("center");
     setNewBlockWidth("");
     setNewBlockHeight("");
   }
 
   async function uploadChapterMedia(file: File) {
-    if (!selectedChapter) return;
+    if (!selectedChapter) return "";
 
     setUploadingBlockMedia(true);
     setChapterMessage("");
@@ -1126,14 +1128,9 @@ function App() {
       const extension =
         file.name.split(".").pop()?.toLowerCase() || "bin";
 
-      let bucket = "chapter-media";
-
-      if (newBlockType === "audio") {
-        bucket = "audio";
-      }
-
+      const bucket =
+        newBlockType === "audio" ? "audio" : "chapter-media";
       const path = `${newBlockType}/${makeStorageId()}.${extension}`;
-
       const contentType =
         newBlockType === "gif"
           ? "image/gif"
@@ -1148,14 +1145,12 @@ function App() {
         });
 
       if (error) {
-        setChapterMessage(error.message);
-        return;
+        setChapterMessage(`تعذر رفع الملف: ${error.message}`);
+        return "";
       }
 
       setNewBlockMediaPath(path);
-      // Keep the local preview for images/GIFs so the preview never
-      // disappears just because the public storage URL is slow or blocked.
-      // The uploaded path is stored separately and is what gets saved.
+
       if (newBlockType === "audio") {
         const publicUrl = getPublicMediaUrl(bucket, path);
         if (publicUrl) {
@@ -1163,15 +1158,12 @@ function App() {
         }
       }
 
-      setChapterMessage(
-        newBlockType === "gif"
-          ? "تم رفع الـGIF بنجاح — المعاينة جاهزة، اضغطي حفظ الـGIF في الفصل."
-          : "تم رفع الملف بنجاح — المعاينة جاهزة، اضغطي زر الحفظ."
-      );
+      return path;
     } catch (error: any) {
       setChapterMessage(
         error?.message || "تعذر رفع الملف."
       );
+      return "";
     } finally {
       setUploadingBlockMedia(false);
     }
@@ -1210,9 +1202,10 @@ function App() {
 
     if (
       ["image", "gif", "audio"].includes(newBlockType) &&
-      !newBlockMediaPath
+      !newBlockMediaPath &&
+      !newBlockMediaFile
     ) {
-      setChapterMessage("ارفعي الملف أولًا.");
+      setChapterMessage("اختاري الملف أولًا.");
       return;
     }
 
@@ -1220,6 +1213,21 @@ function App() {
     setChapterMessage("");
 
     try {
+      let mediaPath = newBlockMediaPath;
+
+      if (
+        ["image", "gif", "audio"].includes(newBlockType) &&
+        !mediaPath &&
+        newBlockMediaFile
+      ) {
+        setChapterMessage("جارٍ رفع الملف وحفظه...");
+        mediaPath = await uploadChapterMedia(newBlockMediaFile);
+
+        if (!mediaPath) {
+          return;
+        }
+      }
+
       const nextOrder =
         chapterBlocks.length > 0
           ? Math.max(
@@ -1239,7 +1247,7 @@ function App() {
             newBlockType === "divider"
               ? null
               : newBlockContent.trim() || null,
-          media_path: newBlockMediaPath || null,
+          media_path: mediaPath || null,
           media_label:
             newBlockMediaLabel.trim() || null,
           align: newBlockAlign,
@@ -2261,6 +2269,7 @@ function App() {
                   setNewBlockMediaLabel("");
                   setNewBlockMediaPreviewUrl("");
                   setNewBlockLocalPreviewUrl("");
+                  setNewBlockMediaFile(null);
                 }}
               >
                 <option value="text">نص</option>
@@ -2328,6 +2337,12 @@ function App() {
                         event.target.files?.[0];
 
                       if (file) {
+                        setNewBlockMediaFile(file);
+                        setNewBlockMediaPath("");
+                        setChapterMessage(
+                          "تم اختيار الملف — اضغطي زر الحفظ لإضافته إلى الفصل."
+                        );
+
                         const reader = new FileReader();
                         reader.onload = () => {
                           const previewUrl =
@@ -2338,7 +2353,6 @@ function App() {
                           setNewBlockMediaPreviewUrl(previewUrl);
                         };
                         reader.readAsDataURL(file);
-                        uploadChapterMedia(file);
                       }
                     }}
                   />
@@ -2346,6 +2360,12 @@ function App() {
                   {uploadingBlockMedia && (
                     <small className="form-hint">
                       جارٍ رفع الملف...
+                    </small>
+                  )}
+
+                  {newBlockMediaFile && !uploadingBlockMedia && (
+                    <small className="form-hint">
+                      الملف جاهز — اضغطي زر الحفظ.
                     </small>
                   )}
 
@@ -2506,7 +2526,7 @@ function App() {
             onClick={addChapterBlock}
             disabled={
               savingChapterBlocks ||
-              (uploadingBlockMedia && !newBlockMediaPath)
+              uploadingBlockMedia
             }
           >
             {savingChapterBlocks
