@@ -575,6 +575,72 @@ function App() {
     }
   }
 
+  async function deleteNovel(
+    novel: Novel
+  ) {
+    if (
+      !user ||
+      profile?.role !== "owner"
+    ) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `هل أنتِ متأكدة من حذف رواية "${novel.title}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const { error } =
+      await supabase
+        .from("novels")
+        .delete()
+        .eq("id", novel.id);
+
+    if (error) {
+      console.error(
+        "Delete novel:",
+        error
+      );
+
+      alert(
+        "حدث خطأ أثناء حذف الرواية."
+      );
+
+      return;
+    }
+
+    setNovels(
+      (current) =>
+        current.filter(
+          (item) =>
+            item.id !== novel.id
+        )
+    );
+
+    setPublishedNovels(
+      (current) =>
+        current.filter(
+          (item) =>
+            item.id !== novel.id
+        )
+    );
+
+    if (
+      selectedNovel?.id ===
+      novel.id
+    ) {
+      setSelectedNovel(null);
+    }
+
+    alert(
+      "تم حذف الرواية."
+    );
+  }
+
   async function signInWithGoogle() {
     const { error } =
       await supabase.auth.signInWithOAuth({
@@ -589,6 +655,7 @@ function App() {
       alert(
         "حدث خطأ أثناء تسجيل الدخول"
       );
+
       console.error(error);
     }
   }
@@ -1501,8 +1568,19 @@ function App() {
                           key={
                             novel.id
                           }
+                          style={{
+                            display:
+                              "grid",
+                            gap:
+                              "8px",
+                          }}
                         >
-                          <h3>
+                          <h3
+                            style={{
+                              margin:
+                                "0",
+                            }}
+                          >
                             {
                               novel.title
                             }
@@ -1531,6 +1609,8 @@ function App() {
                           {novel.description && (
                             <p
                               style={{
+                                margin:
+                                  "5px 0 0",
                                 lineHeight:
                                   "1.7",
                                 color:
@@ -1541,6 +1621,36 @@ function App() {
                                 novel.description
                               }
                             </p>
+                          )}
+
+                          {isOwner && (
+                            <button
+                              onClick={() =>
+                                deleteNovel(
+                                  novel
+                                )
+                              }
+                              style={{
+                                marginTop:
+                                  "10px",
+                                padding:
+                                  "10px 14px",
+                                border:
+                                  "1px solid #555",
+                                borderRadius:
+                                  "8px",
+                                background:
+                                  "transparent",
+                                color:
+                                  "#fff",
+                                cursor:
+                                  "pointer",
+                                fontFamily:
+                                  "inherit",
+                              }}
+                            >
+                              🗑️ حذف الرواية
+                            </button>
                           )}
                         </div>
                       )
@@ -1967,7 +2077,8 @@ function App() {
                   style={{
                     display:
                       "grid",
-                    gap: "20px",
+                    gap:
+                      "20px",
                   }}
                 >
                   {publishedNovels
