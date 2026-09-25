@@ -164,6 +164,7 @@ function App() {
   const [newBlockMediaPath, setNewBlockMediaPath] = useState("");
   const [newBlockMediaLabel, setNewBlockMediaLabel] = useState("");
   const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
+  const [newBlockLocalPreviewUrl, setNewBlockLocalPreviewUrl] = useState("");
   const [newBlockAlign, setNewBlockAlign] =
     useState<"right" | "left" | "center" | "full">("center");
   const [newBlockWidth, setNewBlockWidth] = useState("");
@@ -1109,6 +1110,7 @@ function App() {
     setNewBlockMediaPath("");
     setNewBlockMediaLabel("");
     setNewBlockMediaPreviewUrl("");
+    setNewBlockLocalPreviewUrl("");
     setNewBlockAlign("center");
     setNewBlockWidth("");
     setNewBlockHeight("");
@@ -1151,9 +1153,10 @@ function App() {
       }
 
       setNewBlockMediaPath(path);
-      setNewBlockMediaPreviewUrl(
-        getPublicMediaUrl(bucket, path)
-      );
+      const publicUrl = getPublicMediaUrl(bucket, path);
+      if (publicUrl) {
+        setNewBlockMediaPreviewUrl(publicUrl);
+      }
       setChapterMessage(
         newBlockType === "gif"
           ? "تم رفع الـGIF بنجاح. راجعي المعاينة ثم اضغطي حفظ الصورة."
@@ -2251,6 +2254,7 @@ function App() {
                   setNewBlockMediaPath("");
                   setNewBlockMediaLabel("");
                   setNewBlockMediaPreviewUrl("");
+                  setNewBlockLocalPreviewUrl("");
                 }}
               >
                 <option value="text">نص</option>
@@ -2318,8 +2322,16 @@ function App() {
                         event.target.files?.[0];
 
                       if (file) {
-                        const previewUrl = URL.createObjectURL(file);
-                        setNewBlockMediaPreviewUrl(previewUrl);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const previewUrl =
+                            typeof reader.result === "string"
+                              ? reader.result
+                              : "";
+                          setNewBlockLocalPreviewUrl(previewUrl);
+                          setNewBlockMediaPreviewUrl(previewUrl);
+                        };
+                        reader.readAsDataURL(file);
                         uploadChapterMedia(file);
                       }
                     }}
@@ -2338,6 +2350,20 @@ function App() {
                           controls
                           preload="metadata"
                           src={newBlockMediaPreviewUrl}
+                          onError={() => {
+                            if (
+                              newBlockLocalPreviewUrl &&
+                              newBlockMediaPreviewUrl !==
+                                newBlockLocalPreviewUrl
+                            ) {
+                              setNewBlockMediaPreviewUrl(
+                                newBlockLocalPreviewUrl
+                              );
+                              setChapterMessage(
+                                "تم رفع الملف، والمعاينة المحلية تعمل. يمكنك حفظه الآن."
+                              );
+                            }
+                          }}
                         />
                       ) : (
                         <img
