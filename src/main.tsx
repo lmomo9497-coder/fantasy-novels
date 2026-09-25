@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -34,13 +33,6 @@ type Novel = {
   created_by: string | null;
   created_at: string;
   categories?: Category | null;
-};
-
-type StaffMember = {
-  id: string;
-  display_name: string | null;
-  role: Role;
-  email?: string | null;
 };
 
 type Chapter = {
@@ -93,6 +85,19 @@ function makeSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function makeStorageId() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+}
+
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -110,7 +115,6 @@ function App() {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-
   const [loadingAccountData, setLoadingAccountData] =
     useState(false);
 
@@ -119,87 +123,44 @@ function App() {
     useState<Novel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const [showNovelForm, setShowNovelForm] =
-    useState(false);
-
-  const [savingNovel, setSavingNovel] =
-    useState(false);
-
-  /* =========================
-     تعديل الرواية
-  ========================= */
-
+  const [showNovelForm, setShowNovelForm] = useState(false);
+  const [savingNovel, setSavingNovel] = useState(false);
   const [editingNovelId, setEditingNovelId] =
     useState<string | null>(null);
 
-  const [novelTitle, setNovelTitle] =
-    useState("");
-
+  const [novelTitle, setNovelTitle] = useState("");
   const [novelDescription, setNovelDescription] =
     useState("");
-
-  const [novelCategory, setNovelCategory] =
-    useState("");
-
+  const [novelCategory, setNovelCategory] = useState("");
   const [novelStatus, setNovelStatus] =
     useState<"ongoing" | "completed">("ongoing");
-
   const [novelLanguage, setNovelLanguage] =
     useState("العربية");
-
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
+  const [novelMessage, setNovelMessage] = useState("");
 
-  const [novelMessage, setNovelMessage] =
-    useState("");
+  const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffMessage, setStaffMessage] = useState("");
+  const [managingStaff, setManagingStaff] = useState(false);
 
-  const [staffMembers, setStaffMembers] = useState<
-    StaffMember[]
-  >([]);
-
-  const [loadingStaff, setLoadingStaff] =
-    useState(false);
-
-  const [staffEmail, setStaffEmail] =
-    useState("");
-
-  const [staffMessage, setStaffMessage] =
-    useState("");
-
-  const [managingStaff, setManagingStaff] =
-    useState(false);
-
-  /* =========================
-     الفصول
-  ========================= */
-
-  const [chapters, setChapters] =
-    useState<Chapter[]>([]);
-
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loadingChapters, setLoadingChapters] =
     useState(false);
 
   const [showChapterForm, setShowChapterForm] =
     useState(false);
 
-  const [savingChapter, setSavingChapter] =
-    useState(false);
+  const [savingChapter, setSavingChapter] = useState(false);
 
   const [editingChapterId, setEditingChapterId] =
     useState<string | null>(null);
 
-  const [chapterNumber, setChapterNumber] =
-    useState("");
-
-  const [chapterTitle, setChapterTitle] =
-    useState("");
-
-  const [chapterMessage, setChapterMessage] =
-    useState("");
-
-  /* =========================
-     محرر محتوى الفصل
-  ========================= */
+  const [chapterNumber, setChapterNumber] = useState("");
+  const [chapterTitle, setChapterTitle] = useState("");
+  const [chapterMessage, setChapterMessage] = useState("");
 
   const [selectedChapter, setSelectedChapter] =
     useState<Chapter | null>(null);
@@ -228,11 +189,11 @@ function App() {
   const [newBlockAlign, setNewBlockAlign] =
     useState<ChapterBlock["align"]>("right");
 
-  const [newBlockWidth, setNewBlockWidth] =
-    useState("");
+  const [newBlockWidth, setNewBlockWidth] = useState("");
+  const [newBlockHeight, setNewBlockHeight] = useState("");
 
-  const [newBlockHeight, setNewBlockHeight] =
-    useState("");
+  const [uploadingMedia, setUploadingMedia] =
+    useState(false);
 
   const isOwner = profile?.role === "owner";
   const isStaff = profile?.role === "staff";
@@ -255,9 +216,7 @@ function App() {
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -317,8 +276,7 @@ function App() {
   async function loadPublishedNovels() {
     const { data } = await supabase
       .from("novels")
-      .select(
-        `
+      .select(`
         id,
         title,
         slug,
@@ -331,9 +289,12 @@ function App() {
         published,
         created_by,
         created_at,
-        categories(id,name,slug)
-      `
-      )
+        categories (
+          id,
+          name,
+          slug
+        )
+      `)
       .eq("published", true)
       .order("created_at", {
         ascending: false,
@@ -349,8 +310,7 @@ function App() {
 
     const { data } = await supabase
       .from("novels")
-      .select(
-        `
+      .select(`
         id,
         title,
         slug,
@@ -363,9 +323,12 @@ function App() {
         published,
         created_by,
         created_at,
-        categories(id,name,slug)
-      `
-      )
+        categories (
+          id,
+          name,
+          slug
+        )
+      `)
       .order("created_at", {
         ascending: false,
       });
@@ -411,32 +374,31 @@ function App() {
     setLoadingAccountData(true);
 
     try {
-      const [fav, hist, notif] =
-        await Promise.all([
-          supabase
-            .from("favorites")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", {
-              ascending: false,
-            }),
+      const [fav, hist, notif] = await Promise.all([
+        supabase
+          .from("favorites")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", {
+            ascending: false,
+          }),
 
-          supabase
-            .from("reading_progress")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("updated_at", {
-              ascending: false,
-            }),
+        supabase
+          .from("reading_progress")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", {
+            ascending: false,
+          }),
 
-          supabase
-            .from("notifications")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", {
-              ascending: false,
-            }),
-        ]);
+        supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", {
+            ascending: false,
+          }),
+      ]);
 
       setFavorites(fav.data ?? []);
       setHistory(hist.data ?? []);
@@ -445,10 +407,6 @@ function App() {
       setLoadingAccountData(false);
     }
   }
-
-  /* =========================
-     نموذج الرواية
-  ========================= */
 
   function resetNovelForm() {
     setEditingNovelId(null);
@@ -465,7 +423,9 @@ function App() {
   function editNovel(novel: Novel) {
     setEditingNovelId(novel.id);
     setNovelTitle(novel.title);
-    setNovelDescription(novel.description ?? "");
+    setNovelDescription(
+      novel.description ?? ""
+    );
     setNovelCategory(
       novel.categories?.name || ""
     );
@@ -480,10 +440,6 @@ function App() {
       behavior: "smooth",
     });
   }
-
-  /* =========================
-     إدارة الروايات
-  ========================= */
 
   async function saveNovel(publish: boolean) {
     if (!user || !canManageNovels) {
@@ -518,66 +474,60 @@ function App() {
           category.name
             .trim()
             .toLowerCase() ===
-          novelCategory.trim().toLowerCase()
+          novelCategory
+            .trim()
+            .toLowerCase()
       );
 
       if (existingCategory) {
         categoryId = existingCategory.id;
       } else {
-        const {
-          data: newCategory,
-          error: categoryError,
-        } = await supabase
-          .from("categories")
-          .insert({
-            name: novelCategory.trim(),
-            slug: makeSlug(novelCategory),
-          })
-          .select("id,name,slug")
-          .single();
-
-        if (categoryError) {
-          setNovelMessage(
-            categoryError.message ||
-              "حدث خطأ أثناء إنشاء التصنيف."
-          );
-          return;
-        }
-
-        categoryId = newCategory.id;
-
-        setCategories((current) => [
-          ...current,
-          newCategory as Category,
-        ]);
-      }
-
-      if (editingNovelId) {
-        const { error } = await supabase
-          .from("novels")
-          .update({
-            title: novelTitle.trim(),
-            description:
-              novelDescription.trim() ||
-              null,
-            category_id: categoryId,
-            status: novelStatus,
-            language: novelLanguage,
-            direction: novelDirection,
-            published: publish,
-          })
-          .eq("id", editingNovelId);
+        const { data, error } =
+          await supabase
+            .from("categories")
+            .insert({
+              name: novelCategory.trim(),
+              slug: makeSlug(novelCategory),
+            })
+            .select(
+              "id,name,slug"
+            )
+            .single();
 
         if (error) {
           setNovelMessage(error.message);
           return;
         }
 
-        setNovelMessage(
-          publish
-            ? `تم تعديل «${novelTitle.trim()}» ونشرها بنجاح.`
-            : `تم تعديل «${novelTitle.trim()}» وحفظها كمسودة.`
-        );
+        categoryId = data.id;
+
+        setCategories((current) => [
+          ...current,
+          data as Category,
+        ]);
+      }
+
+      if (editingNovelId) {
+        const { error } =
+          await supabase
+            .from("novels")
+            .update({
+              title: novelTitle.trim(),
+              description:
+                novelDescription.trim() ||
+                null,
+              category_id: categoryId,
+              status: novelStatus,
+              language: novelLanguage,
+              direction: novelDirection,
+              published: publish,
+            })
+            .eq("id", editingNovelId);
+
+        if (error) {
+          setNovelMessage(error.message);
+          return;
+        }
 
         resetNovelForm();
 
@@ -591,32 +541,28 @@ function App() {
         makeSlug(novelTitle) ||
         `novel-${Date.now()}`;
 
-      const { error } = await supabase
-        .from("novels")
-        .insert({
-          title: novelTitle.trim(),
-          slug: `${baseSlug}-${Date.now()}`,
-          description:
-            novelDescription.trim() || null,
-          cover_path: null,
-          category_id: categoryId,
-          status: novelStatus,
-          language: novelLanguage,
-          direction: novelDirection,
-          published: publish,
-          created_by: user.id,
-        });
+      const { error } =
+        await supabase
+          .from("novels")
+          .insert({
+            title: novelTitle.trim(),
+            slug: `${baseSlug}-${Date.now()}`,
+            description:
+              novelDescription.trim() ||
+              null,
+            cover_path: null,
+            category_id: categoryId,
+            status: novelStatus,
+            language: novelLanguage,
+            direction: novelDirection,
+            published: publish,
+            created_by: user.id,
+          });
 
       if (error) {
         setNovelMessage(error.message);
         return;
       }
-
-      setNovelMessage(
-        publish
-          ? "تم حفظ الرواية ونشرها بنجاح."
-          : "تم حفظ الرواية كمسودة. لن تظهر للقراء."
-      );
 
       resetNovelForm();
 
@@ -630,14 +576,10 @@ function App() {
   async function toggleNovelPublished(
     novel: Novel
   ) {
-    if (!canManageNovels) {
-      setNovelMessage(
-        "ليس لديك صلاحية لتغيير حالة الرواية."
-      );
-      return;
-    }
+    if (!canManageNovels) return;
 
-    const nextPublished = !novel.published;
+    const nextPublished =
+      !novel.published;
 
     const { error } = await supabase
       .from("novels")
@@ -651,59 +593,20 @@ function App() {
       return;
     }
 
-    setNovels((current) =>
-      current.map((item) =>
-        item.id === novel.id
-          ? {
-              ...item,
-              published: nextPublished,
-            }
-          : item
-      )
-    );
-
-    setPublishedNovels((current) => {
-      if (nextPublished) {
-        return current.some(
-          (item) => item.id === novel.id
-        )
-          ? current
-          : [
-              ...current,
-              {
-                ...novel,
-                published: true,
-              },
-            ];
-      }
-
-      return current.filter(
-        (item) => item.id !== novel.id
-      );
-    });
-
-    setNovelMessage(
-      nextPublished
-        ? `تم نشر «${novel.title}».`
-        : `تم إلغاء نشر «${novel.title}» وحفظها كمسودة.`
-    );
-
+    await loadAdminData();
     await loadPublishedNovels();
   }
 
   async function deleteNovel(novel: Novel) {
-    if (!isOwner) {
-      setNovelMessage(
-        "حذف الروايات متاح للمالك فقط."
-      );
+    if (!isOwner) return;
+
+    if (
+      !window.confirm(
+        `هل أنت متأكدة من حذف «${novel.title}»؟`
+      )
+    ) {
       return;
     }
-
-    const confirmed = window.confirm(
-      `هل أنت متأكدة من حذف رواية «${novel.title}»؟\n\nهذا الحذف للرواية نفسها.`
-    );
-
-    if (!confirmed) return;
 
     const { error } = await supabase
       .from("novels")
@@ -726,18 +629,7 @@ function App() {
         (item) => item.id !== novel.id
       )
     );
-
-    if (selectedNovel?.id === novel.id) {
-      setSelectedNovel(null);
-      setChapters([]);
-    }
-
-    setNovelMessage("تم حذف الرواية.");
   }
-
-  /* =========================
-     إدارة الفصول
-  ========================= */
 
   async function loadChapters(
     novelId: string,
@@ -748,8 +640,7 @@ function App() {
     try {
       let query = supabase
         .from("chapters")
-        .select(
-          `
+        .select(`
           id,
           novel_id,
           chapter_number,
@@ -759,29 +650,24 @@ function App() {
           published_at,
           created_at,
           updated_at
-        `
-        )
+        `)
         .eq("novel_id", novelId)
         .order("chapter_number", {
           ascending: true,
         });
 
       if (!adminView) {
-        query = query.eq("published", true);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error(
-          "خطأ أثناء تحميل الفصول:",
-          error
+        query = query.eq(
+          "published",
+          true
         );
-        setChapters([]);
-        return;
       }
 
-      setChapters((data ?? []) as Chapter[]);
+      const { data } = await query;
+
+      setChapters(
+        (data ?? []) as Chapter[]
+      );
     } finally {
       setLoadingChapters(false);
     }
@@ -800,8 +686,9 @@ function App() {
     setChapterNumber(
       String(chapter.chapter_number)
     );
-    setChapterTitle(chapter.title ?? "");
-    setChapterMessage("");
+    setChapterTitle(
+      chapter.title ?? ""
+    );
     setShowChapterForm(true);
   }
 
@@ -813,19 +700,15 @@ function App() {
       !user ||
       !canManageNovels
     ) {
-      setChapterMessage(
-        "ليس لديك صلاحية لإدارة الفصول."
-      );
       return;
     }
 
-    const parsedNumber =
+    const number =
       Number(chapterNumber);
 
     if (
-      !chapterNumber.trim() ||
-      !Number.isInteger(parsedNumber) ||
-      parsedNumber <= 0
+      !Number.isInteger(number) ||
+      number <= 0
     ) {
       setChapterMessage(
         "اكتبي رقم فصل صحيحًا."
@@ -841,52 +724,38 @@ function App() {
     }
 
     setSavingChapter(true);
-    setChapterMessage("");
 
     try {
       const chapterData = {
         novel_id: selectedNovel.id,
-        chapter_number: parsedNumber,
+        chapter_number: number,
         title: chapterTitle.trim(),
         published: publish,
         access_type: "free",
         published_at: publish
           ? new Date().toISOString()
           : null,
-        updated_at: new Date().toISOString(),
+        updated_at:
+          new Date().toISOString(),
       };
 
-      if (editingChapterId) {
-        const { error } = await supabase
-          .from("chapters")
-          .update(chapterData)
-          .eq("id", editingChapterId);
+      const result = editingChapterId
+        ? await supabase
+            .from("chapters")
+            .update(chapterData)
+            .eq(
+              "id",
+              editingChapterId
+            )
+        : await supabase
+            .from("chapters")
+            .insert(chapterData);
 
-        if (error) {
-          setChapterMessage(error.message);
-          return;
-        }
-
+      if (result.error) {
         setChapterMessage(
-          publish
-            ? "تم تعديل الفصل ونشره."
-            : "تم تعديل الفصل وحفظه كمسودة."
+          result.error.message
         );
-      } else {
-        const { error } = await supabase
-          .from("chapters")
-          .insert(chapterData);
-
-        if (error) {
-          setChapterMessage(error.message);
-          return;
-        }
-
-        setChapterMessage(
-          publish
-            ? "تمت إضافة الفصل ونشره."
-            : "تمت إضافة الفصل كمسودة."
-        );
+        return;
       }
 
       resetChapterForm();
@@ -903,103 +772,81 @@ function App() {
   async function toggleChapterPublished(
     chapter: Chapter
   ) {
-    if (!canManageNovels) {
+    const next =
+      !chapter.published;
+
+    const { error } =
+      await supabase
+        .from("chapters")
+        .update({
+          published: next,
+          published_at: next
+            ? new Date().toISOString()
+            : null,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          chapter.id
+        );
+
+    if (error) {
       setChapterMessage(
-        "ليس لديك صلاحية لتغيير حالة الفصل."
+        error.message
       );
       return;
     }
 
-    const nextPublished =
-      !chapter.published;
-
-    const { error } = await supabase
-      .from("chapters")
-      .update({
-        published: nextPublished,
-        published_at: nextPublished
-          ? new Date().toISOString()
-          : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", chapter.id);
-
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
-
-    setChapters((current) =>
-      current
-        .map((item) =>
-          item.id === chapter.id
-            ? {
-                ...item,
-                published: nextPublished,
-                published_at: nextPublished
-                  ? new Date().toISOString()
-                  : null,
-              }
-            : item
-        )
-        .sort(
-          (a, b) =>
-            a.chapter_number -
-            b.chapter_number
-        )
-    );
-
-    setChapterMessage(
-      nextPublished
-        ? `تم نشر الفصل ${chapter.chapter_number}.`
-        : `تم إلغاء نشر الفصل ${chapter.chapter_number}.`
+    await loadChapters(
+      selectedNovel!.id,
+      true
     );
   }
 
   async function deleteChapter(
     chapter: Chapter
   ) {
-    if (!isOwner) {
-      setChapterMessage(
-        "حذف الفصول متاح للمالك فقط."
-      );
+    if (!isOwner) return;
+
+    if (
+      !window.confirm(
+        `هل أنت متأكدة من حذف الفصل ${chapter.chapter_number}؟`
+      )
+    ) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `هل أنت متأكدة من حذف الفصل ${chapter.chapter_number}؟\n\nسيتم حذف الفصل نفسه.`
-    );
-
-    if (!confirmed) return;
-
-    const { error } = await supabase
-      .from("chapters")
-      .delete()
-      .eq("id", chapter.id);
+    const { error } =
+      await supabase
+        .from("chapters")
+        .delete()
+        .eq(
+          "id",
+          chapter.id
+        );
 
     if (error) {
-      setChapterMessage(error.message);
+      setChapterMessage(
+        error.message
+      );
       return;
     }
 
     setChapters((current) =>
       current.filter(
-        (item) => item.id !== chapter.id
+        (item) =>
+          item.id !== chapter.id
       )
     );
 
-    if (selectedChapter?.id === chapter.id) {
+    if (
+      selectedChapter?.id ===
+      chapter.id
+    ) {
       closeChapterEditor();
     }
-
-    setChapterMessage(
-      `تم حذف الفصل ${chapter.chapter_number}.`
-    );
   }
-
-  /* =========================
-     محرر محتوى الفصل
-  ========================= */
 
   async function loadChapterBlocks(
     chapterId: string
@@ -1007,32 +854,34 @@ function App() {
     setLoadingChapterBlocks(true);
 
     try {
-      const { data, error } = await supabase
-        .from("chapter_blocks")
-        .select(
-          `
-          id,
-          chapter_id,
-          block_order,
-          block_type,
-          content,
-          media_path,
-          media_label,
-          align,
-          width,
-          height
-        `
-        )
-        .eq("chapter_id", chapterId)
-        .order("block_order", {
-          ascending: true,
-        });
+      const { data, error } =
+        await supabase
+          .from("chapter_blocks")
+          .select(`
+            id,
+            chapter_id,
+            block_order,
+            block_type,
+            content,
+            media_path,
+            media_label,
+            align,
+            width,
+            height
+          `)
+          .eq(
+            "chapter_id",
+            chapterId
+          )
+          .order(
+            "block_order",
+            {
+              ascending: true,
+            }
+          );
 
       if (error) {
-        console.error(
-          "خطأ أثناء تحميل محتوى الفصل:",
-          error
-        );
+        alert(error.message);
         setChapterBlocks([]);
         return;
       }
@@ -1055,32 +904,138 @@ function App() {
     setNewBlockHeight("");
   }
 
-  async function addChapterBlock() {
-    if (!selectedChapter) return;
+  async function uploadChapterMedia(
+    file: File
+  ) {
+    if (!file || !selectedChapter) {
+      return;
+    }
 
-    const isTextBlock =
+    if (
+      newBlockType === "gif" &&
+      file.type !== "image/gif"
+    ) {
+      alert(
+        "اختاري ملف GIF فقط لهذا النوع."
+      );
+      return;
+    }
+
+    if (
+      newBlockType === "image" &&
+      !file.type.startsWith("image/")
+    ) {
+      alert(
+        "اختاري ملف صورة."
+      );
+      return;
+    }
+
+    if (
+      newBlockType === "audio" &&
+      !file.type.startsWith("audio/")
+    ) {
+      alert(
+        "اختاري ملف صوتي."
+      );
+      return;
+    }
+
+    const isAudio =
+      newBlockType === "audio";
+
+    const bucket = isAudio
+      ? "audio"
+      : "chapter-media";
+
+    const extension =
+      file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase() ||
+      "bin";
+
+    const path =
+      `${selectedChapter.id}/` +
+      `${makeStorageId()}.${extension}`;
+
+    setUploadingMedia(true);
+
+    try {
+      const { error } =
+        await supabase.storage
+          .from(bucket)
+          .upload(
+            path,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                file.type ||
+                undefined,
+            }
+          );
+
+      if (error) {
+        alert(
+          `فشل رفع الملف:\n${error.message}`
+        );
+        return;
+      }
+
+      const { data } =
+        supabase.storage
+          .from(bucket)
+          .getPublicUrl(path);
+
+      if (!data.publicUrl) {
+        alert(
+          "تم رفع الملف لكن تعذر الحصول على الرابط."
+        );
+        return;
+      }
+
+      setNewBlockMediaPath(
+        data.publicUrl
+      );
+    } finally {
+      setUploadingMedia(false);
+    }
+  }
+
+  async function addChapterBlock() {
+    if (!selectedChapter) {
+      return;
+    }
+
+    const textType =
       newBlockType === "text" ||
       newBlockType === "heading" ||
       newBlockType === "quote";
 
-    const isMediaBlock =
+    const mediaType =
       newBlockType === "image" ||
       newBlockType === "gif" ||
       newBlockType === "audio";
 
     if (
-      isTextBlock &&
+      textType &&
       !newBlockContent.trim()
     ) {
-      alert("اكتبي محتوى العنصر أولًا.");
+      alert(
+        "اكتبي المحتوى أولًا."
+      );
       return;
     }
 
     if (
-      isMediaBlock &&
+      mediaType &&
       !newBlockMediaPath.trim()
     ) {
-      alert("أضيفي رابط الملف أولًا.");
+      alert(
+        "ارفعي الملف أولًا."
+      );
       return;
     }
 
@@ -1088,7 +1043,7 @@ function App() {
       chapterBlocks.length > 0
         ? Math.max(
             ...chapterBlocks.map(
-              (block) => block.block_order
+              (b) => b.block_order
             )
           ) + 1
         : 1;
@@ -1096,53 +1051,64 @@ function App() {
     setSavingChapterBlocks(true);
 
     try {
-      const { data, error } = await supabase
-        .from("chapter_blocks")
-        .insert({
-          chapter_id: selectedChapter.id,
-          block_order: order,
-          block_type: newBlockType,
-          content:
-            newBlockContent.trim() || null,
-          media_path:
-            newBlockMediaPath.trim() || null,
-          media_label:
-            newBlockMediaLabel.trim() || null,
-          align: newBlockAlign,
-          width:
-            newBlockWidth.trim()
-              ? Number(newBlockWidth)
-              : null,
-          height:
-            newBlockHeight.trim()
-              ? Number(newBlockHeight)
-              : null,
-        })
-        .select(
-          `
-          id,
-          chapter_id,
-          block_order,
-          block_type,
-          content,
-          media_path,
-          media_label,
-          align,
-          width,
-          height
-        `
-        )
-        .single();
+      const width =
+        newBlockWidth.trim()
+          ? Number(newBlockWidth)
+          : null;
+
+      const height =
+        newBlockHeight.trim()
+          ? Number(newBlockHeight)
+          : null;
+
+      const { data, error } =
+        await supabase
+          .from("chapter_blocks")
+          .insert({
+            chapter_id:
+              selectedChapter.id,
+            block_order: order,
+            block_type:
+              newBlockType,
+            content:
+              newBlockContent.trim() ||
+              null,
+            media_path:
+              newBlockMediaPath.trim() ||
+              null,
+            media_label:
+              newBlockMediaLabel.trim() ||
+              null,
+            align:
+              newBlockAlign,
+            width,
+            height,
+          })
+          .select(`
+            id,
+            chapter_id,
+            block_order,
+            block_type,
+            content,
+            media_path,
+            media_label,
+            align,
+            width,
+            height
+          `)
+          .single();
 
       if (error) {
         alert(error.message);
         return;
       }
 
-      setChapterBlocks((current) => [
-        ...current,
-        data as ChapterBlock,
-      ]);
+      setChapterBlocks(
+        (current) => [
+          ...current,
+          data as ChapterBlock,
+        ]
+      );
 
       resetBlockForm();
     } finally {
@@ -1153,23 +1119,24 @@ function App() {
   async function deleteChapterBlock(
     block: ChapterBlock
   ) {
-    if (!isOwner) {
-      alert(
-        "حذف محتوى الفصل متاح للمالك فقط."
-      );
+    if (!isOwner) return;
+
+    if (
+      !window.confirm(
+        "هل أنت متأكدة من حذف هذا العنصر؟"
+      )
+    ) {
       return;
     }
 
-    const confirmed = window.confirm(
-      "هل أنت متأكدة من حذف هذا العنصر؟"
-    );
-
-    if (!confirmed) return;
-
-    const { error } = await supabase
-      .from("chapter_blocks")
-      .delete()
-      .eq("id", block.id);
+    const { error } =
+      await supabase
+        .from("chapter_blocks")
+        .delete()
+        .eq(
+          "id",
+          block.id
+        );
 
     if (error) {
       alert(error.message);
@@ -1178,7 +1145,8 @@ function App() {
 
     setChapterBlocks((current) =>
       current.filter(
-        (item) => item.id !== block.id
+        (item) =>
+          item.id !== block.id
       )
     );
   }
@@ -1189,10 +1157,10 @@ function App() {
   ) {
     const index =
       chapterBlocks.findIndex(
-        (item) => item.id === block.id
+        (b) => b.id === block.id
       );
 
-    if (index === -1) return;
+    if (index < 0) return;
 
     const newIndex =
       direction === "up"
@@ -1201,59 +1169,49 @@ function App() {
 
     if (
       newIndex < 0 ||
-      newIndex >= chapterBlocks.length
+      newIndex >=
+        chapterBlocks.length
     ) {
       return;
     }
 
-    const targetBlock =
+    const target =
       chapterBlocks[newIndex];
 
     setSavingChapterBlocks(true);
 
     try {
-      const temporaryOrder =
-        -1000000 - index;
+      await supabase
+        .from("chapter_blocks")
+        .update({
+          block_order: -Date.now(),
+        })
+        .eq(
+          "id",
+          block.id
+        );
 
-      const firstUpdate =
-        await supabase
-          .from("chapter_blocks")
-          .update({
-            block_order: temporaryOrder,
-          })
-          .eq("id", block.id);
+      await supabase
+        .from("chapter_blocks")
+        .update({
+          block_order:
+            block.block_order,
+        })
+        .eq(
+          "id",
+          target.id
+        );
 
-      if (firstUpdate.error) {
-        alert(firstUpdate.error.message);
-        return;
-      }
-
-      const secondUpdate =
-        await supabase
-          .from("chapter_blocks")
-          .update({
-            block_order: block.block_order,
-          })
-          .eq("id", targetBlock.id);
-
-      if (secondUpdate.error) {
-        alert(secondUpdate.error.message);
-        return;
-      }
-
-      const thirdUpdate =
-        await supabase
-          .from("chapter_blocks")
-          .update({
-            block_order:
-              targetBlock.block_order,
-          })
-          .eq("id", block.id);
-
-      if (thirdUpdate.error) {
-        alert(thirdUpdate.error.message);
-        return;
-      }
+      await supabase
+        .from("chapter_blocks")
+        .update({
+          block_order:
+            target.block_order,
+        })
+        .eq(
+          "id",
+          block.id
+        );
 
       await loadChapterBlocks(
         selectedChapter!.id
@@ -1270,7 +1228,9 @@ function App() {
     setChapterBlocks([]);
     resetBlockForm();
 
-    loadChapterBlocks(chapter.id);
+    loadChapterBlocks(
+      chapter.id
+    );
   }
 
   function closeChapterEditor() {
@@ -1282,24 +1242,20 @@ function App() {
   function getBlockTypeLabel(
     type: ChapterBlockType
   ) {
-    switch (type) {
-      case "text":
-        return "📝 نص";
-      case "heading":
-        return "🔤 عنوان";
-      case "image":
-        return "🖼️ صورة";
-      case "gif":
-        return "🎞️ GIF";
-      case "audio":
-        return "🎧 صوت";
-      case "quote":
-        return "💬 اقتباس";
-      case "divider":
-        return "─ فاصل";
-      default:
-        return type;
-    }
+    const labels: Record<
+      ChapterBlockType,
+      string
+    > = {
+      text: "📝 نص",
+      heading: "🔤 عنوان",
+      image: "🖼️ صورة",
+      gif: "🎞️ GIF",
+      audio: "🎧 صوت",
+      quote: "💬 اقتباس",
+      divider: "─ فاصل",
+    };
+
+    return labels[type];
   }
 
   function renderChapterBlock(
@@ -1311,17 +1267,6 @@ function App() {
           ? "center"
           : block.align,
     };
-
-    if (block.width) {
-      style.width = `${block.width}px`;
-      style.maxWidth = "100%";
-      style.margin =
-        block.align === "right"
-          ? "0 0 20px auto"
-          : block.align === "left"
-          ? "0 auto 20px 0"
-          : "0 auto 20px";
-    }
 
     switch (block.block_type) {
       case "heading":
@@ -1336,8 +1281,9 @@ function App() {
           <p
             style={{
               ...style,
-              lineHeight: "2.1",
-              whiteSpace: "pre-wrap",
+              lineHeight: 2.1,
+              whiteSpace:
+                "pre-wrap",
             }}
           >
             {block.content}
@@ -1349,7 +1295,7 @@ function App() {
           <blockquote
             style={{
               ...style,
-              lineHeight: "2",
+              lineHeight: 2,
             }}
           >
             {block.content}
@@ -1366,40 +1312,28 @@ function App() {
         );
 
       case "image":
-        return block.media_path ? (
-          <div style={style}>
-            <img
-              src={block.media_path}
-              alt={block.content || ""}
-              style={{
-                width: block.width
-                  ? `${block.width}px`
-                  : "auto",
-                height: block.height
-                  ? `${block.height}px`
-                  : "auto",
-                maxWidth: "100%",
-                objectFit: "contain",
-              }}
-            />
-          </div>
-        ) : null;
-
       case "gif":
         return block.media_path ? (
           <div style={style}>
             <img
-              src={block.media_path}
-              alt={block.content || ""}
+              src={
+                block.media_path
+              }
+              alt={
+                block.content || ""
+              }
               style={{
-                width: block.width
-                  ? `${block.width}px`
-                  : "auto",
-                height: block.height
-                  ? `${block.height}px`
-                  : "auto",
+                width:
+                  block.width
+                    ? `${block.width}px`
+                    : "auto",
+                height:
+                  block.height
+                    ? `${block.height}px`
+                    : "auto",
                 maxWidth: "100%",
-                objectFit: "contain",
+                objectFit:
+                  "contain",
               }}
             />
           </div>
@@ -1411,7 +1345,9 @@ function App() {
             {block.media_label && (
               <p>
                 <strong>
-                  {block.media_label}
+                  {
+                    block.media_label
+                  }
                 </strong>
               </p>
             )}
@@ -1419,7 +1355,9 @@ function App() {
             <audio
               controls
               preload="none"
-              src={block.media_path}
+              src={
+                block.media_path
+              }
               style={{
                 width: "100%",
               }}
@@ -1432,22 +1370,15 @@ function App() {
     }
   }
 
-  /* =========================
-     الموظفون
-  ========================= */
-
   async function addStaff() {
-    if (!isOwner) return;
-
-    if (!staffEmail.trim()) {
-      setStaffMessage(
-        "اكتبي بريد المشرف."
-      );
+    if (
+      !isOwner ||
+      !staffEmail.trim()
+    ) {
       return;
     }
 
     setManagingStaff(true);
-    setStaffMessage("");
 
     try {
       const { data, error } =
@@ -1456,19 +1387,24 @@ function App() {
           {
             body: {
               action: "set_role",
-              email: staffEmail.trim(),
+              email:
+                staffEmail.trim(),
               role: "staff",
             },
           }
         );
 
       if (error) {
-        setStaffMessage(error.message);
+        setStaffMessage(
+          error.message
+        );
         return;
       }
 
       if (data?.error) {
-        setStaffMessage(data.error);
+        setStaffMessage(
+          data.error
+        );
         return;
       }
 
@@ -1484,18 +1420,17 @@ function App() {
   }
 
   async function removeStaff(
-    staff: StaffMember
+    staff: any
   ) {
     if (!isOwner) return;
 
-    const confirmed = window.confirm(
-      `هل تريدين إزالة صلاحية المشرف من ${
-        staff.display_name ||
-        "هذا المستخدم"
-      }؟`
-    );
-
-    if (!confirmed) return;
+    if (
+      !window.confirm(
+        "هل تريدين إزالة صلاحية المشرف؟"
+      )
+    ) {
+      return;
+    }
 
     setManagingStaff(true);
 
@@ -1513,18 +1448,18 @@ function App() {
         );
 
       if (error) {
-        setStaffMessage(error.message);
+        setStaffMessage(
+          error.message
+        );
         return;
       }
 
       if (data?.error) {
-        setStaffMessage(data.error);
+        setStaffMessage(
+          data.error
+        );
         return;
       }
-
-      setStaffMessage(
-        "تمت إزالة صلاحية المشرف."
-      );
 
       await loadStaffMembers();
     } finally {
@@ -1533,12 +1468,15 @@ function App() {
   }
 
   async function loginWithGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
+    await supabase.auth.signInWithOAuth(
+      {
+        provider: "google",
+        options: {
+          redirectTo:
+            window.location.origin,
+        },
+      }
+    );
   }
 
   async function logout() {
@@ -1561,23 +1499,29 @@ function App() {
   async function markNotificationRead(
     id: string
   ) {
+    const now =
+      new Date().toISOString();
+
     await supabase
       .from("notifications")
       .update({
-        read_at: new Date().toISOString(),
+        read_at: now,
       })
-      .eq("id", id);
+      .eq(
+        "id",
+        id
+      );
 
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === id
-          ? {
-              ...notification,
-              read_at:
-                new Date().toISOString(),
-            }
-          : notification
-      )
+    setNotifications(
+      (current) =>
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                read_at: now,
+              }
+            : item
+        )
     );
   }
 
@@ -1592,7 +1536,8 @@ function App() {
 
     await loadChapters(
       novel.id,
-      adminView && canManageNovels
+      adminView &&
+        canManageNovels
     );
   }
 
@@ -1601,15 +1546,17 @@ function App() {
     setSelectedChapter(null);
     setChapterBlocks([]);
     setChapters([]);
+
     resetChapterForm();
     resetBlockForm();
+
     setShowNovels(true);
   }
 
   const unreadNotifications =
     notifications.filter(
-      (notification) =>
-        !notification.read_at
+      (item) =>
+        !item.read_at
     ).length;
 
   return (
@@ -1628,9 +1575,6 @@ function App() {
               setSelectedChapter(null);
               setChapterBlocks([]);
               setChapters([]);
-              resetNovelForm();
-              resetChapterForm();
-              resetBlockForm();
               setShowNovels(true);
             }}
           >
@@ -1646,7 +1590,9 @@ function App() {
           <nav className="main-nav">
             <button
               className={
-                showNovels ? "active" : ""
+                showNovels
+                  ? "active"
+                  : ""
               }
               onClick={() => {
                 setShowNovels(true);
@@ -1656,9 +1602,6 @@ function App() {
                 setSelectedChapter(null);
                 setChapterBlocks([]);
                 setChapters([]);
-                resetNovelForm();
-                resetChapterForm();
-                resetBlockForm();
               }}
             >
               الروايات
@@ -1667,25 +1610,25 @@ function App() {
             {user && (
               <button
                 className={
-                  showAccount ? "active" : ""
+                  showAccount
+                    ? "active"
+                    : ""
                 }
                 onClick={() => {
                   setShowAccount(true);
                   setShowAdmin(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
-                  setSelectedChapter(null);
-                  setChapterBlocks([]);
-                  setChapters([]);
-                  resetChapterForm();
-                  resetBlockForm();
                 }}
               >
                 حسابي
 
-                {unreadNotifications > 0 && (
+                {unreadNotifications >
+                  0 && (
                   <span className="notification-badge">
-                    {unreadNotifications}
+                    {
+                      unreadNotifications
+                    }
                   </span>
                 )}
               </button>
@@ -1694,7 +1637,9 @@ function App() {
             {canManageNovels && (
               <button
                 className={
-                  showAdmin ? "active" : ""
+                  showAdmin
+                    ? "active"
+                    : ""
                 }
                 onClick={() => {
                   setShowAdmin(true);
@@ -1704,9 +1649,6 @@ function App() {
                   setSelectedChapter(null);
                   setChapterBlocks([]);
                   setChapters([]);
-                  resetNovelForm();
-                  resetChapterForm();
-                  resetBlockForm();
                 }}
               >
                 الإدارة
@@ -1723,9 +1665,6 @@ function App() {
                   setShowAdmin(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
-                  setSelectedChapter(null);
-                  setChapterBlocks([]);
-                  setChapters([]);
                 }}
               >
                 {profile?.display_name ||
@@ -1735,7 +1674,9 @@ function App() {
             ) : (
               <button
                 className="account-button"
-                onClick={loginWithGoogle}
+                onClick={
+                  loginWithGoogle
+                }
               >
                 تسجيل الدخول
               </button>
@@ -1749,7 +1690,9 @@ function App() {
           <section className="novel-reader">
             <button
               className="back-button"
-              onClick={backToNovels}
+              onClick={
+                backToNovels
+              }
             >
               ← العودة للروايات
             </button>
@@ -1775,11 +1718,14 @@ function App() {
               <div className="novel-detail-content">
                 <span className="novel-category">
                   {selectedNovel.categories
-                    ?.name || "رواية"}
+                    ?.name ||
+                    "رواية"}
                 </span>
 
                 <h1>
-                  {selectedNovel.title}
+                  {
+                    selectedNovel.title
+                  }
                 </h1>
 
                 <p>
@@ -1796,42 +1742,18 @@ function App() {
                   </span>
 
                   <span>
-                    {selectedNovel.language}
+                    {
+                      selectedNovel.language
+                    }
                   </span>
                 </div>
-
-                <button
-                  className="primary-button"
-                  disabled={
-                    chapters.length === 0
-                  }
-                  onClick={() => {
-                    const firstChapter =
-                      chapters[0];
-
-                    if (firstChapter) {
-                      openChapterEditor(
-                        firstChapter
-                      );
-                    }
-                  }}
-                >
-                  {canManageNovels &&
-                  showAdmin
-                    ? "فتح محرر الفصل الأول"
-                    : "بدء القراءة"}
-                </button>
               </div>
             </div>
-
-            {/* =========================
-                الفصول
-            ========================= */}
 
             <div
               className="account-card"
               style={{
-                marginTop: "25px",
+                marginTop: 25,
               }}
             >
               <div className="admin-heading-row">
@@ -1861,9 +1783,12 @@ function App() {
                           setEditingChapterId(
                             null
                           );
-                          setChapterNumber("");
-                          setChapterTitle("");
-                          setChapterMessage("");
+                          setChapterNumber(
+                            ""
+                          );
+                          setChapterTitle(
+                            ""
+                          );
                           setShowChapterForm(
                             true
                           );
@@ -1893,13 +1818,14 @@ function App() {
                       <input
                         type="number"
                         min="1"
-                        value={chapterNumber}
-                        onChange={(event) =>
+                        value={
+                          chapterNumber
+                        }
+                        onChange={(e) =>
                           setChapterNumber(
-                            event.target.value
+                            e.target.value
                           )
                         }
-                        placeholder="مثال: 1"
                       />
                     </label>
 
@@ -1907,27 +1833,22 @@ function App() {
                       عنوان الفصل
 
                       <input
-                        value={chapterTitle}
-                        onChange={(event) =>
+                        value={
+                          chapterTitle
+                        }
+                        onChange={(e) =>
                           setChapterTitle(
-                            event.target.value
+                            e.target.value
                           )
                         }
-                        placeholder="مثال: سر القلعة"
                       />
                     </label>
 
-                    <div className="panel">
-                      نوع الوصول:
-                      <strong>
-                        {" "}
-                        مجاني
-                      </strong>
-                    </div>
-
                     {chapterMessage && (
                       <div className="panel">
-                        {chapterMessage}
+                        {
+                          chapterMessage
+                        }
                       </div>
                     )}
 
@@ -1938,7 +1859,9 @@ function App() {
                           savingChapter
                         }
                         onClick={() =>
-                          saveChapter(false)
+                          saveChapter(
+                            false
+                          )
                         }
                       >
                         📝 حفظ كمسودة
@@ -1950,7 +1873,9 @@ function App() {
                           savingChapter
                         }
                         onClick={() =>
-                          saveChapter(true)
+                          saveChapter(
+                            true
+                          )
                         }
                       >
                         🟢 حفظ ونشر
@@ -1963,12 +1888,10 @@ function App() {
                 <div className="account-loading">
                   جارٍ تحميل الفصول...
                 </div>
-              ) : chapters.length === 0 ? (
+              ) : chapters.length ===
+                0 ? (
                 <div className="panel">
-                  {canManageNovels &&
-                  showAdmin
-                    ? "لا توجد فصول لهذه الرواية حاليًا."
-                    : "لا توجد فصول منشورة حاليًا."}
+                  لا توجد فصول حاليًا.
                 </div>
               ) : (
                 <div className="account-list">
@@ -1976,7 +1899,9 @@ function App() {
                     (chapter) => (
                       <div
                         className="account-novel"
-                        key={chapter.id}
+                        key={
+                          chapter.id
+                        }
                       >
                         <div className="novel-list-info">
                           <h3>
@@ -1991,24 +1916,14 @@ function App() {
                           </h3>
 
                           <span>
-                            {chapter.access_type ===
-                            "free"
-                              ? "مجاني"
-                              : "مدفوع"}
+                            مجاني
                           </span>
 
-                          {canManageNovels &&
-                          showAdmin ? (
-                            <small>
-                              {chapter.published
-                                ? "🟢 منشور"
-                                : "📝 مسودة"}
-                            </small>
-                          ) : (
-                            <small>
-                              🟢 منشور
-                            </small>
-                          )}
+                          <small>
+                            {chapter.published
+                              ? "🟢 منشور"
+                              : "📝 مسودة"}
+                          </small>
                         </div>
 
                         <div className="novel-list-actions">
@@ -2041,11 +1956,7 @@ function App() {
                                 </button>
 
                                 <button
-                                  className={
-                                    chapter.published
-                                      ? "secondary-button"
-                                      : "primary-button"
-                                  }
+                                  className="secondary-button"
                                   onClick={() =>
                                     toggleChapterPublished(
                                       chapter
@@ -2077,29 +1988,13 @@ function App() {
                   )}
                 </div>
               )}
-
-              {chapterMessage &&
-                !showChapterForm && (
-                  <div
-                    className="panel"
-                    style={{
-                      marginTop: "15px",
-                    }}
-                  >
-                    {chapterMessage}
-                  </div>
-                )}
             </div>
-
-            {/* =========================
-                محرر / قارئ الفصل
-            ========================= */}
 
             {selectedChapter && (
               <div
                 className="account-card"
                 style={{
-                  marginTop: "25px",
+                  marginTop: 25,
                 }}
               >
                 <div className="admin-heading-row">
@@ -2149,11 +2044,12 @@ function App() {
                         نوع العنصر
 
                         <select
-                          value={newBlockType}
-                          onChange={(event) =>
+                          value={
+                            newBlockType
+                          }
+                          onChange={(e) =>
                             setNewBlockType(
-                              event.target
-                                .value as ChapterBlockType
+                              e.target.value as ChapterBlockType
                             )
                           }
                         >
@@ -2200,20 +2096,10 @@ function App() {
                             value={
                               newBlockContent
                             }
-                            onChange={(event) =>
+                            onChange={(e) =>
                               setNewBlockContent(
-                                event.target
-                                  .value
+                                e.target.value
                               )
-                            }
-                            placeholder={
-                              newBlockType ===
-                              "heading"
-                                ? "اكتبي عنوانًا..."
-                                : newBlockType ===
-                                  "quote"
-                                ? "اكتبي الاقتباس..."
-                                : "اكتبي النص..."
                             }
                             rows={6}
                           />
@@ -2228,21 +2114,67 @@ function App() {
                           "audio") && (
                         <>
                           <label>
-                            رابط الملف
+                            رفع الملف
 
                             <input
-                              value={
-                                newBlockMediaPath
+                              type="file"
+                              accept={
+                                newBlockType ===
+                                "audio"
+                                  ? "audio/*"
+                                  : newBlockType ===
+                                    "gif"
+                                  ? "image/gif"
+                                  : "image/*"
                               }
-                              onChange={(event) =>
-                                setNewBlockMediaPath(
-                                  event.target
-                                    .value
-                                )
+                              disabled={
+                                uploadingMedia
                               }
-                              placeholder="https://..."
+                              onChange={(e) => {
+                                const file =
+                                  e.target
+                                    .files?.[0];
+
+                                if (file) {
+                                  uploadChapterMedia(
+                                    file
+                                  );
+                                }
+
+                                e.target.value =
+                                  "";
+                              }}
                             />
                           </label>
+
+                          {uploadingMedia && (
+                            <div className="panel">
+                              ⏳ جارٍ رفع الملف...
+                            </div>
+                          )}
+
+                          {newBlockMediaPath && (
+                            <div className="panel">
+                              ✅ تم رفع الملف بنجاح.
+
+                              <div
+                                style={{
+                                  marginTop:
+                                    8,
+                                  wordBreak:
+                                    "break-all",
+                                  fontSize:
+                                    12,
+                                  opacity:
+                                    0.7,
+                                }}
+                              >
+                                {
+                                  newBlockMediaPath
+                                }
+                              </div>
+                            </div>
+                          )}
 
                           {newBlockType ===
                             "audio" && (
@@ -2253,10 +2185,9 @@ function App() {
                                 value={
                                   newBlockMediaLabel
                                 }
-                                onChange={(event) =>
+                                onChange={(e) =>
                                   setNewBlockMediaLabel(
-                                    event.target
-                                      .value
+                                    e.target.value
                                   )
                                 }
                                 placeholder="مثال: صوت المطر"
@@ -2270,8 +2201,22 @@ function App() {
                               "gif") && (
                             <>
                               <label>
-                                عرض الصورة
-                                بالبكسل
+                                وصف الصورة
+                                <input
+                                  value={
+                                    newBlockContent
+                                  }
+                                  onChange={(e) =>
+                                    setNewBlockContent(
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="وصف اختياري للصورة"
+                                />
+                              </label>
+
+                              <label>
+                                عرض الصورة بالبكسل
 
                                 <input
                                   type="number"
@@ -2279,12 +2224,9 @@ function App() {
                                   value={
                                     newBlockWidth
                                   }
-                                  onChange={(
-                                    event
-                                  ) =>
+                                  onChange={(e) =>
                                     setNewBlockWidth(
-                                      event.target
-                                        .value
+                                      e.target.value
                                     )
                                   }
                                   placeholder="مثال: 700"
@@ -2292,8 +2234,7 @@ function App() {
                               </label>
 
                               <label>
-                                ارتفاع الصورة
-                                بالبكسل
+                                ارتفاع الصورة بالبكسل
 
                                 <input
                                   type="number"
@@ -2301,12 +2242,9 @@ function App() {
                                   value={
                                     newBlockHeight
                                   }
-                                  onChange={(
-                                    event
-                                  ) =>
+                                  onChange={(e) =>
                                     setNewBlockHeight(
-                                      event.target
-                                        .value
+                                      e.target.value
                                     )
                                   }
                                   placeholder="مثال: 500"
@@ -2320,12 +2258,9 @@ function App() {
                                   value={
                                     newBlockAlign
                                   }
-                                  onChange={(
-                                    event
-                                  ) =>
+                                  onChange={(e) =>
                                     setNewBlockAlign(
-                                      event.target
-                                        .value as ChapterBlock["align"]
+                                      e.target.value as ChapterBlock["align"]
                                     )
                                   }
                                 >
@@ -2355,7 +2290,8 @@ function App() {
                         <button
                           className="primary-button"
                           disabled={
-                            savingChapterBlocks
+                            savingChapterBlocks ||
+                            uploadingMedia
                           }
                           onClick={
                             addChapterBlock
@@ -2368,9 +2304,6 @@ function App() {
 
                         <button
                           className="secondary-button"
-                          disabled={
-                            savingChapterBlocks
-                          }
                           onClick={
                             resetBlockForm
                           }
@@ -2383,7 +2316,7 @@ function App() {
                     <div
                       className="panel"
                       style={{
-                        marginTop: "20px",
+                        marginTop: 20,
                       }}
                     >
                       <h3>
@@ -2393,115 +2326,111 @@ function App() {
                       {chapterBlocks.length ===
                       0 ? (
                         <p>
-                          لم تتم إضافة أي محتوى
-                          للفصل بعد.
+                          لم تتم إضافة أي محتوى للفصل بعد.
                         </p>
                       ) : (
-                        <div>
-                          {chapterBlocks.map(
-                            (
-                              block,
-                              index
-                            ) => (
+                        chapterBlocks.map(
+                          (
+                            block,
+                            index
+                          ) => (
+                            <div
+                              className="account-novel"
+                              key={
+                                block.id
+                              }
+                              style={{
+                                marginBottom:
+                                  15,
+                                display:
+                                  "block",
+                              }}
+                            >
                               <div
-                                className="account-novel"
-                                key={
-                                  block.id
-                                }
                                 style={{
-                                  marginBottom:
-                                    "15px",
                                   display:
-                                    "block",
+                                    "flex",
+                                  justifyContent:
+                                    "space-between",
+                                  alignItems:
+                                    "center",
+                                  gap: 10,
+                                  flexWrap:
+                                    "wrap",
                                 }}
                               >
-                                <div
-                                  style={{
-                                    display:
-                                      "flex",
-                                    justifyContent:
-                                      "space-between",
-                                    alignItems:
-                                      "center",
-                                    gap: "10px",
-                                    flexWrap:
-                                      "wrap",
-                                  }}
-                                >
-                                  <strong>
-                                    {index +
-                                      1}{" "}
-                                    —{" "}
-                                    {getBlockTypeLabel(
-                                      block.block_type
-                                    )}
-                                  </strong>
+                                <strong>
+                                  {index +
+                                    1}{" "}
+                                  —{" "}
+                                  {getBlockTypeLabel(
+                                    block.block_type
+                                  )}
+                                </strong>
 
-                                  <div className="novel-list-actions">
+                                <div className="novel-list-actions">
+                                  <button
+                                    className="secondary-button"
+                                    disabled={
+                                      savingChapterBlocks ||
+                                      index ===
+                                        0
+                                    }
+                                    onClick={() =>
+                                      moveChapterBlock(
+                                        block,
+                                        "up"
+                                      )
+                                    }
+                                  >
+                                    ↑
+                                  </button>
+
+                                  <button
+                                    className="secondary-button"
+                                    disabled={
+                                      savingChapterBlocks ||
+                                      index ===
+                                        chapterBlocks.length -
+                                          1
+                                    }
+                                    onClick={() =>
+                                      moveChapterBlock(
+                                        block,
+                                        "down"
+                                      )
+                                    }
+                                  >
+                                    ↓
+                                  </button>
+
+                                  {isOwner && (
                                     <button
-                                      className="secondary-button"
-                                      disabled={
-                                        savingChapterBlocks ||
-                                        index ===
-                                          0
-                                      }
+                                      className="danger-button"
                                       onClick={() =>
-                                        moveChapterBlock(
-                                          block,
-                                          "up"
+                                        deleteChapterBlock(
+                                          block
                                         )
                                       }
                                     >
-                                      ↑
+                                      🗑️ حذف
                                     </button>
-
-                                    <button
-                                      className="secondary-button"
-                                      disabled={
-                                        savingChapterBlocks ||
-                                        index ===
-                                          chapterBlocks.length -
-                                            1
-                                      }
-                                      onClick={() =>
-                                        moveChapterBlock(
-                                          block,
-                                          "down"
-                                        )
-                                      }
-                                    >
-                                      ↓
-                                    </button>
-
-                                    {isOwner && (
-                                      <button
-                                        className="danger-button"
-                                        onClick={() =>
-                                          deleteChapterBlock(
-                                            block
-                                          )
-                                        }
-                                      >
-                                        🗑️ حذف
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div
-                                  style={{
-                                    marginTop:
-                                      "15px",
-                                  }}
-                                >
-                                  {renderChapterBlock(
-                                    block
                                   )}
                                 </div>
                               </div>
-                            )
-                          )}
-                        </div>
+
+                              <div
+                                style={{
+                                  marginTop: 15,
+                                }}
+                              >
+                                {renderChapterBlock(
+                                  block
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )
                       )}
                     </div>
                   </>
@@ -2509,23 +2438,24 @@ function App() {
                   <div
                     className="panel"
                     style={{
-                      lineHeight: "2",
+                      lineHeight: 2,
                     }}
                   >
                     {chapterBlocks.length ===
                     0 ? (
                       <p>
-                        لا يوجد محتوى منشور لهذا
-                        الفصل حاليًا.
+                        لا يوجد محتوى منشور لهذا الفصل حاليًا.
                       </p>
                     ) : (
                       chapterBlocks.map(
                         (block) => (
                           <div
-                            key={block.id}
+                            key={
+                              block.id
+                            }
                             style={{
                               marginBottom:
-                                "25px",
+                                25,
                             }}
                           >
                             {renderChapterBlock(
@@ -2553,8 +2483,7 @@ function App() {
               </h1>
 
               <p>
-                هنا يمكنك حفظ الروايات كمسودات
-                ثم نشرها عندما تصبح جاهزة.
+                إدارة الروايات والفصول والمحتوى.
               </p>
             </div>
 
@@ -2566,26 +2495,37 @@ function App() {
                   </h2>
 
                   <p>
-                    المسودة لا تظهر للقراء حتى
-                    يتم نشرها.
+                    المسودة لا تظهر للقراء.
                   </p>
                 </div>
 
                 <button
                   className="primary-button"
                   onClick={() => {
-                    if (showNovelForm) {
+                    if (
+                      showNovelForm
+                    ) {
                       resetNovelForm();
                     } else {
-                      setEditingNovelId(null);
-                      setNovelTitle("");
-                      setNovelDescription("");
-                      setNovelCategory("");
-                      setNovelStatus("ongoing");
-                      setNovelLanguage("العربية");
-                      setNovelDirection("rtl");
-                      setNovelMessage("");
-                      setShowNovelForm(true);
+                      setEditingNovelId(
+                        null
+                      );
+
+                      setNovelTitle(
+                        ""
+                      );
+
+                      setNovelDescription(
+                        ""
+                      );
+
+                      setNovelCategory(
+                        ""
+                      );
+
+                      setShowNovelForm(
+                        true
+                      );
                     }
                   }}
                 >
@@ -2607,13 +2547,14 @@ function App() {
                     اسم الرواية
 
                     <input
-                      value={novelTitle}
-                      onChange={(event) =>
+                      value={
+                        novelTitle
+                      }
+                      onChange={(e) =>
                         setNovelTitle(
-                          event.target.value
+                          e.target.value
                         )
                       }
-                      placeholder="مثال: لعنة القلعة"
                     />
                   </label>
 
@@ -2624,12 +2565,11 @@ function App() {
                       value={
                         novelDescription
                       }
-                      onChange={(event) =>
+                      onChange={(e) =>
                         setNovelDescription(
-                          event.target.value
+                          e.target.value
                         )
                       }
-                      placeholder="اكتبي وصف الرواية..."
                     />
                   </label>
 
@@ -2640,12 +2580,11 @@ function App() {
                       value={
                         novelCategory
                       }
-                      onChange={(event) =>
+                      onChange={(e) =>
                         setNovelCategory(
-                          event.target.value
+                          e.target.value
                         )
                       }
-                      placeholder="رعب، فانتازيا، رومانسية..."
                     />
                   </label>
 
@@ -2653,11 +2592,12 @@ function App() {
                     الحالة
 
                     <select
-                      value={novelStatus}
-                      onChange={(event) =>
+                      value={
+                        novelStatus
+                      }
+                      onChange={(e) =>
                         setNovelStatus(
-                          event.target
-                            .value as
+                          e.target.value as
                             | "ongoing"
                             | "completed"
                         )
@@ -2680,9 +2620,9 @@ function App() {
                       value={
                         novelLanguage
                       }
-                      onChange={(event) =>
+                      onChange={(e) =>
                         setNovelLanguage(
-                          event.target.value
+                          e.target.value
                         )
                       }
                     />
@@ -2695,10 +2635,9 @@ function App() {
                       value={
                         novelDirection
                       }
-                      onChange={(event) =>
+                      onChange={(e) =>
                         setNovelDirection(
-                          event.target
-                            .value as
+                          e.target.value as
                             | "rtl"
                             | "ltr"
                         )
@@ -2716,7 +2655,9 @@ function App() {
 
                   {novelMessage && (
                     <div className="panel">
-                      {novelMessage}
+                      {
+                        novelMessage
+                      }
                     </div>
                   )}
 
@@ -2727,7 +2668,9 @@ function App() {
                         savingNovel
                       }
                       onClick={() =>
-                        saveNovel(false)
+                        saveNovel(
+                          false
+                        )
                       }
                     >
                       📝 حفظ كمسودة
@@ -2739,120 +2682,100 @@ function App() {
                         savingNovel
                       }
                       onClick={() =>
-                        saveNovel(true)
+                        saveNovel(
+                          true
+                        )
                       }
                     >
-                      🟢{" "}
-                      {editingNovelId
-                        ? "حفظ التعديل ونشر"
-                        : "حفظ ونشر"}
+                      🟢 حفظ ونشر
                     </button>
                   </div>
                 </div>
               )}
 
-              {novels.length === 0 ? (
-                <div className="panel">
-                  لا توجد روايات حاليًا.
-                </div>
-              ) : (
-                <div className="account-list">
-                  {novels.map(
-                    (novel) => (
-                      <div
-                        className="account-novel"
-                        key={novel.id}
-                      >
-                        <div className="novel-list-cover">
-                          {novel.cover_path ? (
-                            <img
-                              src={
-                                novel.cover_path
-                              }
-                              alt={
-                                novel.title
-                              }
-                            />
-                          ) : (
-                            "📖"
-                          )}
-                        </div>
+              <div className="account-list">
+                {novels.map(
+                  (novel) => (
+                    <div
+                      className="account-novel"
+                      key={
+                        novel.id
+                      }
+                    >
+                      <div className="novel-list-info">
+                        <h3>
+                          {
+                            novel.title
+                          }
+                        </h3>
 
-                        <div className="novel-list-info">
-                          <h3>
-                            {novel.title}
-                          </h3>
+                        <span>
+                          {novel.categories
+                            ?.name ||
+                            "بدون تصنيف"}
+                        </span>
 
-                          <span>
-                            {novel.categories
-                              ?.name ||
-                              "بدون تصنيف"}
-                          </span>
+                        <small>
+                          {novel.published
+                            ? "🟢 منشورة"
+                            : "📝 مسودة"}
+                        </small>
+                      </div>
 
-                          <small>
-                            {novel.published
-                              ? "🟢 منشورة"
-                              : "📝 مسودة"}
-                          </small>
-                        </div>
+                      <div className="novel-list-actions">
+                        <button
+                          className="secondary-button"
+                          onClick={() =>
+                            editNovel(
+                              novel
+                            )
+                          }
+                        >
+                          ✏️ تعديل
+                        </button>
 
-                        <div className="novel-list-actions">
+                        <button
+                          className="secondary-button"
+                          onClick={() =>
+                            toggleNovelPublished(
+                              novel
+                            )
+                          }
+                        >
+                          {novel.published
+                            ? "⚪ إلغاء النشر"
+                            : "🟢 نشر الرواية"}
+                        </button>
+
+                        <button
+                          className="primary-button"
+                          onClick={() =>
+                            openNovel(
+                              novel,
+                              true
+                            )
+                          }
+                        >
+                          📚 الفصول
+                        </button>
+
+                        {isOwner && (
                           <button
-                            className="secondary-button"
+                            className="danger-button"
                             onClick={() =>
-                              editNovel(novel)
-                            }
-                          >
-                            ✏️ تعديل
-                          </button>
-
-                          <button
-                            className={
-                              novel.published
-                                ? "secondary-button"
-                                : "primary-button"
-                            }
-                            onClick={() =>
-                              toggleNovelPublished(
+                              deleteNovel(
                                 novel
                               )
                             }
                           >
-                            {novel.published
-                              ? "⚪ إلغاء النشر"
-                              : "🟢 نشر الرواية"}
+                            🗑️ حذف
                           </button>
-
-                          <button
-                            className="secondary-button"
-                            onClick={() =>
-                              openNovel(
-                                novel,
-                                true
-                              )
-                            }
-                          >
-                            📚 الفصول
-                          </button>
-
-                          {isOwner && (
-                            <button
-                              className="danger-button"
-                              onClick={() =>
-                                deleteNovel(
-                                  novel
-                                )
-                              }
-                            >
-                              حذف
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    )
-                  )}
-                </div>
-              )}
+                    </div>
+                  )
+                )}
+              </div>
             </div>
 
             {isOwner && (
@@ -2870,12 +2793,11 @@ function App() {
                       value={
                         staffEmail
                       }
-                      onChange={(event) =>
+                      onChange={(e) =>
                         setStaffEmail(
-                          event.target.value
+                          e.target.value
                         )
                       }
-                      placeholder="example@email.com"
                     />
                   </label>
 
@@ -2884,100 +2806,63 @@ function App() {
                     disabled={
                       managingStaff
                     }
-                    onClick={addStaff}
+                    onClick={
+                      addStaff
+                    }
                   >
                     إضافة كمشرف
                   </button>
 
                   {staffMessage && (
-                    <div
-                      className="panel"
-                      style={{
-                        marginTop:
-                          "15px",
-                        lineHeight:
-                          "1.8",
-                      }}
-                    >
-                      {staffMessage}
+                    <div className="panel">
+                      {
+                        staffMessage
+                      }
                     </div>
                   )}
                 </div>
 
-                <div
-                  className="account-card"
-                  style={{
-                    marginTop:
-                      "15px",
-                  }}
-                >
-                  <h3>
-                    👥 المشرفون الحاليون
-                  </h3>
+                {loadingStaff ? (
+                  <div className="account-loading">
+                    جارٍ تحميل المشرفين...
+                  </div>
+                ) : (
+                  <div className="account-list">
+                    {staffMembers.map(
+                      (staff) => (
+                        <div
+                          className="account-novel"
+                          key={
+                            staff.id
+                          }
+                        >
+                          <div className="novel-list-info">
+                            <h3>
+                              {staff.display_name ||
+                                "مشرف"}
+                            </h3>
 
-                  {loadingStaff ? (
-                    <div className="account-loading">
-                      جارٍ تحميل المشرفين...
-                    </div>
-                  ) : staffMembers.length ===
-                    0 ? (
-                    <div className="panel">
-                      لا يوجد مشرفون
-                      حاليًا.
-                    </div>
-                  ) : (
-                    <div className="account-list">
-                      {staffMembers.map(
-                        (staff) => (
-                          <div
-                            className="account-novel"
-                            key={
-                              staff.id
+                            <span>
+                              {staff.email ||
+                                "بريد غير متوفر"}
+                            </span>
+                          </div>
+
+                          <button
+                            className="danger-button"
+                            onClick={() =>
+                              removeStaff(
+                                staff
+                              )
                             }
                           >
-                            <div className="avatar">
-                              {(
-                                staff.display_name ||
-                                "م"
-                              )[0]}
-                            </div>
-
-                            <div className="novel-list-info">
-                              <h3>
-                                {staff.display_name ||
-                                  "مشرف"}
-                              </h3>
-
-                              <span>
-                                {staff.email ||
-                                  "بريد غير متوفر"}
-                              </span>
-
-                              <small>
-                                صلاحية:
-                                مشرف
-                              </small>
-                            </div>
-
-                            <button
-                              className="danger-button"
-                              disabled={
-                                managingStaff
-                              }
-                              onClick={() =>
-                                removeStaff(
-                                  staff
-                                )
-                              }
-                            >
-                              إزالة الصلاحية
-                            </button>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
+                            إزالة الصلاحية
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -3063,15 +2948,6 @@ function App() {
                   }
                 >
                   الإشعارات
-
-                  {unreadNotifications >
-                    0 && (
-                    <span className="notification-badge">
-                      {
-                        unreadNotifications
-                      }
-                    </span>
-                  )}
                 </button>
 
                 <button
@@ -3097,20 +2973,11 @@ function App() {
 
                         <div className="profile-header">
                           <div className="profile-avatar">
-                            {profile?.avatar_url ? (
-                              <img
-                                src={
-                                  profile.avatar_url
-                                }
-                                alt=""
-                              />
-                            ) : (
-                              (
-                                profile?.display_name ||
-                                user.email ||
-                                "م"
-                              )[0]
-                            )}
+                            {(
+                              profile?.display_name ||
+                              user.email ||
+                              "م"
+                            )[0]}
                           </div>
 
                           <div>
@@ -3120,7 +2987,9 @@ function App() {
                             </h3>
 
                             <p>
-                              {user.email}
+                              {
+                                user.email
+                              }
                             </p>
 
                             <small>
@@ -3138,7 +3007,9 @@ function App() {
 
                         {profile?.bio && (
                           <p>
-                            {profile.bio}
+                            {
+                              profile.bio
+                            }
                           </p>
                         )}
                       </div>
@@ -3151,30 +3022,11 @@ function App() {
                           المفضلة
                         </h2>
 
-                        {favorites.length ===
-                        0 ? (
-                          <div className="panel">
-                            لا توجد روايات في
-                            المفضلة حاليًا.
-                          </div>
-                        ) : (
-                          <div className="account-list">
-                            {favorites.map(
-                              (item) => (
-                                <div
-                                  className="account-novel"
-                                  key={
-                                    item.id
-                                  }
-                                >
-                                  <span>
-                                    رواية مفضلة
-                                  </span>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        )}
+                        <div className="panel">
+                          {favorites.length
+                            ? `لديك ${favorites.length} رواية في المفضلة.`
+                            : "لا توجد روايات في المفضلة حاليًا."}
+                        </div>
                       </div>
                     )}
 
@@ -3185,30 +3037,11 @@ function App() {
                           سجل القراءة
                         </h2>
 
-                        {history.length ===
-                        0 ? (
-                          <div className="panel">
-                            لم تبدأ قراءة أي
-                            رواية بعد.
-                          </div>
-                        ) : (
-                          <div className="account-list">
-                            {history.map(
-                              (item) => (
-                                <div
-                                  className="account-novel"
-                                  key={
-                                    item.id
-                                  }
-                                >
-                                  <span>
-                                    سجل قراءة
-                                  </span>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        )}
+                        <div className="panel">
+                          {history.length
+                            ? `لديك ${history.length} سجل قراءة.`
+                            : "لم تبدأ قراءة أي رواية بعد."}
+                        </div>
                       </div>
                     )}
 
@@ -3243,8 +3076,10 @@ function App() {
                                 >
                                   <div>
                                     <strong>
-                                      {notification.title ||
-                                        "إشعار"}
+                                      {
+                                        notification.title ||
+                                        "إشعار"
+                                      }
                                     </strong>
 
                                     <p>
@@ -3283,8 +3118,7 @@ function App() {
               </h1>
 
               <p>
-                اكتشفي الروايات المنشورة
-                واقرئيها في مكان واحد.
+                اكتشفي الروايات المنشورة واقرئيها في مكان واحد.
               </p>
             </div>
 
@@ -3304,8 +3138,7 @@ function App() {
               {publishedNovels.length ===
               0 ? (
                 <div className="panel">
-                  لا توجد روايات منشورة
-                  حاليًا.
+                  لا توجد روايات منشورة حاليًا.
                 </div>
               ) : (
                 <div className="novels-grid">
@@ -3313,7 +3146,9 @@ function App() {
                     (novel) => (
                       <article
                         className="novel-card"
-                        key={novel.id}
+                        key={
+                          novel.id
+                        }
                         onClick={() =>
                           openNovel(
                             novel,
@@ -3346,7 +3181,9 @@ function App() {
                           </span>
 
                           <h3>
-                            {novel.title}
+                            {
+                              novel.title
+                            }
                           </h3>
 
                           <p>
@@ -3389,4 +3226,3 @@ createRoot(
     <App />
   </React.StrictMode>
 );
-
