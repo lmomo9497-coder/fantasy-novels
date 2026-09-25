@@ -2116,12 +2116,12 @@ select:focus-visible {
 
 @media (max-width: 640px) {
   .library-tools {
-    grid-template-columns: 1fr;
     padding: 10px;
   }
 
   .library-filters {
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
   }
 
 .category-filter-button {
@@ -2624,11 +2624,26 @@ select:focus-visible {
    أدوات المكتبة والبحث
 ========================= */
 .library-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
-  gap: 12px;
+  display: block;
   padding: 13px;
   margin-bottom: 22px;
+}
+
+.library-search {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.library-filters select,
+.category-filter-button {
+  min-width: 110px;
 }
 
 .library-search {
