@@ -2056,6 +2056,41 @@ function App() {
           </div>
         </div>
 
+        <div className="category-browser card">
+          <div className="category-browser-heading">
+            <div>
+              <span className="eyebrow">استكشفي حسب النوع</span>
+              <strong>التصنيفات</strong>
+            </div>
+            {selectedCategoryFilter !== "all" && (
+              <button
+                className="category-clear-button"
+                onClick={() => setSelectedCategoryFilter("all")}
+              >
+                عرض الكل
+              </button>
+            )}
+          </div>
+
+          <div className="category-chips">
+            <button
+              className={selectedCategoryFilter === "all" ? "category-chip active" : "category-chip"}
+              onClick={() => setSelectedCategoryFilter("all")}
+            >
+              الكل
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                className={selectedCategoryFilter === category.id ? "category-chip active" : "category-chip"}
+                onClick={() => setSelectedCategoryFilter(category.id)}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="library-tools card">
           <div className="library-search">
             <input
@@ -2938,12 +2973,26 @@ function App() {
           </div>
 
           <div className="novel-hero-info">
-            <span className="eyebrow">
-              {selectedNovel.categories?.name ||
-                "رواية"}
-            </span>
+            <span className="eyebrow">تفاصيل الرواية</span>
 
             <h1>{selectedNovel.title}</h1>
+
+            {selectedNovel.categories?.name && (
+              <button
+                className="novel-category novel-category-large"
+                onClick={() => {
+                  setSelectedNovel(null);
+                  setSelectedChapter(null);
+                  setShowNovels(true);
+                  setShowAccount(false);
+                  setShowAdmin(false);
+                  setSelectedCategoryFilter(selectedNovel.category_id || "all");
+                }}
+              >
+                <span>التصنيف</span>
+                <strong>{selectedNovel.categories.name}</strong>
+              </button>
+            )}
 
             {selectedNovel.description && (
               <p className="novel-description">
