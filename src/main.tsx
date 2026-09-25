@@ -1272,7 +1272,7 @@ function App() {
   }
 
   async function deleteChapterBlock(block: ChapterBlock) {
-    if (!isOwner) return;
+    if (!canManage) return;
 
     const confirmed = window.confirm(
       "هل أنت متأكدة من حذف هذا العنصر؟"
@@ -2592,12 +2592,12 @@ function App() {
                         ↓
                       </button>
 
-                      {isOwner && (
+                      {canManage && (
                         <button
                           className="danger-button"
                           onClick={() =>
                             deleteChapterBlock(block)
-                }
+                          }
                         >
                           حذف
                         </button>
