@@ -1167,7 +1167,46 @@ img {
 .chapter-block[data-align="full"] img {
   width: 100%;
 }
+.chapter-media-block {
+  display: flex;
+  width: 100%;
+  margin: 24px 0;
+}
 
+.chapter-media-block.block-align-right {
+  justify-content: flex-end;
+}
+
+.chapter-media-block.block-align-left {
+  justify-content: flex-start;
+}
+
+.chapter-media-block.block-align-center {
+  justify-content: center;
+}
+
+.chapter-media-block.block-align-full {
+  justify-content: stretch;
+}
+
+.chapter-media-block .chapter-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  margin: 0;
+}
+
+.chapter-media-block.block-align-full .chapter-image {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .chapter-media-block .chapter-image {
+    max-width: 100%;
+  }
+}
 /* =========================
    الصوت
 ========================= */
