@@ -55,6 +55,28 @@ type Chapter = {
   updated_at: string;
 };
 
+type ChapterBlockType =
+  | "text"
+  | "heading"
+  | "image"
+  | "gif"
+  | "audio"
+  | "quote"
+  | "divider";
+
+type ChapterBlock = {
+  id: string;
+  chapter_id: string;
+  block_order: number;
+  block_type: ChapterBlockType;
+  content: string | null;
+  media_path: string | null;
+  media_label: string | null;
+  align: "right" | "left" | "center" | "full";
+  width: number | null;
+  height: number | null;
+};
+
 type AccountSection =
   | "profile"
   | "favorites"
@@ -173,6 +195,43 @@ function App() {
     useState("");
 
   const [chapterMessage, setChapterMessage] =
+    useState("");
+
+  /* =========================
+     محرر محتوى الفصل
+  ========================= */
+
+  const [selectedChapter, setSelectedChapter] =
+    useState<Chapter | null>(null);
+
+  const [chapterBlocks, setChapterBlocks] =
+    useState<ChapterBlock[]>([]);
+
+  const [loadingChapterBlocks, setLoadingChapterBlocks] =
+    useState(false);
+
+  const [savingChapterBlocks, setSavingChapterBlocks] =
+    useState(false);
+
+  const [newBlockType, setNewBlockType] =
+    useState<ChapterBlockType>("text");
+
+  const [newBlockContent, setNewBlockContent] =
+    useState("");
+
+  const [newBlockMediaPath, setNewBlockMediaPath] =
+    useState("");
+
+  const [newBlockMediaLabel, setNewBlockMediaLabel] =
+    useState("");
+
+  const [newBlockAlign, setNewBlockAlign] =
+    useState<ChapterBlock["align"]>("right");
+
+  const [newBlockWidth, setNewBlockWidth] =
+    useState("");
+
+  const [newBlockHeight, setNewBlockHeight] =
     useState("");
 
   const isOwner = profile?.role === "owner";
@@ -405,18 +464,14 @@ function App() {
 
   function editNovel(novel: Novel) {
     setEditingNovelId(novel.id);
-
     setNovelTitle(novel.title);
     setNovelDescription(novel.description ?? "");
-
     setNovelCategory(
       novel.categories?.name || ""
     );
-
     setNovelStatus(novel.status);
     setNovelLanguage(novel.language);
     setNovelDirection(novel.direction);
-
     setNovelMessage("");
     setShowNovelForm(true);
 
@@ -497,16 +552,7 @@ function App() {
         ]);
       }
 
-      /* =========================
-         تعديل رواية موجودة
-      ========================= */
-
       if (editingNovelId) {
-        const currentNovel = novels.find(
-          (novel) =>
-            novel.id === editingNovelId
-        );
-
         const { error } = await supabase
           .from("novels")
           .update({
@@ -540,10 +586,6 @@ function App() {
 
         return;
       }
-
-      /* =========================
-         إضافة رواية جديدة
-      ========================= */
 
       const baseSlug =
         makeSlug(novelTitle) ||
@@ -833,9 +875,7 @@ function App() {
       } else {
         const { error } = await supabase
           .from("chapters")
-          .insert({
-            ...chapterData,
-          });
+          .insert(chapterData);
 
         if (error) {
           setChapterMessage(error.message);
@@ -948,9 +988,448 @@ function App() {
       )
     );
 
+    if (selectedChapter?.id === chapter.id) {
+      closeChapterEditor();
+    }
+
     setChapterMessage(
       `تم حذف الفصل ${chapter.chapter_number}.`
     );
+  }
+
+  /* =========================
+     محرر محتوى الفصل
+  ========================= */
+
+  async function loadChapterBlocks(
+    chapterId: string
+  ) {
+    setLoadingChapterBlocks(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("chapter_blocks")
+        .select(
+          `
+          id,
+          chapter_id,
+          block_order,
+          block_type,
+          content,
+          media_path,
+          media_label,
+          align,
+          width,
+          height
+        `
+        )
+        .eq("chapter_id", chapterId)
+        .order("block_order", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error(
+          "خطأ أثناء تحميل محتوى الفصل:",
+          error
+        );
+        setChapterBlocks([]);
+        return;
+      }
+
+      setChapterBlocks(
+        (data ?? []) as ChapterBlock[]
+      );
+    } finally {
+      setLoadingChapterBlocks(false);
+    }
+  }
+
+  function resetBlockForm() {
+    setNewBlockType("text");
+    setNewBlockContent("");
+    setNewBlockMediaPath("");
+    setNewBlockMediaLabel("");
+    setNewBlockAlign("right");
+    setNewBlockWidth("");
+    setNewBlockHeight("");
+  }
+
+  async function addChapterBlock() {
+    if (!selectedChapter) return;
+
+    const isTextBlock =
+      newBlockType === "text" ||
+      newBlockType === "heading" ||
+      newBlockType === "quote";
+
+    const isMediaBlock =
+      newBlockType === "image" ||
+      newBlockType === "gif" ||
+      newBlockType === "audio";
+
+    if (
+      isTextBlock &&
+      !newBlockContent.trim()
+    ) {
+      alert("اكتبي محتوى العنصر أولًا.");
+      return;
+    }
+
+    if (
+      isMediaBlock &&
+      !newBlockMediaPath.trim()
+    ) {
+      alert("أضيفي رابط الملف أولًا.");
+      return;
+    }
+
+    const order =
+      chapterBlocks.length > 0
+        ? Math.max(
+            ...chapterBlocks.map(
+              (block) => block.block_order
+            )
+          ) + 1
+        : 1;
+
+    setSavingChapterBlocks(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("chapter_blocks")
+        .insert({
+          chapter_id: selectedChapter.id,
+          block_order: order,
+          block_type: newBlockType,
+          content:
+            newBlockContent.trim() || null,
+          media_path:
+            newBlockMediaPath.trim() || null,
+          media_label:
+            newBlockMediaLabel.trim() || null,
+          align: newBlockAlign,
+          width:
+            newBlockWidth.trim()
+              ? Number(newBlockWidth)
+              : null,
+          height:
+            newBlockHeight.trim()
+              ? Number(newBlockHeight)
+              : null,
+        })
+        .select(
+          `
+          id,
+          chapter_id,
+          block_order,
+          block_type,
+          content,
+          media_path,
+          media_label,
+          align,
+          width,
+          height
+        `
+        )
+        .single();
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setChapterBlocks((current) => [
+        ...current,
+        data as ChapterBlock,
+      ]);
+
+      resetBlockForm();
+    } finally {
+      setSavingChapterBlocks(false);
+    }
+  }
+
+  async function deleteChapterBlock(
+    block: ChapterBlock
+  ) {
+    if (!isOwner) {
+      alert(
+        "حذف محتوى الفصل متاح للمالك فقط."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "هل أنت متأكدة من حذف هذا العنصر؟"
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .delete()
+      .eq("id", block.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.filter(
+        (item) => item.id !== block.id
+      )
+    );
+  }
+
+  async function moveChapterBlock(
+    block: ChapterBlock,
+    direction: "up" | "down"
+  ) {
+    const index =
+      chapterBlocks.findIndex(
+        (item) => item.id === block.id
+      );
+
+    if (index === -1) return;
+
+    const newIndex =
+      direction === "up"
+        ? index - 1
+        : index + 1;
+
+    if (
+      newIndex < 0 ||
+      newIndex >= chapterBlocks.length
+    ) {
+      return;
+    }
+
+    const targetBlock =
+      chapterBlocks[newIndex];
+
+    setSavingChapterBlocks(true);
+
+    try {
+      const temporaryOrder =
+        -1000000 - index;
+
+      const firstUpdate =
+        await supabase
+          .from("chapter_blocks")
+          .update({
+            block_order: temporaryOrder,
+          })
+          .eq("id", block.id);
+
+      if (firstUpdate.error) {
+        alert(firstUpdate.error.message);
+        return;
+      }
+
+      const secondUpdate =
+        await supabase
+          .from("chapter_blocks")
+          .update({
+            block_order: block.block_order,
+          })
+          .eq("id", targetBlock.id);
+
+      if (secondUpdate.error) {
+        alert(secondUpdate.error.message);
+        return;
+      }
+
+      const thirdUpdate =
+        await supabase
+          .from("chapter_blocks")
+          .update({
+            block_order:
+              targetBlock.block_order,
+          })
+          .eq("id", block.id);
+
+      if (thirdUpdate.error) {
+        alert(thirdUpdate.error.message);
+        return;
+      }
+
+      await loadChapterBlocks(
+        selectedChapter!.id
+      );
+    } finally {
+      setSavingChapterBlocks(false);
+    }
+  }
+
+  function openChapterEditor(
+    chapter: Chapter
+  ) {
+    setSelectedChapter(chapter);
+    setChapterBlocks([]);
+    resetBlockForm();
+
+    loadChapterBlocks(chapter.id);
+  }
+
+  function closeChapterEditor() {
+    setSelectedChapter(null);
+    setChapterBlocks([]);
+    resetBlockForm();
+  }
+
+  function getBlockTypeLabel(
+    type: ChapterBlockType
+  ) {
+    switch (type) {
+      case "text":
+        return "📝 نص";
+      case "heading":
+        return "🔤 عنوان";
+      case "image":
+        return "🖼️ صورة";
+      case "gif":
+        return "🎞️ GIF";
+      case "audio":
+        return "🎧 صوت";
+      case "quote":
+        return "💬 اقتباس";
+      case "divider":
+        return "─ فاصل";
+      default:
+        return type;
+    }
+  }
+
+  function renderChapterBlock(
+    block: ChapterBlock
+  ) {
+    const style: React.CSSProperties = {
+      textAlign:
+        block.align === "full"
+          ? "center"
+          : block.align,
+    };
+
+    if (block.width) {
+      style.width = `${block.width}px`;
+      style.maxWidth = "100%";
+      style.margin =
+        block.align === "right"
+          ? "0 0 20px auto"
+          : block.align === "left"
+          ? "0 auto 20px 0"
+          : "0 auto 20px";
+    }
+
+    switch (block.block_type) {
+      case "heading":
+        return (
+          <h2 style={style}>
+            {block.content}
+          </h2>
+        );
+
+      case "text":
+        return (
+          <p
+            style={{
+              ...style,
+              lineHeight: "2.1",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {block.content}
+          </p>
+        );
+
+      case "quote":
+        return (
+          <blockquote
+            style={{
+              ...style,
+              lineHeight: "2",
+            }}
+          >
+            {block.content}
+          </blockquote>
+        );
+
+      case "divider":
+        return (
+          <hr
+            style={{
+              margin: "30px 0",
+            }}
+          />
+        );
+
+      case "image":
+        return block.media_path ? (
+          <div style={style}>
+            <img
+              src={block.media_path}
+              alt={block.content || ""}
+              style={{
+                width: block.width
+                  ? `${block.width}px`
+                  : "auto",
+                height: block.height
+                  ? `${block.height}px`
+                  : "auto",
+                maxWidth: "100%",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+        ) : null;
+
+      case "gif":
+        return block.media_path ? (
+          <div style={style}>
+            <img
+              src={block.media_path}
+              alt={block.content || ""}
+              style={{
+                width: block.width
+                  ? `${block.width}px`
+                  : "auto",
+                height: block.height
+                  ? `${block.height}px`
+                  : "auto",
+                maxWidth: "100%",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+        ) : null;
+
+      case "audio":
+        return block.media_path ? (
+          <div style={style}>
+            {block.media_label && (
+              <p>
+                <strong>
+                  {block.media_label}
+                </strong>
+              </p>
+            )}
+
+            <audio
+              controls
+              preload="none"
+              src={block.media_path}
+              style={{
+                width: "100%",
+              }}
+            />
+          </div>
+        ) : null;
+
+      default:
+        return null;
+    }
   }
 
   /* =========================
@@ -1070,9 +1549,13 @@ function App() {
     setShowAccount(false);
     setShowAdmin(false);
     setSelectedNovel(null);
+    setSelectedChapter(null);
+    setChapterBlocks([]);
     setChapters([]);
+
     resetNovelForm();
     resetChapterForm();
+    resetBlockForm();
   }
 
   async function markNotificationRead(
@@ -1081,7 +1564,7 @@ function App() {
     await supabase
       .from("notifications")
       .update({
-        read: true,
+        read_at: new Date().toISOString(),
       })
       .eq("id", id);
 
@@ -1090,7 +1573,8 @@ function App() {
         notification.id === id
           ? {
               ...notification,
-              read: true,
+              read_at:
+                new Date().toISOString(),
             }
           : notification
       )
@@ -1102,6 +1586,8 @@ function App() {
     adminView = false
   ) {
     setSelectedNovel(novel);
+    setSelectedChapter(null);
+    setChapterBlocks([]);
     setShowNovels(false);
 
     await loadChapters(
@@ -1112,14 +1598,18 @@ function App() {
 
   function backToNovels() {
     setSelectedNovel(null);
+    setSelectedChapter(null);
+    setChapterBlocks([]);
     setChapters([]);
     resetChapterForm();
+    resetBlockForm();
     setShowNovels(true);
   }
 
   const unreadNotifications =
     notifications.filter(
-      (notification) => !notification.read
+      (notification) =>
+        !notification.read_at
     ).length;
 
   return (
@@ -1135,14 +1625,22 @@ function App() {
               setShowAccount(false);
               setShowAdmin(false);
               setSelectedNovel(null);
+              setSelectedChapter(null);
+              setChapterBlocks([]);
               setChapters([]);
               resetNovelForm();
               resetChapterForm();
+              resetBlockForm();
               setShowNovels(true);
             }}
           >
-            <strong>روايات خيالية</strong>
-            <span>عالم من الحكايات</span>
+            <strong>
+              روايات خيالية
+            </strong>
+
+            <span>
+              عالم من الحكايات
+            </span>
           </button>
 
           <nav className="main-nav">
@@ -1155,9 +1653,12 @@ function App() {
                 setShowAccount(false);
                 setShowAdmin(false);
                 setSelectedNovel(null);
+                setSelectedChapter(null);
+                setChapterBlocks([]);
                 setChapters([]);
                 resetNovelForm();
                 resetChapterForm();
+                resetBlockForm();
               }}
             >
               الروايات
@@ -1173,8 +1674,11 @@ function App() {
                   setShowAdmin(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
+                  setSelectedChapter(null);
+                  setChapterBlocks([]);
                   setChapters([]);
                   resetChapterForm();
+                  resetBlockForm();
                 }}
               >
                 حسابي
@@ -1197,9 +1701,12 @@ function App() {
                   setShowAccount(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
+                  setSelectedChapter(null);
+                  setChapterBlocks([]);
                   setChapters([]);
                   resetNovelForm();
                   resetChapterForm();
+                  resetBlockForm();
                 }}
               >
                 الإدارة
@@ -1216,6 +1723,8 @@ function App() {
                   setShowAdmin(false);
                   setShowNovels(false);
                   setSelectedNovel(null);
+                  setSelectedChapter(null);
+                  setChapterBlocks([]);
                   setChapters([]);
                 }}
               >
@@ -1301,13 +1810,16 @@ function App() {
                       chapters[0];
 
                     if (firstChapter) {
-                      alert(
-                        `سيتم فتح الفصل ${firstChapter.chapter_number} في الخطوة القادمة.`
+                      openChapterEditor(
+                        firstChapter
                       );
                     }
                   }}
                 >
-                  بدء القراءة
+                  {canManageNovels &&
+                  showAdmin
+                    ? "فتح محرر الفصل الأول"
+                    : "بدء القراءة"}
                 </button>
               </div>
             </div>
@@ -1331,7 +1843,7 @@ function App() {
                   <p>
                     {canManageNovels &&
                     showAdmin
-                      ? "إدارة فصول الرواية."
+                      ? "إدارة فصول الرواية ومحتواها."
                       : "الفصول المنشورة فقط."}
                   </p>
                 </div>
@@ -1384,8 +1896,7 @@ function App() {
                         value={chapterNumber}
                         onChange={(event) =>
                           setChapterNumber(
-                            event.target
-                              .value
+                            event.target.value
                           )
                         }
                         placeholder="مثال: 1"
@@ -1399,8 +1910,7 @@ function App() {
                         value={chapterTitle}
                         onChange={(event) =>
                           setChapterTitle(
-                            event.target
-                              .value
+                            event.target.value
                           )
                         }
                         placeholder="مثال: سر القلعة"
@@ -1501,51 +2011,67 @@ function App() {
                           )}
                         </div>
 
-                        {canManageNovels &&
-                          showAdmin && (
-                            <div className="novel-list-actions">
-                              <button
-                                className="secondary-button"
-                                onClick={() =>
-                                  editChapter(
-                                    chapter
-                                  )
-                                }
-                              >
-                                ✏️ تعديل
-                              </button>
+                        <div className="novel-list-actions">
+                          <button
+                            className="primary-button"
+                            onClick={() =>
+                              openChapterEditor(
+                                chapter
+                              )
+                            }
+                          >
+                            {canManageNovels &&
+                            showAdmin
+                              ? "✏️ تحرير المحتوى"
+                              : "📖 قراءة"}
+                          </button>
 
-                              <button
-                                className={
-                                  chapter.published
-                                    ? "secondary-button"
-                                    : "primary-button"
-                                }
-                                onClick={() =>
-                                  toggleChapterPublished(
-                                    chapter
-                                  )
-                                }
-                              >
-                                {chapter.published
-                                  ? "⚪ إلغاء النشر"
-                                  : "🟢 نشر الفصل"}
-                              </button>
-
-                              {isOwner && (
+                          {canManageNovels &&
+                            showAdmin && (
+                              <>
                                 <button
-                                  className="danger-button"
+                                  className="secondary-button"
                                   onClick={() =>
-                                    deleteChapter(
+                                    editChapter(
                                       chapter
                                     )
                                   }
                                 >
-                                  🗑️ حذف
+                                  ✏️ تعديل البيانات
                                 </button>
-                              )}
-                            </div>
-                          )}
+
+                                <button
+                                  className={
+                                    chapter.published
+                                      ? "secondary-button"
+                                      : "primary-button"
+                                  }
+                                  onClick={() =>
+                                    toggleChapterPublished(
+                                      chapter
+                                    )
+                                  }
+                                >
+                                  {chapter.published
+                                    ? "⚪ إلغاء النشر"
+                                    : "🟢 نشر الفصل"}
+                                </button>
+
+                                {isOwner && (
+                                  <button
+                                    className="danger-button"
+                                    onClick={() =>
+                                      deleteChapter(
+                                        chapter
+                                      )
+                                    }
+                                  >
+                                    🗑️ حذف
+                                  </button>
+                                )}
+                              </>
+                            )}
+                        </div>
                       </div>
                     )
                   )}
@@ -1564,12 +2090,463 @@ function App() {
                   </div>
                 )}
             </div>
+
+            {/* =========================
+                محرر / قارئ الفصل
+            ========================= */}
+
+            {selectedChapter && (
+              <div
+                className="account-card"
+                style={{
+                  marginTop: "25px",
+                }}
+              >
+                <div className="admin-heading-row">
+                  <div>
+                    <span>
+                      {canManageNovels &&
+                      showAdmin
+                        ? "محرر الفصل"
+                        : "القراءة"}
+                    </span>
+
+                    <h2>
+                      الفصل{" "}
+                      {
+                        selectedChapter.chapter_number
+                      }
+
+                      {selectedChapter.title
+                        ? ` — ${selectedChapter.title}`
+                        : ""}
+                    </h2>
+                  </div>
+
+                  <button
+                    className="secondary-button"
+                    onClick={
+                      closeChapterEditor
+                    }
+                  >
+                    إغلاق
+                  </button>
+                </div>
+
+                {loadingChapterBlocks ? (
+                  <div className="account-loading">
+                    جارٍ تحميل محتوى الفصل...
+                  </div>
+                ) : canManageNovels &&
+                  showAdmin ? (
+                  <>
+                    <div className="panel">
+                      <h3>
+                        ➕ إضافة عنصر إلى الفصل
+                      </h3>
+
+                      <label>
+                        نوع العنصر
+
+                        <select
+                          value={newBlockType}
+                          onChange={(event) =>
+                            setNewBlockType(
+                              event.target
+                                .value as ChapterBlockType
+                            )
+                          }
+                        >
+                          <option value="text">
+                            📝 نص
+                          </option>
+
+                          <option value="heading">
+                            🔤 عنوان
+                          </option>
+
+                          <option value="quote">
+                            💬 اقتباس
+                          </option>
+
+                          <option value="divider">
+                            ─ فاصل
+                          </option>
+
+                          <option value="image">
+                            🖼️ صورة
+                          </option>
+
+                          <option value="gif">
+                            🎞️ GIF
+                          </option>
+
+                          <option value="audio">
+                            🎧 صوت
+                          </option>
+                        </select>
+                      </label>
+
+                      {(newBlockType ===
+                        "text" ||
+                        newBlockType ===
+                          "heading" ||
+                        newBlockType ===
+                          "quote") && (
+                        <label>
+                          المحتوى
+
+                          <textarea
+                            value={
+                              newBlockContent
+                            }
+                            onChange={(event) =>
+                              setNewBlockContent(
+                                event.target
+                                  .value
+                              )
+                            }
+                            placeholder={
+                              newBlockType ===
+                              "heading"
+                                ? "اكتبي عنوانًا..."
+                                : newBlockType ===
+                                  "quote"
+                                ? "اكتبي الاقتباس..."
+                                : "اكتبي النص..."
+                            }
+                            rows={6}
+                          />
+                        </label>
+                      )}
+
+                      {(newBlockType ===
+                        "image" ||
+                        newBlockType ===
+                          "gif" ||
+                        newBlockType ===
+                          "audio") && (
+                        <>
+                          <label>
+                            رابط الملف
+
+                            <input
+                              value={
+                                newBlockMediaPath
+                              }
+                              onChange={(event) =>
+                                setNewBlockMediaPath(
+                                  event.target
+                                    .value
+                                )
+                              }
+                              placeholder="https://..."
+                            />
+                          </label>
+
+                          {newBlockType ===
+                            "audio" && (
+                            <label>
+                              اسم الصوت
+
+                              <input
+                                value={
+                                  newBlockMediaLabel
+                                }
+                                onChange={(event) =>
+                                  setNewBlockMediaLabel(
+                                    event.target
+                                      .value
+                                  )
+                                }
+                                placeholder="مثال: صوت المطر"
+                              />
+                            </label>
+                          )}
+
+                          {(newBlockType ===
+                            "image" ||
+                            newBlockType ===
+                              "gif") && (
+                            <>
+                              <label>
+                                عرض الصورة
+                                بالبكسل
+
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={
+                                    newBlockWidth
+                                  }
+                                  onChange={(
+                                    event
+                                  ) =>
+                                    setNewBlockWidth(
+                                      event.target
+                                        .value
+                                    )
+                                  }
+                                  placeholder="مثال: 700"
+                                />
+                              </label>
+
+                              <label>
+                                ارتفاع الصورة
+                                بالبكسل
+
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={
+                                    newBlockHeight
+                                  }
+                                  onChange={(
+                                    event
+                                  ) =>
+                                    setNewBlockHeight(
+                                      event.target
+                                        .value
+                                    )
+                                  }
+                                  placeholder="مثال: 500"
+                                />
+                              </label>
+
+                              <label>
+                                المحاذاة
+
+                                <select
+                                  value={
+                                    newBlockAlign
+                                  }
+                                  onChange={(
+                                    event
+                                  ) =>
+                                    setNewBlockAlign(
+                                      event.target
+                                        .value as ChapterBlock["align"]
+                                    )
+                                  }
+                                >
+                                  <option value="right">
+                                    يمين
+                                  </option>
+
+                                  <option value="center">
+                                    وسط
+                                  </option>
+
+                                  <option value="left">
+                                    يسار
+                                  </option>
+
+                                  <option value="full">
+                                    كامل
+                                  </option>
+                                </select>
+                              </label>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      <div className="form-actions">
+                        <button
+                          className="primary-button"
+                          disabled={
+                            savingChapterBlocks
+                          }
+                          onClick={
+                            addChapterBlock
+                          }
+                        >
+                          {savingChapterBlocks
+                            ? "جارٍ الحفظ..."
+                            : "➕ إضافة العنصر"}
+                        </button>
+
+                        <button
+                          className="secondary-button"
+                          disabled={
+                            savingChapterBlocks
+                          }
+                          onClick={
+                            resetBlockForm
+                          }
+                        >
+                          مسح
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      className="panel"
+                      style={{
+                        marginTop: "20px",
+                      }}
+                    >
+                      <h3>
+                        📑 محتوى الفصل
+                      </h3>
+
+                      {chapterBlocks.length ===
+                      0 ? (
+                        <p>
+                          لم تتم إضافة أي محتوى
+                          للفصل بعد.
+                        </p>
+                      ) : (
+                        <div>
+                          {chapterBlocks.map(
+                            (
+                              block,
+                              index
+                            ) => (
+                              <div
+                                className="account-novel"
+                                key={
+                                  block.id
+                                }
+                                style={{
+                                  marginBottom:
+                                    "15px",
+                                  display:
+                                    "block",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display:
+                                      "flex",
+                                    justifyContent:
+                                      "space-between",
+                                    alignItems:
+                                      "center",
+                                    gap: "10px",
+                                    flexWrap:
+                                      "wrap",
+                                  }}
+                                >
+                                  <strong>
+                                    {index +
+                                      1}{" "}
+                                    —{" "}
+                                    {getBlockTypeLabel(
+                                      block.block_type
+                                    )}
+                                  </strong>
+
+                                  <div className="novel-list-actions">
+                                    <button
+                                      className="secondary-button"
+                                      disabled={
+                                        savingChapterBlocks ||
+                                        index ===
+                                          0
+                                      }
+                                      onClick={() =>
+                                        moveChapterBlock(
+                                          block,
+                                          "up"
+                                        )
+                                      }
+                                    >
+                                      ↑
+                                    </button>
+
+                                    <button
+                                      className="secondary-button"
+                                      disabled={
+                                        savingChapterBlocks ||
+                                        index ===
+                                          chapterBlocks.length -
+                                            1
+                                      }
+                                      onClick={() =>
+                                        moveChapterBlock(
+                                          block,
+                                          "down"
+                                        )
+                                      }
+                                    >
+                                      ↓
+                                    </button>
+
+                                    {isOwner && (
+                                      <button
+                                        className="danger-button"
+                                        onClick={() =>
+                                          deleteChapterBlock(
+                                            block
+                                          )
+                                        }
+                                      >
+                                        🗑️ حذف
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    marginTop:
+                                      "15px",
+                                  }}
+                                >
+                                  {renderChapterBlock(
+                                    block
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="panel"
+                    style={{
+                      lineHeight: "2",
+                    }}
+                  >
+                    {chapterBlocks.length ===
+                    0 ? (
+                      <p>
+                        لا يوجد محتوى منشور لهذا
+                        الفصل حاليًا.
+                      </p>
+                    ) : (
+                      chapterBlocks.map(
+                        (block) => (
+                          <div
+                            key={block.id}
+                            style={{
+                              marginBottom:
+                                "25px",
+                            }}
+                          >
+                            {renderChapterBlock(
+                              block
+                            )}
+                          </div>
+                        )
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         ) : showAdmin &&
           canManageNovels ? (
           <section className="account-page">
             <div className="page-heading">
-              <span>لوحة الإدارة</span>
+              <span>
+                لوحة الإدارة
+              </span>
 
               <h1>
                 إدارة الروايات
@@ -1753,10 +2730,7 @@ function App() {
                         saveNovel(false)
                       }
                     >
-                      📝{" "}
-                      {editingNovelId
-                        ? "حفظ كمسودة"
-                        : "حفظ كمسودة"}
+                      📝 حفظ كمسودة
                     </button>
 
                     <button
@@ -1823,7 +2797,6 @@ function App() {
                         </div>
 
                         <div className="novel-list-actions">
-                          {/* زر تعديل الرواية */}
                           <button
                             className="secondary-button"
                             onClick={() =>
@@ -2012,7 +2985,9 @@ function App() {
           user ? (
           <section className="account-page">
             <div className="page-heading">
-              <span>حسابك</span>
+              <span>
+                حسابك
+              </span>
 
               <h1>
                 مرحبًا{" "}
@@ -2279,7 +3254,7 @@ function App() {
                                     </p>
                                   </div>
 
-                                  {!notification.read && (
+                                  {!notification.read_at && (
                                     <span className="notification-badge">
                                       جديد
                                     </span>
