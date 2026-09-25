@@ -159,3 +159,38 @@ footer {
     min-height: 220px;
   }
 }
+.account-page {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 35px 0 60px;
+}
+
+.account-card {
+  padding: 24px;
+  border: 1px solid #303030;
+  border-radius: 16px;
+  background: #171717;
+}
+
+.account-info {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.account-info p {
+  margin: 0;
+  line-height: 1.8;
+}
+
+.account-section {
+  margin-top: 30px;
+}
+
+.account-section h2 {
+  margin-bottom: 15px;
+}
+
+.account-muted {
+  color: #999;
+}
