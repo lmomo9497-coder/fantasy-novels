@@ -1006,7 +1006,7 @@ function App() {
     );
   }
   async function deleteChapter(chapter: Chapter) {
-    if (!isOwner) return;
+    if (!canManage) return;
 
     const confirmed = window.confirm(
       `هل أنتِ متأكدة من حذف الفصل ${chapter.chapter_number}؟`
@@ -2878,7 +2878,7 @@ function App() {
                             : "نشر"}
                         </button>
 
-                        {isOwner && (
+                        {canManage && (
                           <button
                             className="danger-button"
                             onClick={() =>
