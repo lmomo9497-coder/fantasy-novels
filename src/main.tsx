@@ -202,7 +202,8 @@ function App() {
 
     return [...audioBlocks, ...otherBlocks];
   }, [chapterBlocks]);
-    useEffect(() => {
+
+  useEffect(() => {
     let mounted = true;
 
     const loadSession = async () => {
@@ -344,7 +345,9 @@ function App() {
 
       setStaffMembers(data?.staff ?? data?.users ?? []);
     } catch (error: any) {
-      setStaffMessage(error?.message || "حدث خطأ أثناء تحميل المشرفين");
+      setStaffMessage(
+        error?.message || "حدث خطأ أثناء تحميل المشرفين"
+      );
     } finally {
       setLoadingStaff(false);
     }
@@ -545,8 +548,9 @@ function App() {
 
   function isFavorite(novelId: string) {
     return favorites.some((item) => item.novel_id === novelId);
-}
-    async function uploadNovelCover(file: File) {
+  }
+
+  async function uploadNovelCover(file: File) {
     setUploadingCover(true);
     setNovelMessage("");
 
@@ -561,6 +565,7 @@ function App() {
         .upload(path, file, {
           cacheControl: "3600",
           upsert: false,
+          contentType: file.type || undefined,
         });
 
       if (uploadError) {
@@ -966,8 +971,9 @@ function App() {
     } finally {
       setSavingChapter(false);
     }
-    }
-    async function toggleChapterPublished(chapter: Chapter) {
+  }
+
+  async function toggleChapterPublished(chapter: Chapter) {
     if (!canManage) return;
 
     const nextPublished = !chapter.published;
@@ -997,12 +1003,11 @@ function App() {
         .sort((a, b) => a.chapter_number - b.chapter_number)
     );
   }
-
   async function deleteChapter(chapter: Chapter) {
     if (!isOwner) return;
 
     const confirmed = window.confirm(
-      `هل أنت متأكدة من حذف الفصل ${chapter.chapter_number}؟`
+      `هل أنت متأكدة من حذف الفصل ${chapter.chapter_number؟}`
     );
 
     if (!confirmed) return;
@@ -1125,11 +1130,17 @@ function App() {
 
       const path = `${newBlockType}/${makeStorageId()}.${extension}`;
 
+      const contentType =
+        newBlockType === "gif"
+          ? "image/gif"
+          : file.type || undefined;
+
       const { error } = await supabase.storage
         .from(bucket)
         .upload(path, file, {
           cacheControl: "3600",
           upsert: false,
+          contentType,
         });
 
       if (error) {
@@ -1391,8 +1402,9 @@ function App() {
     setSelectedNovel(null);
     setSelectedChapter(null);
     setSelectedNovelAdminView(false);
-      }
-    async function addStaff() {
+  }
+
+  async function addStaff() {
     if (!isOwner) return;
 
     const email = staffEmail.trim().toLowerCase();
@@ -1497,7 +1509,6 @@ function App() {
 
   function coverUrl(novel: Novel) {
     if (!novel.cover_path) return "";
-
     if (
       novel.cover_path.startsWith("http://") ||
       novel.cover_path.startsWith("https://")
@@ -1740,8 +1751,9 @@ function App() {
         </div>
       </section>
     );
-              }
-    function renderHeader() {
+  }
+
+  function renderHeader() {
     return (
       <header className="site-header">
         <div className="header-inner">
@@ -1992,13 +2004,13 @@ function App() {
               <option value="ongoing">
                 مستمرة
               </option>
+
               <option value="completed">
                 مكتملة
               </option>
             </select>
           </div>
-
-          <div className="form-group">
+            <div className="form-group">
             <label>لغة الرواية</label>
             <input
               value={novelLanguage}
@@ -2193,8 +2205,9 @@ function App() {
         </div>
       </div>
     );
-              }
-    function renderBlockEditor() {
+  }
+
+  function renderBlockEditor() {
     if (!selectedChapter || !selectedNovelAdminView || !canManage) {
       return null;
     }
@@ -2287,7 +2300,7 @@ function App() {
                       newBlockType === "audio"
                         ? "audio/*"
                         : newBlockType === "gif"
-                          ? "image/gif"
+                          ? "image/gif,.gif"
                           : "image/*"
                     }
                     onChange={(event) => {
@@ -2497,7 +2510,7 @@ function App() {
                           className="danger-button"
                           onClick={() =>
                             deleteChapterBlock(block)
-                          }
+                }
                         >
                           حذف
                         </button>
@@ -2799,8 +2812,9 @@ function App() {
         </div>
       </section>
     );
-          }
-    function renderAdminPage() {
+  }
+
+  function renderAdminPage() {
     if (!canManage) return null;
 
     return (
@@ -2998,7 +3012,7 @@ function App() {
                 جارٍ تحميل المشرفين...
               </div>
             ) : staffMembers.length === 0 ? (
-              <div className="empty-state">
+               <div className="empty-state">
                 لا يوجد مشرفون حاليًا.
               </div>
             ) : (
@@ -3436,4 +3450,4 @@ createRoot(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-);
+);           
