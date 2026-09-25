@@ -163,6 +163,7 @@ function App() {
   const [newBlockContent, setNewBlockContent] = useState("");
   const [newBlockMediaPath, setNewBlockMediaPath] = useState("");
   const [newBlockMediaLabel, setNewBlockMediaLabel] = useState("");
+  const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
   const [newBlockAlign, setNewBlockAlign] =
     useState<"right" | "left" | "center" | "full">("center");
   const [newBlockWidth, setNewBlockWidth] = useState("");
@@ -1107,6 +1108,7 @@ function App() {
     setNewBlockContent("");
     setNewBlockMediaPath("");
     setNewBlockMediaLabel("");
+    setNewBlockMediaPreviewUrl("");
     setNewBlockAlign("center");
     setNewBlockWidth("");
     setNewBlockHeight("");
@@ -1149,7 +1151,14 @@ function App() {
       }
 
       setNewBlockMediaPath(path);
-      setChapterMessage("تم رفع الملف بنجاح.");
+      setNewBlockMediaPreviewUrl(
+        getPublicMediaUrl(bucket, path)
+      );
+      setChapterMessage(
+        newBlockType === "gif"
+          ? "تم رفع الـGIF بنجاح. راجعي المعاينة ثم اضغطي حفظ الصورة."
+          : "تم رفع الملف بنجاح. راجعي المعاينة ثم اضغطي زر الحفظ."
+      );
     } catch (error: any) {
       setChapterMessage(
         error?.message || "تعذر رفع الملف."
@@ -2241,6 +2250,7 @@ function App() {
                   setNewBlockContent("");
                   setNewBlockMediaPath("");
                   setNewBlockMediaLabel("");
+                  setNewBlockMediaPreviewUrl("");
                 }}
               >
                 <option value="text">نص</option>
@@ -2308,6 +2318,8 @@ function App() {
                         event.target.files?.[0];
 
                       if (file) {
+                        const previewUrl = URL.createObjectURL(file);
+                        setNewBlockMediaPreviewUrl(previewUrl);
                         uploadChapterMedia(file);
                       }
                     }}
@@ -2319,9 +2331,32 @@ function App() {
                     </small>
                   )}
 
-                  {newBlockMediaPath && (
-                    <div className="uploaded-file">
-                      تم رفع الملف بنجاح.
+                  {newBlockMediaPreviewUrl && (
+                    <div className="media-upload-preview">
+                      {newBlockType === "audio" ? (
+                        <audio
+                          controls
+                          preload="metadata"
+                          src={newBlockMediaPreviewUrl}
+                        />
+                      ) : (
+                        <img
+                          src={newBlockMediaPreviewUrl}
+                          alt={
+                            newBlockType === "gif"
+                              ? "معاينة GIF"
+                              : "معاينة الصورة"
+                          }
+                          className="chapter-image"
+                        />
+                      )}
+                      <div className="uploaded-file">
+                        {uploadingBlockMedia
+                          ? "جارٍ رفع الملف..."
+                          : newBlockMediaPath
+                            ? "تم رفع الملف — جاهز للحفظ"
+                            : "جاري تجهيز المعاينة..."}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2429,8 +2464,14 @@ function App() {
             }
           >
             {savingChapterBlocks
-              ? "جارٍ الإضافة..."
-              : "إضافة العنصر"}
+              ? "جارٍ الحفظ..."
+              : newBlockType === "gif"
+                ? "حفظ الـGIF في الفصل"
+                : newBlockType === "image"
+                  ? "حفظ الصورة في الفصل"
+                  : newBlockType === "audio"
+                    ? "حفظ الملف الصوتي في الفصل"
+                    : "إضافة العنصر"}
           </button>
         </div>
 
