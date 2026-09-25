@@ -2115,6 +2115,24 @@ select:focus-visible {
 ========================= */
 
 @media (max-width: 640px) {
+  .library-tools {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .library-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .continue-reading-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .continue-reading-banner .primary-button {
+    width: 100%;
+  }
+
   body {
     font-size: 15px;
   }
@@ -2580,3 +2598,89 @@ select:focus-visible {
     animation: none !important;
   }
     }
+
+
+/* =========================
+   أدوات المكتبة والبحث
+========================= */
+.library-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+  gap: 12px;
+  padding: 13px;
+  margin-bottom: 22px;
+}
+
+.library-search {
+  position: relative;
+}
+
+.library-search input {
+  padding-right: 46px;
+  min-height: 50px;
+}
+
+.library-search span {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 24px;
+  pointer-events: none;
+}
+
+.library-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.continue-reading-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border: 1px solid rgba(199, 166, 201, 0.22);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(199,166,201,.09), rgba(24,21,27,.8));
+}
+
+.continue-reading-banner strong {
+  display: block;
+  margin-top: 4px;
+  color: #eee6ef;
+}
+
+.reader-progress-shell {
+  width: min(800px, 100%);
+  margin: 0 auto 12px;
+  padding: 10px 14px;
+  border: 1px solid #2d2631;
+  border-radius: 13px;
+  background: #111013;
+}
+
+.reader-progress-label {
+  display: flex;
+  justify-content: space-between;
+  color: #9b909d;
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+
+.reader-progress-track {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #2a252d;
+}
+
+.reader-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width .2s ease;
+}
