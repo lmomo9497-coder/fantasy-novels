@@ -16,6 +16,12 @@ type Profile = {
   bio: string | null;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 type Novel = {
   id: string;
   title: string;
@@ -31,12 +37,6 @@ type Novel = {
   created_at: string;
 };
 
-type Category = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
 function makeSlug(title: string) {
   return title
     .trim()
@@ -49,20 +49,42 @@ function makeSlug(title: string) {
 
 function App() {
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] =
+    useState<Profile | null>(null);
 
-  const [showAccount, setShowAccount] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
+  const [showAccount, setShowAccount] =
+    useState(false);
+
+  const [showAdmin, setShowAdmin] =
+    useState(false);
+
+  const [showNovels, setShowNovels] =
+    useState(false);
+
+  const [selectedNovel, setSelectedNovel] =
+    useState<Novel | null>(null);
+
   const [activeSection, setActiveSection] =
     useState<AccountSection>(null);
 
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [favorites, setFavorites] =
+    useState<any[]>([]);
+
+  const [history, setHistory] =
+    useState<any[]>([]);
+
+  const [notifications, setNotifications] =
+    useState<any[]>([]);
+
   const [loadingAccountData, setLoadingAccountData] =
     useState(false);
 
-  const [novels, setNovels] = useState<Novel[]>([]);
+  const [novels, setNovels] =
+    useState<Novel[]>([]);
+
+  const [publishedNovels, setPublishedNovels] =
+    useState<Novel[]>([]);
+
   const [categories, setCategories] =
     useState<Category[]>([]);
 
@@ -100,6 +122,7 @@ function App() {
 
   useEffect(() => {
     loadSession();
+    loadPublishedNovels();
 
     const {
       data: { subscription },
@@ -117,6 +140,26 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadAccountData();
+    } else {
+      setFavorites([]);
+      setHistory([]);
+      setNotifications([]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (
+      showAdmin &&
+      (profile?.role === "owner" ||
+        profile?.role === "staff")
+    ) {
+      loadAdminData();
+    }
+  }, [showAdmin, profile]);
 
   async function loadSession() {
     const { data } =
@@ -149,21 +192,92 @@ function App() {
     setProfile(data);
   }
 
-  useEffect(() => {
-    if (user) {
-      loadAccountData();
-    } else {
-      setFavorites([]);
-      setHistory([]);
-      setNotifications([]);
-    }
-  }, [user]);
+  async function loadPublishedNovels() {
+    const { data, error } = await supabase
+      .from("novels")
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        cover_path,
+        category_id,
+        status,
+        language,
+        direction,
+        published,
+        created_by,
+        created_at
+      `)
+      .eq("published", true)
+      .order("created_at", {
+        ascending: false,
+      });
 
-  useEffect(() => {
-    if (showAdmin && isAdmin()) {
-      loadAdminData();
+    if (error) {
+      console.error(
+        "Published novels:",
+        error
+      );
+      return;
     }
-  }, [showAdmin]);
+
+    setPublishedNovels(data || []);
+  }
+
+  async function loadAdminData() {
+    const [novelsResult, categoriesResult] =
+      await Promise.all([
+        supabase
+          .from("novels")
+          .select(`
+            id,
+            title,
+            slug,
+            description,
+            cover_path,
+            category_id,
+            status,
+            language,
+            direction,
+            published,
+            created_by,
+            created_at
+          `)
+          .order("created_at", {
+            ascending: false,
+          }),
+
+        supabase
+          .from("categories")
+          .select(
+            "id, name, slug"
+          )
+          .order("name"),
+      ]);
+
+    if (novelsResult.error) {
+      console.error(
+        "Novels:",
+        novelsResult.error
+      );
+    } else {
+      setNovels(
+        novelsResult.data || []
+      );
+    }
+
+    if (categoriesResult.error) {
+      console.error(
+        "Categories:",
+        categoriesResult.error
+      );
+    } else {
+      setCategories(
+        categoriesResult.data || []
+      );
+    }
+  }
 
   async function loadAccountData() {
     if (!user) return;
@@ -264,73 +378,24 @@ function App() {
     setLoadingAccountData(false);
   }
 
-  async function loadAdminData() {
-    const [novelsResult, categoriesResult] =
-      await Promise.all([
-        supabase
-          .from("novels")
-          .select(`
-            id,
-            title,
-            slug,
-            description,
-            cover_path,
-            category_id,
-            status,
-            language,
-            direction,
-            published,
-            created_by,
-            created_at
-          `)
-          .order("created_at", {
-            ascending: false,
-          }),
-
-        supabase
-          .from("categories")
-          .select("id, name, slug")
-          .order("name"),
-      ]);
-
-    if (novelsResult.error) {
-      console.error(
-        "Novels:",
-        novelsResult.error
-      );
-    } else {
-      setNovels(
-        novelsResult.data || []
-      );
-    }
-
-    if (categoriesResult.error) {
-      console.error(
-        "Categories:",
-        categoriesResult.error
-      );
-    } else {
-      setCategories(
-        categoriesResult.data || []
-      );
-    }
-  }
-
-  function isAdmin() {
-    return (
-      profile?.role === "owner" ||
-      profile?.role === "staff"
-    );
-  }
-
   async function saveNovel() {
-    if (!user || !isAdmin()) return;
+    if (!user) return;
+
+    if (
+      profile?.role !== "owner" &&
+      profile?.role !== "staff"
+    ) {
+      return;
+    }
 
     setNovelMessage("");
 
-    const title = novelTitle.trim();
+    const title =
+      novelTitle.trim();
+
     const description =
       novelDescription.trim();
+
     const categoryName =
       novelCategory.trim();
 
@@ -348,11 +413,12 @@ function App() {
       return;
     }
 
-    const slug = makeSlug(title);
+    const slug =
+      makeSlug(title);
 
     if (!slug) {
       setNovelMessage(
-        "تعذر إنشاء رابط للرواية. جربي اسمًا مختلفًا."
+        "تعذر إنشاء رابط للرواية."
       );
       return;
     }
@@ -360,7 +426,9 @@ function App() {
     setSavingNovel(true);
 
     try {
-      let categoryId: string | null = null;
+      let categoryId:
+        | string
+        | null = null;
 
       const existingCategory =
         categories.find(
@@ -370,10 +438,12 @@ function App() {
         );
 
       if (existingCategory) {
-        categoryId = existingCategory.id;
+        categoryId =
+          existingCategory.id;
       } else {
         const categorySlug =
-          makeSlug(categoryName);
+          makeSlug(categoryName) ||
+          `category-${Date.now()}`;
 
         const {
           data: newCategory,
@@ -390,40 +460,27 @@ function App() {
           .single();
 
         if (categoryError) {
-          if (
-            categoryError.code ===
-            "23505"
-          ) {
-            const { data: foundCategory } =
-              await supabase
-                .from("categories")
-                .select(
-                  "id, name, slug"
-                )
-                .eq(
-                  "slug",
-                  categorySlug
-                )
-                .maybeSingle();
+          console.error(
+            "Category:",
+            categoryError
+          );
 
-            if (foundCategory) {
-              categoryId =
-                foundCategory.id;
-            } else {
-              throw categoryError;
-            }
-          } else {
-            throw categoryError;
-          }
-        } else {
-          categoryId =
-            newCategory.id;
+          setNovelMessage(
+            "حدث خطأ أثناء إنشاء التصنيف."
+          );
 
-          setCategories((current) => [
+          return;
+        }
+
+        categoryId =
+          newCategory.id;
+
+        setCategories(
+          (current) => [
             ...current,
             newCategory,
-          ]);
-        }
+          ]
+        );
       }
 
       const {
@@ -436,12 +493,18 @@ function App() {
           slug,
           description:
             description || null,
-          category_id: categoryId,
-          status: novelStatus,
-          language: novelLanguage,
-          direction: novelDirection,
-          published: novelPublished,
-          created_by: user.id,
+          category_id:
+            categoryId,
+          status:
+            novelStatus,
+          language:
+            novelLanguage,
+          direction:
+            novelDirection,
+          published:
+            novelPublished,
+          created_by:
+            user.id,
         })
         .select(`
           id,
@@ -460,19 +523,19 @@ function App() {
         .single();
 
       if (novelError) {
+        console.error(
+          "Novel:",
+          novelError
+        );
+
         if (
           novelError.code ===
           "23505"
         ) {
           setNovelMessage(
-            "يوجد بالفعل رواية تستخدم هذا الاسم أو الرابط."
+            "يوجد بالفعل رواية تستخدم هذا الرابط."
           );
         } else {
-          console.error(
-            "Create novel:",
-            novelError
-          );
-
           setNovelMessage(
             "حدث خطأ أثناء حفظ الرواية."
           );
@@ -481,10 +544,12 @@ function App() {
         return;
       }
 
-      setNovels((current) => [
-        createdNovel,
-        ...current,
-      ]);
+      setNovels(
+        (current) => [
+          createdNovel,
+          ...current,
+        ]
+      );
 
       setNovelTitle("");
       setNovelDescription("");
@@ -494,14 +559,16 @@ function App() {
       setNovelDirection("rtl");
       setNovelPublished(false);
 
+      await loadPublishedNovels();
+
       setNovelMessage(
-        "تم حفظ الرواية بنجاح."
+        "✅ تم حفظ الرواية بنجاح."
       );
     } catch (error) {
       console.error(error);
 
       setNovelMessage(
-        "حدث خطأ أثناء إنشاء الرواية."
+        "حدث خطأ أثناء حفظ الرواية."
       );
     } finally {
       setSavingNovel(false);
@@ -533,6 +600,8 @@ function App() {
     setProfile(null);
     setShowAccount(false);
     setShowAdmin(false);
+    setShowNovels(false);
+    setSelectedNovel(null);
     setActiveSection(null);
   }
 
@@ -544,52 +613,54 @@ function App() {
     const now =
       new Date().toISOString();
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({
-        read_at: now,
-      })
-      .eq("id", id)
-      .eq("user_id", user.id);
+    const { error } =
+      await supabase
+        .from("notifications")
+        .update({
+          read_at: now,
+        })
+        .eq("id", id)
+        .eq("user_id", user.id);
 
     if (error) {
       console.error(error);
       return;
     }
 
-    setNotifications((current) =>
-      current.map((notification) =>
-        notification.id === id
-          ? {
-              ...notification,
-              read_at: now,
-            }
-          : notification
-      )
+    setNotifications(
+      (current) =>
+        current.map(
+          (notification) =>
+            notification.id === id
+              ? {
+                  ...notification,
+                  read_at: now,
+                }
+              : notification
+        )
     );
   }
 
   const userName =
     profile?.display_name ||
-    user?.user_metadata?.full_name ||
+    user?.user_metadata
+      ?.full_name ||
     user?.user_metadata?.name ||
     user?.email ||
     "حسابي";
 
   const userAvatar =
     profile?.avatar_url ||
-    user?.user_metadata?.avatar_url ||
+    user?.user_metadata
+      ?.avatar_url ||
     user?.user_metadata?.picture ||
     null;
 
-  const role =
-    profile?.role || "reader";
-
   const isOwner =
-    role === "owner";
+    profile?.role === "owner";
 
   const isStaff =
-    role === "staff";
+    profile?.role === "staff";
 
   const admin =
     isOwner || isStaff;
@@ -600,7 +671,9 @@ function App() {
         !notification.read_at
     ).length;
 
-  function formatDate(date: string) {
+  function formatDate(
+    date: string
+  ) {
     return new Intl.DateTimeFormat(
       "ar-SA",
       {
@@ -614,17 +687,54 @@ function App() {
   function toggleSection(
     section: AccountSection
   ) {
-    setActiveSection((current) =>
-      current === section
-        ? null
-        : section
+    setActiveSection(
+      (current) =>
+        current === section
+          ? null
+          : section
     );
   }
 
-  function closeAllPages() {
+  function goHome() {
     setShowAccount(false);
     setShowAdmin(false);
+    setShowNovels(false);
+    setSelectedNovel(null);
     setActiveSection(null);
+  }
+
+  function openNovels() {
+    setShowAccount(false);
+    setShowAdmin(false);
+    setSelectedNovel(null);
+    setShowNovels(true);
+    setActiveSection(null);
+    loadPublishedNovels();
+  }
+
+  function openNovel(
+    novel: Novel
+  ) {
+    setShowNovels(true);
+    setShowAccount(false);
+    setShowAdmin(false);
+    setSelectedNovel(novel);
+  }
+
+  function getCategoryName(
+    categoryId: string | null
+  ) {
+    if (!categoryId) {
+      return null;
+    }
+
+    return (
+      categories.find(
+        (category) =>
+          category.id ===
+          categoryId
+      )?.name || null
+    );
   }
 
   return (
@@ -642,13 +752,13 @@ function App() {
 
         <nav>
           <button
-            onClick={closeAllPages}
+            onClick={goHome}
           >
             الرئيسية
           </button>
 
           <button
-            onClick={closeAllPages}
+            onClick={openNovels}
           >
             الروايات
           </button>
@@ -658,9 +768,21 @@ function App() {
               {admin && (
                 <button
                   onClick={() => {
-                    setShowAdmin(true);
-                    setShowAccount(false);
-                    setActiveSection(null);
+                    setShowAdmin(
+                      true
+                    );
+                    setShowAccount(
+                      false
+                    );
+                    setShowNovels(
+                      false
+                    );
+                    setSelectedNovel(
+                      null
+                    );
+                    setActiveSection(
+                      null
+                    );
                   }}
                 >
                   🛠️ لوحة الإدارة
@@ -669,9 +791,21 @@ function App() {
 
               <button
                 onClick={() => {
-                  setShowAccount(true);
-                  setShowAdmin(false);
-                  setActiveSection(null);
+                  setShowAccount(
+                    true
+                  );
+                  setShowAdmin(
+                    false
+                  );
+                  setShowNovels(
+                    false
+                  );
+                  setSelectedNovel(
+                    null
+                  );
+                  setActiveSection(
+                    null
+                  );
                 }}
               >
                 👤 حسابي
@@ -696,13 +830,269 @@ function App() {
       </header>
 
       <main>
-        {showAdmin &&
-        user &&
-        admin ? (
+        {showNovels ? (
+          <section className="novels">
+            <button
+              onClick={goHome}
+              style={{
+                marginBottom:
+                  "25px",
+              }}
+            >
+              ← الرئيسية
+            </button>
+
+            {selectedNovel ? (
+              <div
+                className="account-card"
+                style={{
+                  maxWidth:
+                    "850px",
+                  margin:
+                    "0 auto",
+                }}
+              >
+                <button
+                  onClick={() =>
+                    setSelectedNovel(
+                      null
+                    )
+                  }
+                >
+                  ← العودة للروايات
+                </button>
+
+                <div
+                  style={{
+                    marginTop:
+                      "25px",
+                  }}
+                >
+                  <div
+                    className="cover"
+                    style={{
+                      maxWidth:
+                        "300px",
+                      margin:
+                        "0 auto 25px",
+                    }}
+                  >
+                    {selectedNovel.cover_path ? (
+                      <img
+                        src={
+                          selectedNovel.cover_path
+                        }
+                        alt={
+                          selectedNovel.title
+                        }
+                        style={{
+                          width:
+                            "100%",
+                          height:
+                            "100%",
+                          objectFit:
+                            "cover",
+                          borderRadius:
+                            "12px",
+                        }}
+                      />
+                    ) : (
+                      "📖"
+                    )}
+                  </div>
+
+                  <h2
+                    style={{
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    {
+                      selectedNovel.title
+                    }
+                  </h2>
+
+                  {getCategoryName(
+                    selectedNovel.category_id
+                  ) && (
+                    <div
+                      style={{
+                        textAlign:
+                          "center",
+                        marginBottom:
+                          "15px",
+                      }}
+                    >
+                      <span className="category">
+                        {getCategoryName(
+                          selectedNovel.category_id
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  <p
+                    style={{
+                      lineHeight:
+                        "2",
+                      color:
+                        "#aaa",
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    {selectedNovel.description ||
+                      "لا يوجد وصف للرواية بعد."}
+                  </p>
+
+                  <div
+                    className="panel"
+                    style={{
+                      marginTop:
+                        "25px",
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    <strong>
+                      {selectedNovel.status ===
+                      "ongoing"
+                        ? "مستمرة"
+                        : "مكتملة"}
+                    </strong>
+
+                    <br />
+
+                    <small>
+                      سيتم إضافة الفصول
+                      وصفحة القراءة في
+                      الخطوة التالية.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2>
+                  📚 الروايات
+                </h2>
+
+                {publishedNovels.length ===
+                0 ? (
+                  <div className="panel">
+                    لا توجد روايات منشورة
+                    حاليًا.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display:
+                        "grid",
+                      gap: "20px",
+                    }}
+                  >
+                    {publishedNovels.map(
+                      (novel) => (
+                        <div
+                          className="novel-card"
+                          key={
+                            novel.id
+                          }
+                          style={{
+                            maxWidth:
+                              "100%",
+                          }}
+                        >
+                          <div className="cover">
+                            {novel.cover_path ? (
+                              <img
+                                src={
+                                  novel.cover_path
+                                }
+                                alt={
+                                  novel.title
+                                }
+                                style={{
+                                  width:
+                                    "100%",
+                                  height:
+                                    "100%",
+                                  objectFit:
+                                    "cover",
+                                  borderRadius:
+                                    "12px",
+                                }}
+                              />
+                            ) : (
+                              "📖"
+                            )}
+                          </div>
+
+                          <div>
+                            {getCategoryName(
+                              novel.category_id
+                            ) && (
+                              <span className="category">
+                                {getCategoryName(
+                                  novel.category_id
+                                )}
+                              </span>
+                            )}
+
+                            <h3>
+                              {
+                                novel.title
+                              }
+                            </h3>
+
+                            <p>
+                              {novel.description ||
+                                "لا يوجد وصف للرواية بعد."}
+                            </p>
+
+                            <small
+                              style={{
+                                display:
+                                  "block",
+                                marginBottom:
+                                  "15px",
+                                color:
+                                  "#888",
+                              }}
+                            >
+                              {novel.status ===
+                              "ongoing"
+                                ? "مستمرة"
+                                : "مكتملة"}
+                            </small>
+
+                            <button
+                              onClick={() =>
+                                openNovel(
+                                  novel
+                                )
+                              }
+                            >
+                              قراءة الرواية
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        ) : showAdmin &&
+          user &&
+          admin ? (
           <section className="account-page">
             <button
               onClick={() => {
-                setShowAdmin(false);
+                setShowAdmin(
+                  false
+                );
               }}
             >
               ← العودة
@@ -771,7 +1161,8 @@ function App() {
 
                     <div
                       style={{
-                        display: "grid",
+                        display:
+                          "grid",
                         gap: "15px",
                       }}
                     >
@@ -784,17 +1175,20 @@ function App() {
                           value={
                             novelTitle
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelTitle(
-                              event.target
+                              e.target
                                 .value
                             )
                           }
                           placeholder="مثال: لعنة القلعة"
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -818,18 +1212,21 @@ function App() {
                           value={
                             novelDescription
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelDescription(
-                              event.target
+                              e.target
                                 .value
                             )
                           }
-                          placeholder="اكتبي وصف الرواية..."
                           rows={5}
+                          placeholder="اكتبي وصف الرواية..."
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -840,8 +1237,6 @@ function App() {
                               "#fff",
                             fontFamily:
                               "inherit",
-                            resize:
-                              "vertical",
                           }}
                         />
                       </label>
@@ -855,18 +1250,21 @@ function App() {
                           value={
                             novelCategory
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelCategory(
-                              event.target
+                              e.target
                                 .value
                             )
                           }
                           placeholder="مثال: فانتازيا"
                           list="novel-categories"
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -905,18 +1303,21 @@ function App() {
                           value={
                             novelStatus
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelStatus(
-                              event.target
+                              e.target
                                 .value as
                                 | "ongoing"
                                 | "completed"
                             )
                           }
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -925,8 +1326,6 @@ function App() {
                               "#111",
                             color:
                               "#fff",
-                            fontFamily:
-                              "inherit",
                           }}
                         >
                           <option value="ongoing">
@@ -948,16 +1347,19 @@ function App() {
                           value={
                             novelLanguage
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelLanguage(
-                              event.target
+                              e.target
                                 .value
                             )
                           }
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -966,8 +1368,6 @@ function App() {
                               "#111",
                             color:
                               "#fff",
-                            fontFamily:
-                              "inherit",
                           }}
                         >
                           <option value="ar">
@@ -993,18 +1393,21 @@ function App() {
                           value={
                             novelDirection
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelDirection(
-                              event.target
+                              e.target
                                 .value as
                                 | "rtl"
                                 | "ltr"
                             )
                           }
                           style={{
-                            width: "100%",
-                            marginTop: "7px",
-                            padding: "12px",
+                            width:
+                              "100%",
+                            marginTop:
+                              "7px",
+                            padding:
+                              "12px",
                             borderRadius:
                               "8px",
                             border:
@@ -1013,8 +1416,6 @@ function App() {
                               "#111",
                             color:
                               "#fff",
-                            fontFamily:
-                              "inherit",
                           }}
                         >
                           <option value="rtl">
@@ -1031,11 +1432,10 @@ function App() {
                         style={{
                           display:
                             "flex",
+                          gap:
+                            "10px",
                           alignItems:
                             "center",
-                          gap: "10px",
-                          cursor:
-                            "pointer",
                         }}
                       >
                         <input
@@ -1043,9 +1443,9 @@ function App() {
                           checked={
                             novelPublished
                           }
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setNovelPublished(
-                              event.target
+                              e.target
                                 .checked
                             )
                           }
@@ -1058,7 +1458,9 @@ function App() {
 
                       {novelMessage && (
                         <div className="panel">
-                          {novelMessage}
+                          {
+                            novelMessage
+                          }
                         </div>
                       )}
 
@@ -1089,80 +1491,59 @@ function App() {
                 0 ? (
                   <div className="panel">
                     لا توجد روايات حتى الآن.
-                    أضيفي أول رواية من الزر
-                    بالأعلى.
                   </div>
                 ) : (
                   <div className="account-list">
                     {novels.map(
-                      (novel) => {
-                        const category =
-                          categories.find(
-                            (item) =>
-                              item.id ===
-                              novel.category_id
-                          );
-
-                        return (
-                          <div
-                            className="panel"
-                            key={
-                              novel.id
+                      (novel) => (
+                        <div
+                          className="panel"
+                          key={
+                            novel.id
+                          }
+                        >
+                          <h3>
+                            {
+                              novel.title
                             }
-                            style={{
-                              display:
-                                "grid",
-                              gap: "8px",
-                            }}
-                          >
-                            <h3
+                          </h3>
+
+                          <span className="account-muted">
+                            {getCategoryName(
+                              novel.category_id
+                            ) ||
+                              "بدون تصنيف"}
+                          </span>
+
+                          <span className="account-muted">
+                            {novel.status ===
+                            "ongoing"
+                              ? "مستمرة"
+                              : "مكتملة"}
+                          </span>
+
+                          <span className="account-muted">
+                            {novel.published
+                              ? "🟢 منشورة"
+                              : "⚪ غير منشورة"}
+                          </span>
+
+                          {novel.description && (
+                            <p
                               style={{
-                                margin:
-                                  "0",
+                                lineHeight:
+                                  "1.7",
+                                color:
+                                  "#aaa",
                               }}
                             >
-                              {novel.title}
-                            </h3>
-
-                            <span className="account-muted">
-                              {category
-                                ? `التصنيف: ${category.name}`
-                                : "بدون تصنيف"}
-                            </span>
-
-                            <span className="account-muted">
-                              الحالة:{" "}
-                              {novel.status ===
-                              "ongoing"
-                                ? "مستمرة"
-                                : "مكتملة"}
-                            </span>
-
-                            <span className="account-muted">
-                              {novel.published
-                                ? "🟢 منشورة"
-                                : "⚪ غير منشورة"}
-                            </span>
-
-                            {novel.description && (
-                              <p
-                                style={{
-                                  margin:
-                                    "5px 0 0",
-                                  lineHeight:
-                                    "1.7",
-                                  color:
-                                    "#aaa",
-                                }}
-                              >
-                                {
-                                  novel.description
-                                }
-                              </p>
-                            )}
-                          </div>
-                        );
-                      }
+                              {
+                                novel.description
+                              }
+                            </p>
+                          )}
+                        </div>
+                      )
                     )}
                   </div>
                 )}
@@ -1174,8 +1555,12 @@ function App() {
           <section className="account-page">
             <button
               onClick={() => {
-                setShowAccount(false);
-                setActiveSection(null);
+                setShowAccount(
+                  false
+                );
+                setActiveSection(
+                  null
+                );
               }}
             >
               ← العودة للرئيسية
@@ -1289,15 +1674,9 @@ function App() {
               {activeSection ===
                 "favorites" && (
                 <div className="account-section">
-                  <div className="section-heading">
-                    <h2>
-                      ❤️ رواياتي المفضلة
-                    </h2>
-
-                    <span>
-                      {favorites.length}
-                    </span>
-                  </div>
+                  <h2>
+                    ❤️ رواياتي المفضلة
+                  </h2>
 
                   {favorites.length ===
                   0 ? (
@@ -1323,18 +1702,7 @@ function App() {
                               }
                             >
                               <div className="account-novel-cover">
-                                {novel.cover_path ? (
-                                  <img
-                                    src={
-                                      novel.cover_path
-                                    }
-                                    alt={
-                                      novel.title
-                                    }
-                                  />
-                                ) : (
-                                  "📖"
-                                )}
+                                📖
                               </div>
 
                               <div className="account-novel-info">
@@ -1346,7 +1714,7 @@ function App() {
 
                                 <p>
                                   {novel.description ||
-                                    "لا يوجد وصف للرواية بعد."}
+                                    "لا يوجد وصف."}
                                 </p>
 
                                 <small>
@@ -1368,15 +1736,9 @@ function App() {
               {activeSection ===
                 "history" && (
                 <div className="account-section">
-                  <div className="section-heading">
-                    <h2>
-                      📖 سجل القراءة
-                    </h2>
-
-                    <span>
-                      {history.length}
-                    </span>
-                  </div>
+                  <h2>
+                    📖 سجل القراءة
+                  </h2>
 
                   {history.length ===
                   0 ? (
@@ -1410,18 +1772,7 @@ function App() {
                               }
                             >
                               <div className="account-novel-cover">
-                                {novel.cover_path ? (
-                                  <img
-                                    src={
-                                      novel.cover_path
-                                    }
-                                    alt={
-                                      novel.title
-                                    }
-                                  />
-                                ) : (
-                                  "📖"
-                                )}
+                                📖
                               </div>
 
                               <div className="account-novel-info">
@@ -1476,15 +1827,9 @@ function App() {
               {activeSection ===
                 "notifications" && (
                 <div className="account-section">
-                  <div className="section-heading">
-                    <h2>
-                      🔔 الإشعارات
-                    </h2>
-
-                    <span>
-                      {unreadNotifications}
-                    </span>
-                  </div>
+                  <h2>
+                    🔔 الإشعارات
+                  </h2>
 
                   {notifications.length ===
                   0 ? (
@@ -1494,7 +1839,9 @@ function App() {
                   ) : (
                     <div className="notification-list">
                       {notifications.map(
-                        (notification) => (
+                        (
+                          notification
+                        ) => (
                           <div
                             className={`notification-item ${
                               !notification.read_at
@@ -1512,13 +1859,11 @@ function App() {
                                 }
                               </h3>
 
-                              {notification.message && (
-                                <p>
-                                  {
-                                    notification.message
-                                  }
-                                </p>
-                              )}
+                              <p>
+                                {
+                                  notification.message
+                                }
+                              </p>
 
                               <small>
                                 {formatDate(
@@ -1527,7 +1872,7 @@ function App() {
                               </small>
                             </div>
 
-                            {!notification.read_at ? (
+                            {!notification.read_at && (
                               <button
                                 className="notification-read"
                                 onClick={() =>
@@ -1538,10 +1883,6 @@ function App() {
                               >
                                 تحديد كمقروء
                               </button>
-                            ) : (
-                              <span className="read-label">
-                                مقروء
-                              </span>
                             )}
                           </div>
                         )
@@ -1600,7 +1941,12 @@ function App() {
                 والقصص الجديدة.
               </p>
 
-              <button className="main-button">
+              <button
+                className="main-button"
+                onClick={
+                  openNovels
+                }
+              >
                 تصفح الروايات
               </button>
             </section>
@@ -1610,31 +1956,68 @@ function App() {
                 أحدث الروايات
               </h2>
 
-              <div className="novel-card">
-                <div className="cover">
-                  📖
+              {publishedNovels.length ===
+              0 ? (
+                <div className="panel">
+                  لا توجد روايات منشورة
+                  حاليًا.
                 </div>
+              ) : (
+                <div
+                  style={{
+                    display:
+                      "grid",
+                    gap: "20px",
+                  }}
+                >
+                  {publishedNovels
+                    .slice(0, 5)
+                    .map(
+                      (novel) => (
+                        <div
+                          className="novel-card"
+                          key={
+                            novel.id
+                          }
+                        >
+                          <div className="cover">
+                            📖
+                          </div>
 
-                <div>
-                  <span className="category">
-                    فانتازيا
-                  </span>
+                          <div>
+                            <span className="category">
+                              {getCategoryName(
+                                novel.category_id
+                              ) ||
+                                "رواية"}
+                            </span>
 
-                  <h3>
-                    رواية تجريبية
-                  </h3>
+                            <h3>
+                              {
+                                novel.title
+                              }
+                            </h3>
 
-                  <p>
-                    هذه مساحة مؤقتة ستتحول
-                    لاحقًا إلى رواياتك
-                    الحقيقية.
-                  </p>
+                            <p>
+                              {novel.description ||
+                                "لا يوجد وصف للرواية بعد."}
+                            </p>
 
-                  <button>
-                    قراءة الرواية
-                  </button>
+                            <button
+                              onClick={() =>
+                                openNovel(
+                                  novel
+                                )
+                              }
+                            >
+                              قراءة الرواية
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
                 </div>
-              </div>
+              )}
             </section>
           </>
         )}
