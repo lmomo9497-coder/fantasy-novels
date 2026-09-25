@@ -1,4 +1,3 @@
- 
 
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -100,17 +99,32 @@ function App() {
 
   const [showNovelForm, setShowNovelForm] =
     useState(false);
-  const [savingNovel, setSavingNovel] = useState(false);
 
-  const [novelTitle, setNovelTitle] = useState("");
+  const [savingNovel, setSavingNovel] =
+    useState(false);
+
+  /* =========================
+     تعديل الرواية
+  ========================= */
+
+  const [editingNovelId, setEditingNovelId] =
+    useState<string | null>(null);
+
+  const [novelTitle, setNovelTitle] =
+    useState("");
+
   const [novelDescription, setNovelDescription] =
     useState("");
+
   const [novelCategory, setNovelCategory] =
     useState("");
+
   const [novelStatus, setNovelStatus] =
     useState<"ongoing" | "completed">("ongoing");
+
   const [novelLanguage, setNovelLanguage] =
     useState("العربية");
+
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
 
@@ -120,10 +134,16 @@ function App() {
   const [staffMembers, setStaffMembers] = useState<
     StaffMember[]
   >([]);
+
   const [loadingStaff, setLoadingStaff] =
     useState(false);
-  const [staffEmail, setStaffEmail] = useState("");
-  const [staffMessage, setStaffMessage] = useState("");
+
+  const [staffEmail, setStaffEmail] =
+    useState("");
+
+  const [staffMessage, setStaffMessage] =
+    useState("");
+
   const [managingStaff, setManagingStaff] =
     useState(false);
 
@@ -131,9 +151,8 @@ function App() {
      الفصول
   ========================= */
 
-  const [chapters, setChapters] = useState<Chapter[]>(
-    []
-  );
+  const [chapters, setChapters] =
+    useState<Chapter[]>([]);
 
   const [loadingChapters, setLoadingChapters] =
     useState(false);
@@ -369,13 +388,52 @@ function App() {
   }
 
   /* =========================
+     نموذج الرواية
+  ========================= */
+
+  function resetNovelForm() {
+    setEditingNovelId(null);
+    setNovelTitle("");
+    setNovelDescription("");
+    setNovelCategory("");
+    setNovelStatus("ongoing");
+    setNovelLanguage("العربية");
+    setNovelDirection("rtl");
+    setNovelMessage("");
+    setShowNovelForm(false);
+  }
+
+  function editNovel(novel: Novel) {
+    setEditingNovelId(novel.id);
+
+    setNovelTitle(novel.title);
+    setNovelDescription(novel.description ?? "");
+
+    setNovelCategory(
+      novel.categories?.name || ""
+    );
+
+    setNovelStatus(novel.status);
+    setNovelLanguage(novel.language);
+    setNovelDirection(novel.direction);
+
+    setNovelMessage("");
+    setShowNovelForm(true);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  /* =========================
      إدارة الروايات
   ========================= */
 
   async function saveNovel(publish: boolean) {
     if (!user || !canManageNovels) {
       setNovelMessage(
-        "ليس لديك صلاحية لإضافة الروايات."
+        "ليس لديك صلاحية لإدارة الروايات."
       );
       return;
     }
@@ -439,6 +497,54 @@ function App() {
         ]);
       }
 
+      /* =========================
+         تعديل رواية موجودة
+      ========================= */
+
+      if (editingNovelId) {
+        const currentNovel = novels.find(
+          (novel) =>
+            novel.id === editingNovelId
+        );
+
+        const { error } = await supabase
+          .from("novels")
+          .update({
+            title: novelTitle.trim(),
+            description:
+              novelDescription.trim() ||
+              null,
+            category_id: categoryId,
+            status: novelStatus,
+            language: novelLanguage,
+            direction: novelDirection,
+            published: publish,
+          })
+          .eq("id", editingNovelId);
+
+        if (error) {
+          setNovelMessage(error.message);
+          return;
+        }
+
+        setNovelMessage(
+          publish
+            ? `تم تعديل «${novelTitle.trim()}» ونشرها بنجاح.`
+            : `تم تعديل «${novelTitle.trim()}» وحفظها كمسودة.`
+        );
+
+        resetNovelForm();
+
+        await loadAdminData();
+        await loadPublishedNovels();
+
+        return;
+      }
+
+      /* =========================
+         إضافة رواية جديدة
+      ========================= */
+
       const baseSlug =
         makeSlug(novelTitle) ||
         `novel-${Date.now()}`;
@@ -464,19 +570,13 @@ function App() {
         return;
       }
 
-      setNovelTitle("");
-      setNovelDescription("");
-      setNovelCategory("");
-      setNovelStatus("ongoing");
-      setNovelLanguage("العربية");
-      setNovelDirection("rtl");
-      setShowNovelForm(false);
-
       setNovelMessage(
         publish
           ? "تم حفظ الرواية ونشرها بنجاح."
           : "تم حفظ الرواية كمسودة. لن تظهر للقراء."
       );
+
+      resetNovelForm();
 
       await loadAdminData();
       await loadPublishedNovels();
@@ -971,6 +1071,8 @@ function App() {
     setShowAdmin(false);
     setSelectedNovel(null);
     setChapters([]);
+    resetNovelForm();
+    resetChapterForm();
   }
 
   async function markNotificationRead(
@@ -1034,6 +1136,7 @@ function App() {
               setShowAdmin(false);
               setSelectedNovel(null);
               setChapters([]);
+              resetNovelForm();
               resetChapterForm();
               setShowNovels(true);
             }}
@@ -1053,6 +1156,7 @@ function App() {
                 setShowAdmin(false);
                 setSelectedNovel(null);
                 setChapters([]);
+                resetNovelForm();
                 resetChapterForm();
               }}
             >
@@ -1070,6 +1174,7 @@ function App() {
                   setShowNovels(false);
                   setSelectedNovel(null);
                   setChapters([]);
+                  resetChapterForm();
                 }}
               >
                 حسابي
@@ -1093,6 +1198,7 @@ function App() {
                   setShowNovels(false);
                   setSelectedNovel(null);
                   setChapters([]);
+                  resetNovelForm();
                   resetChapterForm();
                 }}
               >
@@ -1271,6 +1377,7 @@ function App() {
 
                     <label>
                       رقم الفصل
+
                       <input
                         type="number"
                         min="1"
@@ -1287,6 +1394,7 @@ function App() {
 
                     <label>
                       عنوان الفصل
+
                       <input
                         value={chapterTitle}
                         onChange={(event) =>
@@ -1489,10 +1597,19 @@ function App() {
                 <button
                   className="primary-button"
                   onClick={() => {
-                    setShowNovelForm(
-                      (value) => !value
-                    );
-                    setNovelMessage("");
+                    if (showNovelForm) {
+                      resetNovelForm();
+                    } else {
+                      setEditingNovelId(null);
+                      setNovelTitle("");
+                      setNovelDescription("");
+                      setNovelCategory("");
+                      setNovelStatus("ongoing");
+                      setNovelLanguage("العربية");
+                      setNovelDirection("rtl");
+                      setNovelMessage("");
+                      setShowNovelForm(true);
+                    }
                   }}
                 >
                   {showNovelForm
@@ -1504,7 +1621,9 @@ function App() {
               {showNovelForm && (
                 <div className="panel novel-form">
                   <h3>
-                    إضافة رواية جديدة
+                    {editingNovelId
+                      ? "✏️ تعديل الرواية"
+                      : "إضافة رواية جديدة"}
                   </h3>
 
                   <label>
@@ -1530,8 +1649,7 @@ function App() {
                       }
                       onChange={(event) =>
                         setNovelDescription(
-                          event.target
-                            .value
+                          event.target.value
                         )
                       }
                       placeholder="اكتبي وصف الرواية..."
@@ -1547,8 +1665,7 @@ function App() {
                       }
                       onChange={(event) =>
                         setNovelCategory(
-                          event.target
-                            .value
+                          event.target.value
                         )
                       }
                       placeholder="رعب، فانتازيا، رومانسية..."
@@ -1588,8 +1705,7 @@ function App() {
                       }
                       onChange={(event) =>
                         setNovelLanguage(
-                          event.target
-                            .value
+                          event.target.value
                         )
                       }
                     />
@@ -1637,7 +1753,10 @@ function App() {
                         saveNovel(false)
                       }
                     >
-                      📝 حفظ كمسودة
+                      📝{" "}
+                      {editingNovelId
+                        ? "حفظ كمسودة"
+                        : "حفظ كمسودة"}
                     </button>
 
                     <button
@@ -1649,7 +1768,10 @@ function App() {
                         saveNovel(true)
                       }
                     >
-                      🟢 حفظ ونشر
+                      🟢{" "}
+                      {editingNovelId
+                        ? "حفظ التعديل ونشر"
+                        : "حفظ ونشر"}
                     </button>
                   </div>
                 </div>
@@ -1701,6 +1823,16 @@ function App() {
                         </div>
 
                         <div className="novel-list-actions">
+                          {/* زر تعديل الرواية */}
+                          <button
+                            className="secondary-button"
+                            onClick={() =>
+                              editNovel(novel)
+                            }
+                          >
+                            ✏️ تعديل
+                          </button>
+
                           <button
                             className={
                               novel.published
@@ -1767,8 +1899,7 @@ function App() {
                       }
                       onChange={(event) =>
                         setStaffEmail(
-                          event.target
-                            .value
+                          event.target.value
                         )
                       }
                       placeholder="example@email.com"
