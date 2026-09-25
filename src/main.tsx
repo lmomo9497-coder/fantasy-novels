@@ -2085,24 +2085,11 @@ function App() {
               ))}
             </select>
             <select
-              value={selectedCategoryFilter}
-              onChange={(event) => setSelectedCategoryFilter(event.target.value)}
-              aria-label="التصنيف"
-            >
-              <option value="all">كل التصنيفات</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-
-            <select
               value={selectedStatusFilter}
               onChange={(event) => setSelectedStatusFilter(event.target.value)}
               aria-label="حالة الرواية"
             >
-              <option value="all">كل الحالات</option>
+              <option value="all">الحالات</option>
               <option value="ongoing">مستمرة</option>
               <option value="completed">مكتملة</option>
             </select>
