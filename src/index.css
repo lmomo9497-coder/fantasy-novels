@@ -2124,6 +2124,24 @@ select:focus-visible {
     grid-template-columns: 1fr 1fr;
   }
 
+.category-filter-button {
+  border: 1px solid #352e39;
+  border-radius: 10px;
+  background: #17141a;
+  color: #aaa0ad;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.category-filter-button.active {
+  border-color: rgba(199, 166, 201, 0.5);
+  background: rgba(199, 166, 201, 0.12);
+  color: #e7d5e8;
+}
+
+
   .continue-reading-banner {
     align-items: stretch;
     flex-direction: column;
@@ -2600,80 +2618,7 @@ select:focus-visible {
     }
 
 
-/* =========================
-   تصفح التصنيفات
-========================= */
-.category-browser {
-  margin-bottom: 14px;
-  padding: 15px 16px;
-}
 
-.category-browser-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.category-browser-heading > div {
-  display: grid;
-  gap: 3px;
-}
-
-.category-browser-heading strong {
-  font-size: 15px;
-}
-
-.category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.category-chip,
-.category-clear-button {
-  border: 1px solid #352e39;
-  border-radius: 999px;
-  background: #17141a;
-  color: #aaa0ad;
-  padding: 7px 12px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: 0.18s ease;
-}
-
-.category-chip:hover,
-.category-clear-button:hover {
-  border-color: rgba(199, 166, 201, 0.45);
-  color: #ead9eb;
-}
-
-.category-chip.active {
-  border-color: rgba(199, 166, 201, 0.5);
-  background: rgba(199, 166, 201, 0.12);
-  color: #e7d5e8;
-}
-
-.novel-category-large {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 14px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.novel-category-large span {
-  color: #887d8c;
-  font-size: 11px;
-}
-
-.novel-category-large strong {
-  color: #dfc8e1;
-  font-size: 13px;
-}
 
 /* =========================
    أدوات المكتبة والبحث
