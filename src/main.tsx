@@ -22,12 +22,17 @@ function App() {
   }, []);
 
   async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: window.location.origin,
       },
     });
+
+    if (error) {
+      alert("حدث خطأ أثناء تسجيل الدخول");
+      console.error(error);
+    }
   }
 
   async function signOut() {
@@ -41,7 +46,10 @@ function App() {
     user?.email ||
     "حسابي";
 
-  const userAvatar = user?.user_metadata?.avatar_url;
+  const userAvatar =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
 
   return (
     <div className="app">
@@ -52,8 +60,13 @@ function App() {
         </div>
 
         <nav>
-          <button>الرئيسية</button>
-          <button>الروايات</button>
+          <button onClick={() => setShowAccount(false)}>
+            الرئيسية
+          </button>
+
+          <button onClick={() => setShowAccount(false)}>
+            الروايات
+          </button>
 
           {user ? (
             <>
@@ -61,7 +74,9 @@ function App() {
                 👤 حسابي
               </button>
 
-              <button onClick={signOut}>تسجيل الخروج</button>
+              <button onClick={signOut}>
+                تسجيل الخروج
+              </button>
             </>
           ) : (
             <button onClick={signInWithGoogle}>
@@ -74,43 +89,84 @@ function App() {
       <main>
         {showAccount && user ? (
           <section className="account-page">
-            <button onClick={() => setShowAccount(false)}>
-              ← العودة
+            <button
+              className="secondary"
+              onClick={() => setShowAccount(false)}
+            >
+              ← العودة للرئيسية
             </button>
 
             <div className="account-card">
-              {userAvatar ? (
-                <img
-                  src={userAvatar}
-                  alt="صورة الحساب"
-                  className="account-avatar"
-                />
-              ) : (
-                <div className="account-avatar-placeholder">👤</div>
-              )}
+              <div style={{ textAlign: "center" }}>
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt="صورة الحساب"
+                    className="account-avatar"
+                  />
+                ) : (
+                  <div className="account-avatar-placeholder">
+                    👤
+                  </div>
+                )}
 
-              <h2>{userName}</h2>
+                <h2>{userName}</h2>
 
-              <p>{user.email}</p>
+                <p className="account-muted">
+                  {user.email}
+                </p>
+              </div>
 
               <div className="account-info">
-                <div>
-                  <strong>الحساب</strong>
+                <div className="account-row">
+                  <strong>نوع الحساب</strong>
                   <span>قارئ</span>
                 </div>
 
-                <div>
+                <div className="account-row">
                   <strong>المفضلة</strong>
                   <span>لا توجد روايات بعد</span>
                 </div>
 
-                <div>
-                  <strong>القراءة</strong>
+                <div className="account-row">
+                  <strong>آخر قراءة</strong>
                   <span>لا يوجد سجل قراءة بعد</span>
+                </div>
+
+                <div className="account-row">
+                  <strong>الإشعارات</strong>
+                  <span>لا توجد إشعارات جديدة</span>
                 </div>
               </div>
 
-              <button onClick={signOut} className="logout-button">
+              <div className="account-section">
+                <h2>المفضلة</h2>
+
+                <div className="panel">
+                  لم تضيفي أي رواية إلى المفضلة حتى الآن.
+                </div>
+              </div>
+
+              <div className="account-section">
+                <h2>سجل القراءة</h2>
+
+                <div className="panel">
+                  عندما تبدئين بقراءة رواية، سيظهر تقدمك هنا.
+                </div>
+              </div>
+
+              <div className="account-section">
+                <h2>الإشعارات</h2>
+
+                <div className="panel">
+                  ستظهر هنا إشعارات الفصول الجديدة.
+                </div>
+              </div>
+
+              <button
+                onClick={signOut}
+                className="logout-button"
+              >
                 تسجيل الخروج
               </button>
             </div>
@@ -119,13 +175,17 @@ function App() {
           <>
             <section className="hero">
               <p>مرحبًا بك في</p>
+
               <h2>عالم الروايات الخيالية</h2>
+
               <p>
-                مكان هادئ لقراءة الروايات واكتشاف العوالم والشخصيات والقصص
-                الجديدة.
+                مكان هادئ لقراءة الروايات واكتشاف العوالم
+                والشخصيات والقصص الجديدة.
               </p>
 
-              <button className="main-button">تصفح الروايات</button>
+              <button className="main-button">
+                تصفح الروايات
+              </button>
             </section>
 
             <section className="novels">
@@ -135,12 +195,20 @@ function App() {
                 <div className="cover">📖</div>
 
                 <div>
-                  <span className="category">فانتازيا</span>
+                  <span className="category">
+                    فانتازيا
+                  </span>
+
                   <h3>رواية تجريبية</h3>
+
                   <p>
-                    هذه مساحة مؤقتة ستتحول لاحقًا إلى رواياتك الحقيقية.
+                    هذه مساحة مؤقتة ستتحول لاحقًا إلى
+                    رواياتك الحقيقية.
                   </p>
-                  <button>قراءة الرواية</button>
+
+                  <button>
+                    قراءة الرواية
+                  </button>
                 </div>
               </div>
             </section>
@@ -148,7 +216,9 @@ function App() {
         )}
       </main>
 
-      <footer>© 2026 روايات خيالية</footer>
+      <footer>
+        © 2026 روايات خيالية
+      </footer>
     </div>
   );
 }
