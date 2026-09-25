@@ -1103,12 +1103,15 @@ function App() {
       if (!selectedNovelAdminView && user) {
         const { data: progress } = await supabase
           .from("reading_progress")
-          .select("progress_percent")
+          .select("chapter_id, progress_percent")
           .eq("user_id", user.id)
           .eq("novel_id", selectedNovel.id)
           .maybeSingle();
 
-        savedProgress = Number(progress?.progress_percent || 0);
+        savedProgress =
+          progress?.chapter_id === chapter.id
+            ? Number(progress?.progress_percent || 0)
+            : 0;
         setReaderProgress(savedProgress);
         await saveReadingProgress(selectedNovel.id, chapter.id, savedProgress);
       }
