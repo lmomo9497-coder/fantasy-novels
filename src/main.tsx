@@ -2506,7 +2506,7 @@ function App() {
             onClick={addChapterBlock}
             disabled={
               savingChapterBlocks ||
-              uploadingBlockMedia
+              (uploadingBlockMedia && !newBlockMediaPath)
             }
           >
             {savingChapterBlocks
