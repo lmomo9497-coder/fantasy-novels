@@ -2998,3 +2998,384 @@ createRoot(
     <App />
   </React.StrictMode>
 );
+            {isOwner && (
+              <div className="account-card">
+                <h2>👥 إدارة المشرفين</h2>
+
+                <div className="panel">
+                  <label>
+                    بريد المستخدم
+
+                    <input
+                      type="email"
+                      value={staffEmail}
+                      onChange={(e) =>
+                        setStaffEmail(e.target.value)
+                      }
+                      placeholder="example@email.com"
+                    />
+                  </label>
+
+                  <button
+                    className="primary-button"
+                    disabled={managingStaff}
+                    onClick={addStaff}
+                  >
+                    {managingStaff
+                      ? "جارٍ التحديث..."
+                      : "إضافة كمشرف"}
+                  </button>
+
+                  {staffMessage && (
+                    <div className="panel">
+                      {staffMessage}
+                    </div>
+                  )}
+                </div>
+
+                {loadingStaff ? (
+                  <div className="account-loading">
+                    جارٍ تحميل المشرفين...
+                  </div>
+                ) : staffMembers.length === 0 ? (
+                  <div className="panel">
+                    لا يوجد مشرفون حاليًا.
+                  </div>
+                ) : (
+                  <div className="account-list">
+                    {staffMembers.map((staff) => (
+                      <div
+                        className="account-novel"
+                        key={staff.id}
+                      >
+                        <div className="novel-list-info">
+                          <h3>
+                            {staff.display_name ||
+                              "مشرف"}
+                          </h3>
+
+                          <span>
+                            {staff.email ||
+                              "بريد غير متوفر"}
+                          </span>
+                        </div>
+
+                        <button
+                          className="danger-button"
+                          disabled={managingStaff}
+                          onClick={() =>
+                            removeStaff(staff)
+                          }
+                        >
+                          إزالة الصلاحية
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        ) : showAccount && user ? (
+          <section className="account-page">
+            <div className="page-heading">
+              <span>حسابك</span>
+
+              <h1>
+                مرحبًا{" "}
+                {profile?.display_name ||
+                  user.email?.split("@")[0] ||
+                  ""}
+              </h1>
+            </div>
+
+            <div className="account-layout">
+              <aside className="account-sidebar">
+                <button
+                  className={
+                    activeSection === "profile"
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setActiveSection("profile")
+                  }
+                >
+                  الملف الشخصي
+                </button>
+
+                <button
+                  className={
+                    activeSection === "favorites"
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setActiveSection("favorites")
+                  }
+                >
+                  المفضلة
+                </button>
+
+                <button
+                  className={
+                    activeSection === "history"
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setActiveSection("history")
+                  }
+                >
+                  سجل القراءة
+                </button>
+
+                <button
+                  className={
+                    activeSection === "notifications"
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setActiveSection(
+                      "notifications"
+                    )
+                  }
+                >
+                  الإشعارات
+                  {unreadNotifications > 0 && (
+                    <span className="notification-badge">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </button>
+
+                <button onClick={logout}>
+                  تسجيل الخروج
+                </button>
+              </aside>
+
+              <div className="account-content">
+                {loadingAccountData ? (
+                  <div className="account-loading">
+                    جارٍ تحميل الحساب...
+                  </div>
+                ) : (
+                  <>
+                    {activeSection === "profile" && (
+                      <div className="account-card">
+                        <h2>الملف الشخصي</h2>
+
+                        <div className="profile-header">
+                          <div className="profile-avatar">
+                            {(
+                              profile?.display_name ||
+                              user.email ||
+                              "م"
+                            )[0]}
+                          </div>
+
+                          <div>
+                            <h3>
+                              {profile?.display_name ||
+                                "قارئ"}
+                            </h3>
+
+                            <p>{user.email}</p>
+
+                            <small>
+                              الصلاحية:{" "}
+                              {profile?.role === "owner"
+                                ? "المالك"
+                                : profile?.role === "staff"
+                                ? "مشرف"
+                                : "قارئ"}
+                            </small>
+                          </div>
+                        </div>
+
+                        {profile?.bio && (
+                          <p>{profile.bio}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {activeSection === "favorites" && (
+                      <div className="account-card">
+                        <h2>المفضلة</h2>
+
+                        <div className="panel">
+                          {favorites.length
+                            ? `لديك ${favorites.length} رواية في المفضلة.`
+                            : "لا توجد روايات في المفضلة حاليًا."}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeSection === "history" && (
+                      <div className="account-card">
+                        <h2>سجل القراءة</h2>
+
+                        <div className="panel">
+                          {history.length
+                            ? `لديك ${history.length} سجل قراءة.`
+                            : "لم تبدأ قراءة أي رواية بعد."}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeSection === "notifications" && (
+                      <div className="account-card">
+                        <h2>الإشعارات</h2>
+
+                        {notifications.length === 0 ? (
+                          <div className="panel">
+                            لا توجد إشعارات.
+                          </div>
+                        ) : (
+                          <div className="account-list">
+                            {notifications.map(
+                              (notification) => (
+                                <button
+                                  className="account-novel"
+                                  key={notification.id}
+                                  onClick={() =>
+                                    markNotificationRead(
+                                      notification.id
+                                    )
+                                  }
+                                >
+                                  <div>
+                                    <strong>
+                                      {notification.title ||
+                                        "إشعار"}
+                                    </strong>
+
+                                    <p>
+                                      {notification.message ||
+                                        ""}
+                                    </p>
+
+                                    {notification.created_at && (
+                                      <small>
+                                        {new Date(
+                                          notification.created_at
+                                        ).toLocaleString(
+                                          "ar-SA"
+                                        )}
+                                      </small>
+                                    )}
+                                  </div>
+
+                                  {!notification.read_at && (
+                                    <span className="notification-badge">
+                                      جديد
+                                    </span>
+                                  )}
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="novels-page">
+            <div className="hero">
+              <span>عالم الروايات</span>
+
+              <h1>
+                اقرئي حكايتك القادمة
+              </h1>
+
+              <p>
+                اكتشفي الروايات المنشورة واقرئيها في
+                مكان واحد.
+              </p>
+            </div>
+
+            <div className="novels-section">
+              <div className="section-heading">
+                <div>
+                  <span>المكتبة</span>
+
+                  <h2>الروايات</h2>
+                </div>
+              </div>
+
+              {publishedNovels.length === 0 ? (
+                <div className="panel">
+                  لا توجد روايات منشورة حاليًا.
+                </div>
+              ) : (
+                <div className="novels-grid">
+                  {publishedNovels.map((novel) => (
+                    <article
+                      className="novel-card"
+                      key={novel.id}
+                      onClick={() =>
+                        openNovel(novel, false)
+                      }
+                    >
+                      <div className="novel-cover">
+                        {novel.cover_path ? (
+                          <img
+                            src={novel.cover_path}
+                            alt={novel.title}
+                          />
+                        ) : (
+                          <div className="cover-placeholder">
+                            📖
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="novel-card-content">
+                        <span className="novel-category">
+                          {novel.categories?.name ||
+                            "رواية"}
+                        </span>
+
+                        <h3>{novel.title}</h3>
+
+                        <p>
+                          {novel.description ||
+                            "لا يوجد وصف حاليًا."}
+                        </p>
+
+                        <div className="novel-meta">
+                          <span>
+                            {novel.status === "completed"
+                              ? "مكتملة"
+                              : "مستمرة"}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="site-footer">
+        <p>روايات خيالية © 2026</p>
+      </footer>
+    </div>
+  );
+}
+
+createRoot(
+  document.getElementById("root")!
+).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
