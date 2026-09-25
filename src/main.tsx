@@ -1,8 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import { supabase } from "./lib/supabase";
 
 function App() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function signInWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -14,7 +44,14 @@ function App() {
         <nav>
           <button>الرئيسية</button>
           <button>الروايات</button>
-          <button>تسجيل الدخول</button>
+
+          {user ? (
+            <button onClick={signOut}>تسجيل الخروج</button>
+          ) : (
+            <button onClick={signInWithGoogle}>
+              تسجيل الدخول بحساب Google
+            </button>
+          )}
         </nav>
       </header>
 
@@ -26,9 +63,7 @@ function App() {
             مكان هادئ لقراءة الروايات واكتشاف العوالم والشخصيات والقصص الجديدة.
           </p>
 
-          <button className="main-button">
-            تصفح الروايات
-          </button>
+          <button className="main-button">تصفح الروايات</button>
         </section>
 
         <section className="novels">
@@ -49,9 +84,7 @@ function App() {
         </section>
       </main>
 
-      <footer>
-        © 2026 روايات خيالية
-      </footer>
+      <footer>© 2026 روايات خيالية</footer>
     </div>
   );
 }
