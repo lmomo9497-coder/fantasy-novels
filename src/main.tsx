@@ -3358,6 +3358,25 @@ function App() {
       const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 72)));
       const textFontSize = Math.min(64, Math.max(12, Number(block.text_font_size ?? 18)));
       const textColor = block.text_color || "#ffffff";
+      const textContent = String(block.content || "");
+      const viewportWidth =
+        typeof window !== "undefined" ? window.innerWidth : 1024;
+      const estimatedTextWidthPx =
+        Math.max(180, viewportWidth * (textWidth / 100));
+      const estimatedCharsPerLine = Math.max(
+        10,
+        Math.floor(estimatedTextWidthPx / Math.max(7, textFontSize * 0.55))
+      );
+      const estimatedTextLines = Math.max(
+        1,
+        Math.ceil(textContent.length / estimatedCharsPerLine)
+      );
+      const estimatedSceneHeight = Math.max(
+        0,
+        Math.ceil(
+          estimatedTextLines * Math.max(28, textFontSize * 2) + 36
+        )
+      );
       const textAlign =
         block.text_align === "left" ||
         block.text_align === "center" ||
@@ -3403,6 +3422,12 @@ function App() {
         <div
           key={block.id}
           className={"chapter-text-background " + alignClass}
+          style={{
+            minHeight:
+              estimatedSceneHeight > 0
+                ? estimatedSceneHeight + "px"
+                : undefined,
+          }}
         >
           <img
             src={mediaUrl}
@@ -3432,7 +3457,9 @@ function App() {
                 dir={selectedNovel?.direction || "rtl"}
                 style={{ textAlign }}
               >
-                {block.content}
+                <span className="chapter-text-on-image-highlight">
+                  {block.content}
+                </span>
               </p>
 
               {block.effect_audio_path && (
