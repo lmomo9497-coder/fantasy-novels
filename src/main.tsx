@@ -4227,44 +4227,20 @@ function App() {
                     المفضلة بعد.
                   </div>
                 ) : (
-                  <div className="account-novel-list">
-                    {favorites.map(
-                      (favorite) => {
-                        const novel =
-                          publishedNovels.find(
-                            (item) =>
-                              item.id ===
-                              favorite.novel_id
-                          );
-
-                        if (!novel) {
-                          return null;
-                        }
-
-                        return (
-                          <button
-                            className="account-novel-item"
-                            key={
-                              favorite.id
-                            }
-                            onClick={() =>
-                              openNovel(
-                                novel,
-                                false
-                              )
-                            }
-                          >
-                            <span>
-                              {novel.title}
-                            </span>
-
-                            <span>
-                              فتح →
-                            </span>
-                          </button>
+                  <div className="novels-grid">
+                    {favorites.map((favorite) => {
+                      const novel =
+                        publishedNovels.find(
+                          (item) =>
+                            item.id === favorite.novel_id
                         );
+
+                      if (!novel) {
+                        return null;
                       }
-                    )}
+
+                      return renderNovelCard(novel);
+                    })}
                   </div>
                 )}
               </div>
