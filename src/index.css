@@ -3511,6 +3511,12 @@ select:focus-visible {
   line-height: 1;
 }
 
+.side-menu-home-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
 .side-menu-logout {
   margin-top: 12px;
   color: #ff6b6b !important;
