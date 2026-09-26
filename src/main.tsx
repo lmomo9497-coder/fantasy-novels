@@ -65,7 +65,7 @@ type ChapterBlock = {
   content: string | null;
   media_path: string | null;
   media_label: string | null;
-  align: "right" | "left" | "center" | "full";
+  align: string;
   width: number | null;
   height: number | null;
 };
@@ -171,8 +171,9 @@ function App() {
   const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
   const [newBlockLocalPreviewUrl, setNewBlockLocalPreviewUrl] = useState("");
   const [newBlockMediaFile, setNewBlockMediaFile] = useState<File | null>(null);
-  const [newBlockAlign, setNewBlockAlign] =
-    useState<"right" | "left" | "center" | "full">("center");
+  const [newBlockColumn, setNewBlockColumn] =
+    useState<"left" | "right" | "full">("right");
+  const [newBlockRow, setNewBlockRow] = useState("1");
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
@@ -233,21 +234,10 @@ function App() {
       ? chapters[currentChapterIndex + 1]
       : null;
 
-  const readerBlocks = useMemo(() => {
-    const sorted = [...chapterBlocks].sort(
-      (a, b) => a.block_order - b.block_order
-    );
-
-    const audioBlocks = sorted.filter(
-      (block) => block.block_type === "audio"
-    );
-
-    const otherBlocks = sorted.filter(
-      (block) => block.block_type !== "audio"
-    );
-
-    return [...audioBlocks, ...otherBlocks];
-  }, [chapterBlocks]);
+  const readerBlocks = useMemo(
+    () => [...chapterBlocks].sort((a, b) => a.block_order - b.block_order),
+    [chapterBlocks]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -1245,7 +1235,8 @@ function App() {
     setNewBlockMediaPreviewUrl("");
     setNewBlockLocalPreviewUrl("");
     setNewBlockMediaFile(null);
-    setNewBlockAlign("center");
+    setNewBlockColumn("right");
+    setNewBlockRow("1");
     setNewBlockWidth("");
     setNewBlockHeight("");
   }
@@ -1382,7 +1373,7 @@ function App() {
           media_path: mediaPath || null,
           media_label:
             newBlockMediaLabel.trim() || null,
-          align: newBlockAlign,
+          align: `${newBlockColumn}:${Math.max(1, Number(newBlockRow) || 1)}`,
           width: newBlockWidth
             ? Number(newBlockWidth)
             : null,
@@ -1679,6 +1670,25 @@ function App() {
       .getPublicUrl(novel.cover_path).data.publicUrl;
   }
 
+  function parseBlockPlacement(block: ChapterBlock) {
+    const match = String(block.align || "").match(/^(left|right|full):(\\d+)$/);
+    if (match) {
+      return {
+        column: match[1] as "left" | "right" | "full",
+        row: Number(match[2]),
+      };
+    }
+    return {
+      column:
+        block.align === "left"
+          ? "left"
+          : block.align === "right"
+            ? "right"
+            : "full",
+      row: Math.max(1, block.block_order),
+    };
+  }
+
   function renderChapterBlock(
     block: ChapterBlock,
     reader = true
@@ -1705,14 +1715,13 @@ function App() {
       maxWidth: "100%",
     };
 
+    const placement = parseBlockPlacement(block);
     const alignClass =
-      block.align === "right"
+      placement.column === "right"
         ? "block-align-right"
-        : block.align === "left"
+        : placement.column === "left"
           ? "block-align-left"
-          : block.align === "full"
-            ? "block-align-full"
-            : "block-align-center";
+          : "block-align-full";
 
     if (block.block_type === "heading") {
       return (
@@ -2655,28 +2664,35 @@ function App() {
                 )}
 
                 <div className="form-group">
-                  <label>مكان العنصر</label>
-
+                  <label>العمود</label>
                   <select
-                    value={newBlockAlign}
+                    value={newBlockColumn}
                     onChange={(event) =>
-                      setNewBlockAlign(
-                        event.target.value as
-                          | "right"
-                          | "left"
-                          | "center"
-                          | "full"
+                      setNewBlockColumn(
+                        event.target.value as "left" | "right" | "full"
                       )
                     }
                   >
-                    <option value="right">يمين</option>
-                    <option value="center">وسط</option>
-                    <option value="left">يسار</option>
+                    <option value="right">العمود الأيمن</option>
+                    <option value="left">العمود الأيسر</option>
                     <option value="full">عرض كامل</option>
                   </select>
-
                   <small className="form-hint">
-                    اختاري مكان الصورة أو الملف الصوتي أو النص. يمكن وضع أكثر من عنصر في الجهة نفسها، أو جعل عنصر بعرض كامل.
+                    هذا يحدد مكان العنصر داخل الصفحة، وليس مجرد محاذاة.
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>رقم الصف</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newBlockRow}
+                    onChange={(event) => setNewBlockRow(event.target.value)}
+                    placeholder="1"
+                  />
+                  <small className="form-hint">
+                    العناصر التي تحمل نفس رقم الصف تظهر بجانب بعضها. مثال: نص يسار + صورة يمين في الصف 2.
                   </small>
                 </div>
 
@@ -2908,9 +2924,26 @@ function App() {
             </div>
           ) : (
             <div className="chapter-content">
-              {readerBlocks.map((block) =>
-                renderChapterBlock(block)
-              )}
+              {readerBlocks.map((block) => {
+                const placement = parseBlockPlacement(block);
+                return (
+                  <div
+                    key={block.id}
+                    className="chapter-layout-item"
+                    style={{
+                      gridColumn:
+                        placement.column === "full"
+                          ? "1 / -1"
+                          : placement.column === "left"
+                            ? "1"
+                            : "2",
+                      gridRow: placement.row,
+                    }}
+                  >
+                    {renderChapterBlock(block)}
+                  </div>
+                );
+              })}
             </div>
           )}
         </article>
