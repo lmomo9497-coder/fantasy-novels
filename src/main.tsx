@@ -2433,6 +2433,17 @@ function App() {
             ? Number(newBlockHeight)
             : null,
           object_position: "50% 50%",
+          text_position_x:
+            newBlockType === "text"
+              ? Number(newBlockTextPosition)
+              : 50,
+          text_position_y: 50,
+          text_font_size: 18,
+          text_color: "#ffffff",
+          text_align: "right",
+          text_width_percent: 72,
+          text_overlay_opacity:
+            newBlockType === "text" ? 0.24 : 0.62,
         })
         .select("*")
         .single();
@@ -3295,31 +3306,117 @@ function App() {
     }
 
     if (block.block_type === "text" && mediaUrl) {
-      const textOverlayPosition = parseTextOverlayPosition(block);
+      const textX = Math.min(100, Math.max(0, Number(block.text_position_x ?? 50)));
+      const textY = Math.min(100, Math.max(0, Number(block.text_position_y ?? 50)));
+      const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 72)));
+      const textFontSize = Math.min(64, Math.max(12, Number(block.text_font_size ?? 18)));
+      const textColor = block.text_color || "#ffffff";
+      const textAlign =
+        block.text_align === "left" ||
+        block.text_align === "center" ||
+        block.text_align === "right"
+          ? block.text_align
+          : "right";
+
       const textOverlayStyle: React.CSSProperties = {
-        width: block.width && block.width > 0 ? `${block.width}px` : "min(100%, 760px)",
+        width: "min(" + textWidth + "%, calc(100% - 24px))",
         minHeight:
           block.height && block.height > 0
-            ? `${block.height}px`
+            ? block.height + "px"
             : undefined,
-        maxWidth: "72%",
+        maxWidth: "calc(100% - 24px)",
         boxSizing: "border-box",
+        color: textColor,
+        fontSize:
+          "clamp(15px, " +
+          Math.max(2.9, Math.min(5.2, textFontSize / 4)) +
+          "vw, " +
+          textFontSize +
+          "px)",
+        textAlign,
       };
 
       const overlayPlacementStyle: React.CSSProperties = {
         position: "absolute",
-        left: textOverlayPosition + "%",
-        top: "50%",
-        transform: "translate(-" + textOverlayPosition + "%, -50%)",
-        textAlign:
-          textOverlayPosition >= 60
-            ? "right"
-            : textOverlayPosition <= 40
-              ? "left"
-              : "center",
+        left: "clamp(12px, " + textX + "%, calc(100% - 12px))",
+        top: "clamp(12px, " + textY + "%, calc(100% - 12px))",
+        transform:
+          textX >= 85
+            ? "translate(-100%, -100%)"
+            : textX <= 15
+              ? "translate(0, 0)"
+              : textY >= 85
+                ? "translate(-50%, -100%)"
+                : textY <= 15
+                  ? "translate(-50%, 0)"
+                  : "translate(-50%, -50%)",
       };
 
       return (
+        <div
+          key={block.id}
+          className={"chapter-text-background " + alignClass}
+        >
+          <img
+            src={mediaUrl}
+            alt=""
+            className="chapter-text-background-image"
+            style={{ objectPosition: block.object_position || "50% 50%" }}
+          />
+          <div
+            className="chapter-text-background-dim"
+            style={{
+              opacity: Math.min(
+                1,
+                Math.max(0, Number(block.text_overlay_opacity ?? 0.24))
+              ),
+            }}
+          />
+          <div
+            className="chapter-text-on-image-shell"
+            style={{ ...textOverlayStyle, ...overlayPlacementStyle }}
+          >
+            <div
+              className="chapter-text-on-image-row"
+              style={{ textAlign }}
+            >
+              <p
+                className="chapter-text chapter-text-on-image"
+                dir={selectedNovel?.direction || "rtl"}
+                style={{ textAlign }}
+              >
+                {block.content}
+              </p>
+
+              {block.effect_audio_path && (
+                <button
+                  type="button"
+                  className={
+                    "chapter-effect-audio-button" +
+                    (activeEffectBlockId === block.id ? " is-playing" : "")
+                  }
+                  onClick={() => void toggleChapterEffectAudio(block)}
+                  aria-label={
+                    activeEffectBlockId === block.id
+                      ? "إيقاف المؤثر الصوتي"
+                      : "تشغيل المؤثر الصوتي"
+                  }
+                  title={
+                    activeEffectBlockId === block.id
+                      ? "إيقاف المؤثر"
+                      : "تشغيل المؤثر"
+                  }
+                >
+                  {activeEffectBlockId === block.id ? "🔊" : "🔈"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
         <div
           key={block.id}
           className={`chapter-text-background ${alignClass}`}
@@ -4798,26 +4895,79 @@ function App() {
                               />
 
                               {block.media_path && block.block_type === "text" && (
-                                <label className="text-overlay-opacity-control">
-                                  تظليل خفيف خلف النص — {Math.round(
-                                    (block.text_overlay_opacity ?? 0.24) * 100
-                                  )}%
-                                  <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    value={Math.round(
+                                <>
+                                  <label className="text-overlay-opacity-control">
+                                    وضوح النص فوق الصورة — {Math.round(
                                       (block.text_overlay_opacity ?? 0.24) * 100
+                                    )}%
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="100"
+                                      step="1"
+                                      value={Math.round(
+                                        (block.text_overlay_opacity ?? 0.24) * 100
+                                      )}
+                                      onChange={(event) => {
+                                        void updateChapterBlockTextOverlayOpacity(
+                                          block,
+                                          Number(event.target.value) / 100
+                                        );
+                                      }}
+                                    />
+                                  </label>
+
+                                  <div className="text-effect-audio-editor">
+                                    <strong>المؤثر الصوتي لهذا النص</strong>
+
+                                    {block.effect_audio_path ? (
+                                      <div className="text-effect-audio-current">
+                                        <audio
+                                          controls
+                                          preload="metadata"
+                                          src={getPublicMediaUrl(
+                                            "audio",
+                                            block.effect_audio_path
+                                          )}
+                                        />
+                                        <button
+                                          type="button"
+                                          className="danger-button"
+                                          onClick={() =>
+                                            void removeEffectAudio(block)
+                                          }
+                                        >
+                                          حذف المؤثر
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span className="editor-placement-hint">
+                                        لا يوجد مؤثر مرتبط بهذا النص.
+                                      </span>
                                     )}
-                                    onChange={(event) => {
-                                      void updateChapterBlockTextOverlayOpacity(
-                                        block,
-                                        Number(event.target.value) / 100
-                                      );
-                                    }}
-                                  />
-                                </label>
+
+                                    <label className="secondary-button text-effect-upload">
+                                      {uploadingEffectAudioId === block.id
+                                        ? "جارٍ رفع المؤثر..."
+                                        : block.effect_audio_path
+                                          ? "تغيير المؤثر"
+                                          : "إضافة مؤثر صوتي"}
+                                      <input
+                                        type="file"
+                                        accept="audio/*"
+                                        hidden
+                                        disabled={uploadingEffectAudioId === block.id}
+                                        onChange={(event) => {
+                                          const file = event.target.files?.[0] || null;
+                                          event.currentTarget.value = "";
+                                          if (file) {
+                                            void uploadEffectAudio(block, file);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                </>
                               )}
                             </>
                           )}
@@ -4831,9 +4981,54 @@ function App() {
                   </div>
 
                   <div className="editor-block-preview">
-                    {renderChapterBlock(
-                      block,
-                      false
+                    {block.block_type === "text" && block.media_path ? (
+                      <TextSceneEditor
+                        src={getPublicMediaUrl(
+                          "chapter-media",
+                          block.media_path
+                        )}
+                        content={block.content || ""}
+                        positionX={Number(block.text_position_x ?? 50)}
+                        positionY={Number(block.text_position_y ?? 50)}
+                        fontSize={Number(block.text_font_size ?? 18)}
+                        color={block.text_color || "#ffffff"}
+                        textAlign={
+                          block.text_align === "left" ||
+                          block.text_align === "center" ||
+                          block.text_align === "right"
+                            ? block.text_align
+                            : "right"
+                        }
+                        widthPercent={Number(block.text_width_percent ?? 72)}
+                        onChangePosition={(x, y) =>
+                          void updateTextSceneProperty(block, {
+                            text_position_x: x,
+                            text_position_y: y,
+                          })
+                        }
+                        onChangeFontSize={(size) =>
+                          void updateTextSceneProperty(block, {
+                            text_font_size: size,
+                          })
+                        }
+                        onChangeColor={(color) =>
+                          void updateTextSceneProperty(block, {
+                            text_color: color,
+                          })
+                        }
+                        onChangeAlign={(align) =>
+                          void updateTextSceneProperty(block, {
+                            text_align: align,
+                          })
+                        }
+                        onChangeWidth={(width) =>
+                          void updateTextSceneProperty(block, {
+                            text_width_percent: width,
+                          })
+                        }
+                      />
+                    ) : (
+                      renderChapterBlock(block, false)
                     )}
                   </div>
                 </div>
