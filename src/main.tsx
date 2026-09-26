@@ -3757,7 +3757,7 @@ function App() {
                       gridColumn:
                         placement.column === "full"
                           ? "1 / -1"
-                          : placement.column === "left"
+                          : placement.column === "right"
                             ? "1"
                             : "2",
                       gridRow: placement.row,
