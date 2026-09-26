@@ -4135,31 +4135,37 @@ select:focus-visible {
   padding: 28px 20px;
   border-radius: 16px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #151218;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-position: center;
+  display: block;
   box-sizing: border-box;
+  background-color: #151218;
 }
 
-.chapter-text-background::before {
-  content: "";
+.chapter-text-background-image {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(0, 0, 0, 0.28);
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  background: #151218;
+}
+
+.chapter-text-background-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000;
   pointer-events: none;
 }
 
 .chapter-text-on-image-shell {
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  max-width: 100%;
-  flex: 0 0 auto;
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  margin: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 12px 18px;
@@ -4185,7 +4191,6 @@ select:focus-visible {
     padding: 10px 14px;
   }
 }
-
 
 
 .site-toast {
