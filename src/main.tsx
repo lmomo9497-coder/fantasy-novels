@@ -2930,9 +2930,6 @@ function App() {
         <div
           key={block.id}
           className={`chapter-text-background ${alignClass}`}
-          style={{
-
-          }}
         >
           <img
             src={mediaUrl}
