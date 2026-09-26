@@ -2091,38 +2091,64 @@ function App() {
 
             <div className="category-filter-menu">
               <button
-                className={selectedCategoryFilter.length > 0 ? "category-filter-button active" : "category-filter-button"}
+                type="button"
+                className="category-filter-button"
                 onClick={() => setShowCategoryFilter((open) => !open)}
                 aria-expanded={showCategoryFilter}
                 aria-haspopup="true"
               >
-                {selectedCategoryFilter.length > 0
-                  ? "التصنيفات (" + selectedCategoryFilter.length + ")"
-                  : "التصنيفات"}
+                <span>التصنيفات</span>
+                {selectedCategoryFilter.length > 0 && (
+                  <span className="category-filter-count">
+                    {selectedCategoryFilter.length}
+                  </span>
+                )}
+                <span className="category-filter-arrow" aria-hidden="true">
+                  {showCategoryFilter ? "⌃" : "⌄"}
+                </span>
               </button>
 
               {showCategoryFilter && (
                 <div className="category-filter-dropdown">
                   <div className="category-filter-dropdown-title">
-                    اختاري أكثر من تصنيف
+                    اختاري تصنيفًا أو أكثر
                   </div>
-                  {categories.map((category) => (
-                    <label key={category.id} className="category-filter-option">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategoryFilter.includes(category.id)}
-                        onChange={() => {
-                          setSelectedCategoryFilter((current) =>
-                            current.includes(category.id)
-                              ? current.filter((id) => id !== category.id)
-                              : [...current, category.id]
-                          );
-                        }}
-                      />
-                      <span className="category-filter-check">✓</span>
-                      <span>{category.name}</span>
-                    </label>
-                  ))}
+
+                  {selectedCategoryFilter.length > 0 && (
+                    <button
+                      type="button"
+                      className="category-filter-clear"
+                      onClick={() => setSelectedCategoryFilter([])}
+                    >
+                      مسح الاختيارات
+                    </button>
+                  )}
+
+                  {categories.map((category) => {
+                    const checked = selectedCategoryFilter.includes(category.id);
+
+                    return (
+                      <label key={category.id} className="category-filter-option">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setSelectedCategoryFilter((current) =>
+                              current.includes(category.id)
+                                ? current.filter((id) => id !== category.id)
+                                : [...current, category.id]
+                            );
+                          }}
+                        />
+                        <span className="category-filter-check" aria-hidden="true">
+                          {checked ? "✓" : ""}
+                        </span>
+                        <span className="category-filter-name">
+                          {category.name}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
