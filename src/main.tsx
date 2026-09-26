@@ -227,7 +227,6 @@ function App() {
         novelId: selectedNovel.id,
         adminView: selectedNovelAdminView,
         chapter: selectedChapter,
-        readerProgress,
       };
     }
 
