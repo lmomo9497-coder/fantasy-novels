@@ -623,12 +623,23 @@ function TextSceneEditor({
   function finishDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
 
-    const next = { ...localPosition };
+    event.preventDefault();
+    updateFromPointer(event.clientX, event.clientY);
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const nextX =
+      ((event.clientX - rect.left) / Math.max(1, rect.width)) * 100 -
+      (dragRef.current.offsetX || 0);
+    const nextY =
+      ((event.clientY - rect.top) / Math.max(1, rect.height)) * 100 -
+      (dragRef.current.offsetY || 0);
+
     dragRef.current = null;
 
     onChangePosition(
-      Math.min(100, Math.max(0, Math.round(next.x))),
-      Math.min(100, Math.max(0, Math.round(next.y)))
+      Math.min(100, Math.max(0, Math.round(nextX))),
+      Math.min(100, Math.max(0, Math.round(nextY)))
     );
   }
 
@@ -3443,7 +3454,7 @@ function App() {
                       : "تشغيل المؤثر"
                   }
                 >
-                  {activeEffectBlockId === block.id ? "🔊" : "🔈"}
+                  🔊
                 </button>
               )}
             </div>
