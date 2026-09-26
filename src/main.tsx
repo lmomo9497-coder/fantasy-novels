@@ -2542,7 +2542,7 @@ function App() {
   }
 
   function parseTextOverlayPosition(block: ChapterBlock) {
-    const match = String(block.align || "").match(/(?:^|\\|)textpos:(0|[1-9][0-9]?|100)(?:$|\\|)/);
+    const match = String(block.align || "").match(/(?:^|\|)textpos:(0|[1-9][0-9]?|100)(?:$|\|)/);
     if (!match) return 50;
     return Number(match[1]);
   }
