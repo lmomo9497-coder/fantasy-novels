@@ -345,6 +345,169 @@ function ImageCropEditor({
 }
 
 
+type TextResizeEditorProps = {
+  width: number | null;
+  height: number | null;
+  onSaveSize: (width: number, height: number) => void | Promise<void>;
+};
+
+function TextResizeEditor({
+  width,
+  height,
+  onSaveSize,
+}: TextResizeEditorProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    scale: number;
+    corner: "nw" | "ne" | "sw" | "se";
+  } | null>(null);
+
+  const latestWidthRef = useRef(width ?? 360);
+  const latestHeightRef = useRef(height ?? 220);
+  const [localWidth, setLocalWidth] = useState(width ?? 360);
+  const [localHeight, setLocalHeight] = useState(height ?? 220);
+
+  useEffect(() => {
+    const nextWidth = width ?? 360;
+    const nextHeight = height ?? 220;
+    latestWidthRef.current = nextWidth;
+    latestHeightRef.current = nextHeight;
+    setLocalWidth(nextWidth);
+    setLocalHeight(nextHeight);
+  }, [width, height]);
+
+  function getMetrics() {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return {
+        scale: 1,
+        displayWidth: localWidth,
+        displayHeight: localHeight,
+      };
+    }
+
+    const scale = Math.max(
+      0.1,
+      Math.min(
+        1,
+        (rect.width - 24) / Math.max(1, localWidth),
+        (rect.height - 24) / Math.max(1, localHeight)
+      )
+    );
+
+    return {
+      scale,
+      displayWidth: localWidth * scale,
+      displayHeight: localHeight * scale,
+    };
+  }
+
+  function startResize(
+    event: React.PointerEvent<HTMLButtonElement>,
+    corner: "nw" | "ne" | "sw" | "se"
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const metrics = getMetrics();
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: latestWidthRef.current,
+      startHeight: latestHeightRef.current,
+      scale: metrics.scale,
+      corner,
+    };
+
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveResize(event: React.PointerEvent<HTMLElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const dx = (event.clientX - drag.startX) / drag.scale;
+    const dy = (event.clientY - drag.startY) / drag.scale;
+
+    let nextWidth = drag.startWidth;
+    let nextHeight = drag.startHeight;
+
+    if (drag.corner.includes("e")) nextWidth += dx;
+    if (drag.corner.includes("w")) nextWidth -= dx;
+    if (drag.corner.includes("s")) nextHeight += dy;
+    if (drag.corner.includes("n")) nextHeight -= dy;
+
+    const safeWidth = Math.min(2000, Math.max(120, Math.round(nextWidth)));
+    const safeHeight = Math.min(2000, Math.max(60, Math.round(nextHeight)));
+
+    latestWidthRef.current = safeWidth;
+    latestHeightRef.current = safeHeight;
+    setLocalWidth(safeWidth);
+    setLocalHeight(safeHeight);
+  }
+
+  async function finishResize() {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+
+    await onSaveSize(
+      latestWidthRef.current,
+      latestHeightRef.current
+    );
+  }
+
+  const metrics = getMetrics();
+
+  return (
+    <div className="image-crop-controls text-resize-controls">
+      <span className="editor-control-title">
+        كبّري أو صغّري مساحة النص بالسحب من الزوايا.
+      </span>
+
+      <div
+        ref={stageRef}
+        className="image-crop-stage text-resize-stage"
+        onPointerMove={moveResize}
+        onPointerUp={() => void finishResize()}
+        onPointerCancel={() => void finishResize()}
+      >
+        <div
+          className="image-crop-frame text-resize-frame"
+          style={{
+            width: metrics.displayWidth + "px",
+            minHeight: metrics.displayHeight + "px",
+          }}
+        >
+          <div className="text-resize-sample">معاينة مساحة النص</div>
+
+          {(["nw", "ne", "sw", "se"] as const).map((corner) => (
+            <button
+              key={corner}
+              type="button"
+              aria-label="تغيير حجم النص"
+              className={"image-crop-handle image-crop-handle-" + corner}
+              onPointerDown={(event) =>
+                startResize(event, corner)
+              }
+            />
+          ))}
+        </div>
+      </div>
+
+      <small className="form-hint">
+        لا تحتاجين كتابة بكسل؛ اسحبي الزوايا فقط.
+      </small>
+    </div>
+  );
+}
+
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -2567,6 +2730,18 @@ function App() {
        objectPosition: block.object_position || "50% 50%",
     };
 
+    const textSizeStyle: React.CSSProperties = {
+      width:
+        block.width && block.width > 0
+          ? `${block.width}px`
+          : undefined,
+      minHeight:
+        block.height && block.height > 0
+          ? `${block.height}px`
+          : undefined,
+      maxWidth: "100%",
+    };
+
     const placement = parseBlockPlacement(block);
     const alignClass =
       placement.column === "right"
@@ -2580,6 +2755,7 @@ function App() {
         <h2
           key={block.id}
           className={`chapter-heading ${alignClass}`}
+          style={textSizeStyle}
         >
           {block.content}
         </h2>
@@ -2591,6 +2767,7 @@ function App() {
         <blockquote
           key={block.id}
           className={`chapter-quote ${alignClass}`}
+          style={textSizeStyle}
         >
           {block.content}
         </blockquote>
@@ -2664,6 +2841,7 @@ function App() {
         key={block.id}
         className={`chapter-text ${alignClass}`}
         dir={selectedNovel?.direction || "rtl"}
+        style={textSizeStyle}
       >
         {block.content}
       </p>
@@ -3885,6 +4063,10 @@ function App() {
                         block.block_type === "image" ||
                         block.block_type === "gif" ||
                         block.block_type === "audio";
+                       const isText =
+                         block.block_type === "text" ||
+                         block.block_type === "heading" ||
+                         block.block_type === "quote";
 
                       return (
                         <>
@@ -4042,9 +4224,23 @@ function App() {
                           )}
 
 
-                          <span className="editor-placement-hint">
-                            الأسهم تحرك العنصر وتحفظ مكانه فورًا. العرض والارتفاع يحفظان المقاس.
-                          </span>
+                          {isText && (
+                             <TextResizeEditor
+                               width={block.width}
+                               height={block.height}
+                               onSaveSize={(nextWidth, nextHeight) =>
+                                 updateChapterBlockSize(
+                                   block,
+                                   nextWidth,
+                                   nextHeight
+                                 )
+                               }
+                             />
+                           )}
+
+                           <span className="editor-placement-hint">
+                             الأسهم تحرك العنصر وتحفظ مكانه فورًا. المقاس يتم ضبطه بالسحب من الزوايا.
+                           </span>
                         </>
                       );
                     })()}
