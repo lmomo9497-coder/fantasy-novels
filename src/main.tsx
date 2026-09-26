@@ -1711,6 +1711,8 @@ function App() {
         row: Number(parts[1]),
       };
     }
+
+    const match = raw.match(/^(left|right|full):(\\d+)$/);
     if (match) {
       return {
         column: match[1] as "left" | "right" | "full",
