@@ -3839,3 +3839,20 @@ select:focus-visible {
   min-width: 0;
   align-self: start;
 }
+
+
+/* Novel card short description section */
+.novel-description-section {
+  margin-top: 2px;
+}
+
+.novel-description-label {
+  margin-bottom: 5px;
+  color: #8f8491;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.novel-description-section > p {
+  margin-top: 0;
+}
