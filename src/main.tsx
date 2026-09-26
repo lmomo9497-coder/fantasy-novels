@@ -2726,6 +2726,13 @@ function App() {
             </div>
           )}
 
+          {novel.description && (
+            <div className="novel-card-description">
+              <span>وصف</span>
+              <p>{novel.description}</p>
+            </div>
+          )}
+
           <div className="novel-meta">
             <span>
               {novel.status === "ongoing"
