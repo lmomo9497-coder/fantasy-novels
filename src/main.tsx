@@ -943,6 +943,8 @@ function App() {
   }
 
   function editChapter(chapter: Chapter) {
+    setSelectedChapter(null);
+    setChapterBlocks([]);
     setEditingChapterId(chapter.id);
     setChapterNumber(String(chapter.chapter_number));
     setChapterTitle(chapter.title || "");
@@ -3330,12 +3332,12 @@ function App() {
                         </span>
 
                         <button
+                          type="button"
                           className="secondary-button"
-                          onClick={() =>
-                            editChapter(
-                              chapter
-                            )
-                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            editChapter(chapter);
+                          }}
                         >
                           تعديل
                         </button>
