@@ -2775,14 +2775,27 @@ select:focus-visible {
   min-height: 50px;
 }
 
-.library-search span {
+.library-search-button {
   position: absolute;
-  right: 16px;
+  right: 8px;
   top: 50%;
+  width: 38px;
+  height: 38px;
   transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   color: var(--accent);
+  font: inherit;
   font-size: 24px;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.library-search-button:hover {
+  background: rgba(199, 166, 201, 0.1);
 }
 
 .library-filters {
