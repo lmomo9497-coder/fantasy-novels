@@ -4485,3 +4485,39 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+
+.editor-text-content-editor {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #302934;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.025);
+}
+
+.editor-text-content-editor label {
+  display: grid;
+  gap: 7px;
+  color: #a99eaa;
+  font-size: 12px;
+}
+
+.editor-text-content-editor textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.chapter-reader-page,
+.chapter-reader,
+.chapter-content {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.chapter-reader-page {
+  overflow-x: hidden;
+}
