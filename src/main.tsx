@@ -2119,6 +2119,37 @@ function App() {
     };
   }
 
+  function getSafeChapterBlockPlacement(
+    block: ChapterBlock,
+    requestedColumn: "left" | "right" | "full",
+    requestedRow: number
+  ) {
+    let safeRow = Math.max(1, Number(requestedRow) || 1);
+
+    while (
+      chapterBlocks.some((item) => {
+        if (item.id === block.id) return false;
+
+        const placement = parseBlockPlacement(item);
+        if (placement.row !== safeRow) return false;
+
+        if (requestedColumn === "full") return true;
+
+        return (
+          placement.column === "full" ||
+          placement.column === requestedColumn
+        );
+      })
+    ) {
+      safeRow += 1;
+    }
+
+    return {
+      column: requestedColumn,
+      row: safeRow,
+    };
+  }
+
   async function updateChapterBlockPlacement(
     block: ChapterBlock,
     column: "left" | "right" | "full",
@@ -2126,8 +2157,12 @@ function App() {
   ) {
     if (!canManage) return;
 
-    const safeRow = Math.max(1, Number(row) || 1);
-    const align = column + ":" + safeRow;
+    const placement = getSafeChapterBlockPlacement(
+      block,
+      column,
+      row
+    );
+    const align = placement.column + ":" + placement.row;
 
     const { error } = await supabase
       .from("chapter_blocks")
@@ -2144,6 +2179,14 @@ function App() {
         item.id === block.id ? { ...item, align } : item
       )
     );
+
+    if (placement.row !== Math.max(1, Number(row) || 1)) {
+      setChapterMessage(
+        "تم نقل العنصر للصف " +
+          placement.row +
+          " لتجنب تغطية عنصر موجود."
+      );
+    }
   }
 
   async function updateChapterBlockSize(
@@ -2244,6 +2287,10 @@ function App() {
           ? `${block.height}px`
           : undefined,
       maxWidth: "100%",
+      objectFit:
+        block.width && block.height
+          ? "fill"
+          : "contain",
     };
 
     const placement = parseBlockPlacement(block);
