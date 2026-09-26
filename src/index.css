@@ -3893,3 +3893,43 @@ select:focus-visible {
     -webkit-line-clamp: 2;
   }
 }
+
+
+/* Final chapter layout: keep text and media side by side on mobile too */
+.chapter-content {
+  direction: rtl;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 24px;
+  align-items: start;
+}
+
+.chapter-layout-item {
+  min-width: 0;
+  width: 100%;
+  align-self: start;
+}
+
+.chapter-layout-item > .block-align-left,
+.chapter-layout-item > .block-align-right,
+.chapter-layout-item > .block-align-full {
+  min-width: 0;
+  width: 100%;
+}
+
+.chapter-media-block {
+  min-width: 0;
+}
+
+.chapter-media-block .chapter-image {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .chapter-content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 20px;
+  }
+}
