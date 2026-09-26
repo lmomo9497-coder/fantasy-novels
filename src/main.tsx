@@ -413,7 +413,6 @@ function App() {
 
         if (route.type === "chapter" && route.chapter) {
           setSelectedChapter(route.chapter as Chapter);
-          setReaderProgress(Number(route.readerProgress || 0));
           setChapterMessage("");
           setLoadingChapterBlocks(true);
 
