@@ -72,9 +72,6 @@ type ChapterBlock = {
   height: number | null;
   object_position?: string | null;
   text_overlay_opacity?: number | null;
-  background_opacity?: number | null;
-  text_position_x?: number | null;
-  text_position_y?: number | null;
 };
 
 type AccountSection =
@@ -512,138 +509,6 @@ function TextResizeEditor({
   );
 }
 
-type TextPositionEditorProps = {
-  x: number | null | undefined;
-  y: number | null | undefined;
-  onSavePosition: (x: number, y: number) => void | Promise<void>;
-};
-
-function TextPositionEditor({ x, y, onSavePosition }: TextPositionEditorProps) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef<number | null>(null);
-  const latestRef = useRef({ x: Math.min(90, Math.max(10, x ?? 50)), y: Math.min(90, Math.max(10, y ?? 50)) });
-
-  useEffect(() => {
-    latestRef.current = {
-      x: Math.min(90, Math.max(10, x ?? 50)),
-      y: Math.min(90, Math.max(10, y ?? 50)),
-    };
-  }, [x, y]);
-
-  function move(event: React.PointerEvent<HTMLDivElement>) {
-    if (draggingRef.current !== event.pointerId) return;
-    const rect = stageRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    latestRef.current = {
-      x: Math.round(Math.min(90, Math.max(10, ((event.clientX - rect.left) / rect.width) * 100))),
-      y: Math.round(Math.min(90, Math.max(10, ((event.clientY - rect.top) / rect.height) * 100))),
-    };
-    event.currentTarget.style.setProperty("--text-x", latestRef.current.x + "%");
-    event.currentTarget.style.setProperty("--text-y", latestRef.current.y + "%");
-  }
-
-  async function finish(event: React.PointerEvent<HTMLDivElement>) {
-    if (draggingRef.current !== event.pointerId) return;
-    draggingRef.current = null;
-    await onSavePosition(latestRef.current.x, latestRef.current.y);
-  }
-
-  return (
-    <div className="text-position-controls">
-      <span className="editor-control-title">مكان النص فوق الصورة</span>
-      <div
-        ref={stageRef}
-        className="text-position-stage"
-        style={{ "--text-x": latestRef.current.x + "%", "--text-y": latestRef.current.y + "%" } as React.CSSProperties}
-        onPointerDown={(event) => {
-          event.preventDefault();
-          draggingRef.current = event.pointerId;
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-          move(event);
-        }}
-        onPointerMove={move}
-        onPointerUp={(event) => void finish(event)}
-        onPointerCancel={(event) => void finish(event)}
-      >
-        <div className="text-position-grid" />
-        <div className="text-position-marker">النص</div>
-      </div>
-      <small className="form-hint">اسحبي «النص» للمكان الذي تريدينه، بدون كتابة بكسلات.</small>
-    </div>
-  );
-}
-
-type ImageFocusEditorProps = {
-  src: string;
-  objectPosition: string | null | undefined;
-  onSavePosition: (x: number, y: number) => void | Promise<void>;
-};
-
-function ImageFocusEditor({
-  src,
-  objectPosition,
-  onSavePosition,
-}: ImageFocusEditorProps) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef<number | null>(null);
-  const local = parseObjectPosition(objectPosition);
-  const positionRef = useRef(local);
-
-  useEffect(() => {
-    positionRef.current = parseObjectPosition(objectPosition);
-  }, [objectPosition]);
-
-  function move(event: React.PointerEvent<HTMLDivElement>) {
-    if (draggingRef.current !== event.pointerId) return;
-    const rect = stageRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    positionRef.current = {
-      x: Math.round(Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100))),
-      y: Math.round(Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100))),
-    };
-    event.currentTarget.style.setProperty("--focus-x", positionRef.current.x + "%");
-    event.currentTarget.style.setProperty("--focus-y", positionRef.current.y + "%");
-  }
-
-  async function finish(event: React.PointerEvent<HTMLDivElement>) {
-    if (draggingRef.current !== event.pointerId) return;
-    draggingRef.current = null;
-    await onSavePosition(positionRef.current.x, positionRef.current.y);
-  }
-
-  return (
-    <div className="image-focus-controls">
-      <span className="editor-control-title">اختيار المشهد الظاهر من الصورة الخلفية</span>
-      <div
-        ref={stageRef}
-        className="image-focus-stage"
-        style={
-          {
-            "--focus-x": local.x + "%",
-            "--focus-y": local.y + "%",
-            "--focus-image": `url("${src}")`,
-          } as React.CSSProperties
-        }
-        onPointerDown={(event) => {
-          event.preventDefault();
-          draggingRef.current = event.pointerId;
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-          move(event);
-        }}
-        onPointerMove={move}
-        onPointerUp={(event) => void finish(event)}
-        onPointerCancel={(event) => void finish(event)}
-      >
-        <div className="image-focus-marker">✦</div>
-      </div>
-      <small className="form-hint">
-        اسحبي العلامة داخل الصورة لاختيار الجزء الذي تريدين ظهوره.
-      </small>
-    </div>
-  );
-}
-
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -747,9 +612,6 @@ function App() {
   const [newBlockRow, setNewBlockRow] = useState("1");
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
-  const [newBlockBackgroundOpacity, setNewBlockBackgroundOpacity] = useState(0.28);
-  const [newBlockTextPositionX, setNewBlockTextPositionX] = useState(50);
-  const [newBlockTextPositionY, setNewBlockTextPositionY] = useState(50);
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
 
   const [authMode, setAuthMode] =
@@ -2171,9 +2033,6 @@ function App() {
     setNewBlockRow("1");
     setNewBlockWidth("");
     setNewBlockHeight("");
-    setNewBlockBackgroundOpacity(0.28);
-    setNewBlockTextPositionX(50);
-    setNewBlockTextPositionY(50);
   }
 
   async function uploadChapterMedia(file: File) {
@@ -2349,18 +2208,6 @@ function App() {
             ? Number(newBlockHeight)
             : null,
           object_position: "50% 50%",
-          background_opacity:
-            newBlockType === "text"
-              ? Math.min(1, Math.max(0, newBlockBackgroundOpacity))
-              : 0.28,
-          text_position_x:
-            newBlockType === "text"
-              ? Math.min(90, Math.max(10, newBlockTextPositionX))
-              : 50,
-          text_position_y:
-            newBlockType === "text"
-              ? Math.min(90, Math.max(10, newBlockTextPositionY))
-              : 50,
         })
         .select("*")
         .single();
@@ -2820,37 +2667,6 @@ function App() {
     );
     setChapterMessage("تم حفظ تعتيم خلف النص.");
   }
-  async function updateChapterBlockBackgroundOpacity(block: ChapterBlock, value: number) {
-    if (!canManage || block.block_type !== "text") return;
-    const safeOpacity = Math.min(0.85, Math.max(0, Number(value)));
-    const { error } = await supabase.from("chapter_blocks").update({ background_opacity: safeOpacity }).eq("id", block.id);
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
-    setChapterBlocks((current) =>
-      current.map((item) => item.id === block.id ? { ...item, background_opacity: safeOpacity } : item)
-    );
-    setChapterMessage("تم حفظ تعتيم الصورة.");
-  }
-
-  async function updateChapterBlockTextPosition(block: ChapterBlock, x: number, y: number) {
-    if (!canManage || block.block_type !== "text") return;
-    const safeX = Math.min(90, Math.max(10, Math.round(x)));
-    const safeY = Math.min(90, Math.max(10, Math.round(y)));
-    const { error } = await supabase.from("chapter_blocks").update({ text_position_x: safeX, text_position_y: safeY }).eq("id", block.id);
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
-    setChapterBlocks((current) =>
-      current.map((item) =>
-        item.id === block.id ? { ...item, text_position_x: safeX, text_position_y: safeY } : item
-      )
-    );
-    setChapterMessage("تم حفظ مكان النص.");
-  }
-
   async function updateChapterBlockObjectPosition(
     block: ChapterBlock,
     x: number,
@@ -3071,19 +2887,12 @@ function App() {
           style={{
             backgroundImage: `url("${mediaUrl}")`,
             backgroundPosition: block.object_position || "50% 50%",
-            "--chapter-bg-overlay": `rgba(0, 0, 0, ${Math.min(
-              0.85,
-              Math.max(0, Number(block.background_opacity ?? 0.28))
-            )})`,
-          } as React.CSSProperties}
+          }}
         >
           <div
             className="chapter-text-on-image-shell"
             style={{
               ...textOverlayStyle,
-              left: `${Math.min(90, Math.max(10, Number(block.text_position_x ?? 50)))}%`,
-              top: `${Math.min(90, Math.max(10, Number(block.text_position_y ?? 50)))}%`,
-              transform: "translate(-50%, -50%)",
               background: `rgba(7, 6, 9, ${Math.min(
                 1,
                 Math.max(0, Number(block.text_overlay_opacity ?? 0.62))
@@ -4480,66 +4289,36 @@ function App() {
                               />
 
                               {block.media_path && block.block_type === "text" && (
-                                <>
-                                  <label className="text-overlay-opacity-control">
-                                    تعتيم الصورة — {Math.round((block.background_opacity ?? 0.28) * 100)}%
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="85"
-                                      step="1"
-                                      value={Math.round((block.background_opacity ?? 0.28) * 100)}
-                                      onChange={(event) => void updateChapterBlockBackgroundOpacity(block, Number(event.target.value) / 100)}
-                                    />
-                                  </label>
-
-                                  {block.media_path && (
-                                    <ImageFocusEditor
-                                      src={getPublicMediaUrl("chapter-media", block.media_path)}
-                                      objectPosition={block.object_position}
-                                      onSavePosition={(x, y) =>
-                                        updateChapterBlockObjectPosition(
-                                          block,
-                                          x,
-                                          y
-                                        )
-                                      }
-                                    />
-                                  )}
-
-                                  <TextPositionEditor
-                                    x={block.text_position_x}
-                                    y={block.text_position_y}
-                                    onSavePosition={(x, y) =>
-                                      updateChapterBlockTextPosition(
+                                <label className="text-overlay-opacity-control">
+                                  تعتيم خلف النص — {Math.round(
+                                    (block.text_overlay_opacity ?? 0.62) * 100
+                                  )}%
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={Math.round(
+                                      (block.text_overlay_opacity ?? 0.62) * 100
+                                    )}
+                                    onChange={(event) => {
+                                      void updateChapterBlockTextOverlayOpacity(
                                         block,
-                                        x,
-                                        y
-                                      )
-                                    }
+                                        Number(event.target.value) / 100
+                                      );
+                                    }}
                                   />
-
-                                  <label className="text-overlay-opacity-control">
-                                    تعتيم صندوق النص — {Math.round((block.text_overlay_opacity ?? 0.62) * 100)}%
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="100"
-                                      step="1"
-                                      value={Math.round((block.text_overlay_opacity ?? 0.62) * 100)}
-                                      onChange={(event) => void updateChapterBlockTextOverlayOpacity(block, Number(event.target.value) / 100)}
-                                    />
-                                  </label>
-                                </>
+                                </label>
                               )}
+                            </>
+                          )}
 
                            <span className="editor-placement-hint">
                              الأسهم تحرك العنصر وتحفظ مكانه فورًا. المقاس يتم ضبطه بالسحب من الزوايا.
                            </span>
                         </>
-
-                       );
-                     })()}
+                      );
+                    })()}
                   </div>
 
                   <div className="editor-block-preview">
@@ -4633,13 +4412,11 @@ function App() {
                     className="chapter-layout-item"
                     style={{
                       gridColumn:
-                        block.block_type === "text" && block.media_path
+                        placement.column === "full"
                           ? "1 / -1"
-                          : placement.column === "full"
-                            ? "1 / -1"
-                            : placement.column === "right"
-                              ? "1"
-                              : "2",
+                          : placement.column === "right"
+                            ? "1"
+                            : "2",
                       gridRow: placement.row,
                     }}
                   >
