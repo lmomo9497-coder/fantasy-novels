@@ -2680,7 +2680,12 @@ function App() {
           )}
 
           {novel.description && (
-            <p>{novel.description}</p>
+            <div className="novel-description-section">
+              <div className="novel-description-label">
+                وصف
+              </div>
+              <p>{novel.description}</p>
+            </div>
           )}
 
           <div className="novel-meta">
