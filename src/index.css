@@ -4084,3 +4084,44 @@ select:focus-visible {
     height: 28px;
   }
 }
+
+
+/* Text block resize editor: same corner handles as images */
+.text-resize-controls {
+  grid-column: 1 / -1;
+}
+
+.text-resize-stage {
+  min-height: 180px;
+}
+
+.text-resize-frame {
+  display: grid;
+  place-items: center;
+  min-width: 120px;
+  min-height: 60px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(199, 166, 201, 0.04) 0,
+      rgba(199, 166, 201, 0.04) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    #0f0d12;
+}
+
+.text-resize-sample {
+  width: 100%;
+  padding: 18px;
+  color: #d9d0db;
+  font-size: 16px;
+  line-height: 1.9;
+  text-align: right;
+  pointer-events: none;
+}
+
+.text-resize-frame .image-crop-handle {
+  z-index: 4;
+}
