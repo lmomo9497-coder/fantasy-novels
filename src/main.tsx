@@ -3464,42 +3464,6 @@ function App() {
     }
 
     return (
-        <div
-          key={block.id}
-          className={`chapter-text-background ${alignClass}`}
-        >
-          <img
-            src={mediaUrl}
-            alt=""
-            className="chapter-text-background-image"
-            style={{ objectPosition: block.object_position || "50% 50%" }}
-          />
-          <div
-            className="chapter-text-background-dim"
-            style={{
-              opacity: Math.min(
-                1,
-                Math.max(0, Number(block.text_overlay_opacity ?? 0.24))
-              ),
-            }}
-          />
-          <div
-            className="chapter-text-on-image-shell"
-            style={{ ...textOverlayStyle, ...overlayPlacementStyle }}
-          >
-            <p
-              className="chapter-text chapter-text-on-image"
-              dir={selectedNovel?.direction || "rtl"}
-              style={{ textAlign: overlayPlacementStyle.textAlign }}
-            >
-              {block.content}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
       <p
         key={block.id}
         className={`chapter-text ${alignClass}`}
