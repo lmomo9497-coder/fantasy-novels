@@ -3163,7 +3163,13 @@ function App() {
                     goHome();
                   }}
                 >
-                  <span className="side-menu-icon" aria-hidden="true">🏠</span>
+                  <span className="side-menu-icon side-menu-home-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3.5 10.5 12 3.8l8.5 6.7" />
+                      <path d="M5.5 9.5v10h13v-10" />
+                      <path d="M9.5 19.5v-6h5v6" />
+                    </svg>
+                  </span>
                   <span>الرئيسية</span>
                 </button>
 
