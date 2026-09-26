@@ -194,6 +194,8 @@ function App() {
   const [newBlockContent, setNewBlockContent] = useState("");
   const [newBlockMediaPath, setNewBlockMediaPath] = useState("");
   const [newBlockMediaLabel, setNewBlockMediaLabel] = useState("");
+  const [newBlockAudioType, setNewBlockAudioType] =
+    useState<"reader" | "effects">("reader");
   const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
   const [newBlockLocalPreviewUrl, setNewBlockLocalPreviewUrl] = useState("");
   const [newBlockMediaFile, setNewBlockMediaFile] = useState<File | null>(null);
@@ -1611,6 +1613,7 @@ function App() {
     setNewBlockContent("");
     setNewBlockMediaPath("");
     setNewBlockMediaLabel("");
+    setNewBlockAudioType("reader");
     setNewBlockMediaPreviewUrl("");
     setNewBlockLocalPreviewUrl("");
     setNewBlockMediaFile(null);
@@ -1775,7 +1778,16 @@ function App() {
               : newBlockContent.trim() || null,
           media_path: mediaPath || null,
           media_label:
-            newBlockMediaLabel.trim() || null,
+            newBlockType === "audio"
+              ? [
+                  newBlockAudioType === "reader"
+                    ? "القارئ"
+                    : "مؤثرات صوتية",
+                  newBlockMediaLabel.trim(),
+                ]
+                  .filter(Boolean)
+                  .join(" — ") || null
+              : newBlockMediaLabel.trim() || null,
           align: `${safeColumn}:${safeRow}`,
           width: newBlockWidth
             ? Number(newBlockWidth)
@@ -3327,7 +3339,23 @@ function App() {
 
                 {newBlockType === "audio" && (
                   <div className="form-group form-group-full">
-                    <label>اسم الصوت</label>
+                    <label>نوع الصوت</label>
+
+                    <select
+                      value={newBlockAudioType}
+                      onChange={(event) =>
+                        setNewBlockAudioType(
+                          event.target.value as "reader" | "effects"
+                        )
+                      }
+                    >
+                      <option value="reader">القارئ</option>
+                      <option value="effects">مؤثرات صوتية</option>
+                    </select>
+
+                    <label className="audio-name-label">
+                      اسم الصوت
+                    </label>
 
                     <input
                       value={newBlockMediaLabel}
@@ -3336,17 +3364,19 @@ function App() {
                           event.target.value
                         )
                       }
-                      placeholder="مثال: صوت المطر"
+                      placeholder={
+                        newBlockAudioType === "reader"
+                          ? "مثال: القارئ أحمد"
+                          : "مثال: صوت المطر"
+                      }
                     />
 
                     <small className="form-hint">
-                      الصوت سيظهر دائمًا فوق النص
-                      عند القراءة، ولن يعمل تلقائيًا.
+                      سيظهر النوع قبل اسم الصوت، مثل:
+                      «القارئ — أحمد» أو «مؤثرات صوتية — المطر».
                     </small>
                   </div>
-                )}
-
-                <div className="form-group">
+                )}                <div className="form-group">
                   <label>العمود</label>
                   <select
                     value={newBlockColumn}
