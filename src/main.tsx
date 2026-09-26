@@ -4137,6 +4137,34 @@ function App() {
                   : renderHome()}
       </main>
 
+      {confirmDialog && (
+        <div className="confirm-dialog-backdrop" role="presentation">
+          <div className="confirm-dialog" role="alertdialog" aria-modal="true">
+            <p>{confirmDialog.message}</p>
+            <div className="confirm-dialog-actions">
+              <button
+                type="button"
+                className="confirm-delete-button"
+                onClick={async () => {
+                  const action = confirmDialog.onConfirm;
+                  setConfirmDialog(null);
+                  await action();
+                }}
+              >
+                حذف
+              </button>
+              <button
+                type="button"
+                className="confirm-cancel-button"
+                onClick={() => setConfirmDialog(null)}
+              >
+                لا
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="site-footer">
         <p>
           روايات خيالية © 2026
