@@ -116,6 +116,10 @@ function App() {
 
   const [showAccount, setShowAccount] = useState(false);
   const [showSideMenu, setShowSideMenu] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    message: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showNovels, setShowNovels] = useState(true);
 
@@ -912,11 +916,9 @@ function App() {
   async function deleteNovel(novel: Novel) {
     if (!isOwner) return;
 
-    const confirmed = window.confirm(
-      `هل أنت متأكدة من حذف رواية "${novel.title}"؟\n\nسيتم حذف الرواية من قاعدة البيانات.`
-    );
-
-    if (!confirmed) return;
+    setConfirmDialog({
+      message: `هل أنت متأكدة من حذف رواية "${novel.title}"؟`,
+      onConfirm: async () => {
 
     const { error } = await supabase
       .from("novels")
@@ -941,6 +943,8 @@ function App() {
     }
 
     setSiteMessage("تم حذف الرواية.");
+      },
+    });
   }
 
   async function openNovel(
@@ -1124,11 +1128,9 @@ function App() {
   async function deleteChapter(chapter: Chapter) {
     if (!canManage) return;
 
-    const confirmed = window.confirm(
-      `هل أنتِ متأكدة من حذف الفصل ${chapter.chapter_number}؟`
-    );
-
-    if (!confirmed) return;
+    setConfirmDialog({
+      message: `هل أنتِ متأكدة من حذف الفصل ${chapter.chapter_number}؟`,
+      onConfirm: async () => {
 
     const { error } = await supabase
       .from("chapters")
@@ -1148,6 +1150,8 @@ function App() {
       setSelectedChapter(null);
       setChapterBlocks([]);
     }
+      },
+    });
   }
 
   async function openChapter(chapter: Chapter) {
@@ -1487,11 +1491,9 @@ function App() {
   async function deleteChapterBlock(block: ChapterBlock) {
     if (!canManage) return;
 
-    const confirmed = window.confirm(
-      "هل أنت متأكدة من حذف هذا العنصر؟"
-    );
-
-    if (!confirmed) return;
+    setConfirmDialog({
+      message: "هل أنت متأكدة من حذف هذا العنصر؟",
+      onConfirm: async () => {
 
     const { error } = await supabase
       .from("chapter_blocks")
@@ -1506,6 +1508,8 @@ function App() {
     setChapterBlocks((current) =>
       current.filter((item) => item.id !== block.id)
     );
+      },
+    });
   }
 
   async function moveChapterBlock(
@@ -1695,11 +1699,9 @@ function App() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `هل أنت متأكدة من إزالة صلاحية المشرف من ${email}؟`
-    );
-
-    if (!confirmed) return;
+    setConfirmDialog({
+      message: `هل أنت متأكدة من إزالة صلاحية المشرف من ${email}؟`,
+      onConfirm: async () => {
 
     setManagingStaff(true);
     setStaffMessage("");
@@ -1736,6 +1738,8 @@ function App() {
     } finally {
       setManagingStaff(false);
     }
+      },
+    });
   }
 
   function coverUrl(novel: Novel) {
