@@ -2042,7 +2042,7 @@ function App() {
 
       const bucket =
         newBlockType === "audio" ? "audio" : "chapter-media";
-      const path = `${newBlockType}/${makeStorageId()}.${extension}`;
+      const path = `${newBlockType === "text" ? "text-background" : newBlockType}/${makeStorageId()}.${extension}`;
       const contentType =
         newBlockType === "gif"
           ? "image/gif"
@@ -2128,7 +2128,7 @@ function App() {
       let mediaPath = newBlockMediaPath;
 
       if (
-        ["image", "gif", "audio"].includes(newBlockType) &&
+        ["image", "gif", "audio", "text"].includes(newBlockType) &&
         !mediaPath &&
         newBlockMediaFile
       ) {
@@ -2832,6 +2832,31 @@ function App() {
               لم يتم العثور على الملف الصوتي.
             </div>
           )}
+        </div>
+      );
+    }
+
+    if (block.block_type === "text" && mediaUrl) {
+      return (
+        <div
+          key={block.id}
+          className={`chapter-text-background ${alignClass}`}
+          style={{
+            ...textSizeStyle,
+            backgroundImage: `url("${mediaUrl}")`,
+            backgroundPosition: block.object_position || "50% 50%",
+          }}
+        >
+          <div
+            className="chapter-text-background-overlay"
+            aria-hidden="true"
+          />
+          <p
+            className="chapter-text chapter-text-on-image"
+            dir={selectedNovel?.direction || "rtl"}
+          >
+            {block.content}
+          </p>
         </div>
       );
     }
@@ -3720,7 +3745,7 @@ function App() {
                 </div>
               )}
 
-            {["image", "gif", "audio"].includes(
+            {["image", "gif", "audio", "text"].includes(
               newBlockType
             ) && (
               <>
@@ -3730,6 +3755,8 @@ function App() {
                       ? "الملف الصوتي"
                       : newBlockType === "gif"
                         ? "صورة GIF"
+                         : newBlockType === "text"
+                           ? "صورة خلفية للنص"
                         : "الصورة"}
                   </label>
 
