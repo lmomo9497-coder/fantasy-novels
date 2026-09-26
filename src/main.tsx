@@ -2909,20 +2909,19 @@ function App() {
           block.height && block.height > 0
             ? `${block.height}px`
             : undefined,
-        maxWidth: "100%",
+        maxWidth: "calc(100% - 28px)",
+        boxSizing: "border-box",
       };
 
       const overlayPlacementStyle: React.CSSProperties = {
-        justifyContent:
-          textOverlayPosition >= 85
-            ? "flex-end"
-            : textOverlayPosition <= 15
-              ? "flex-start"
-              : "center",
+        position: "absolute",
+        left: textOverlayPosition + "%",
+        top: "50%",
+        transform: "translate(-" + textOverlayPosition + "%, -50%)",
         textAlign:
-          textOverlayPosition >= 85
+          textOverlayPosition >= 60
             ? "right"
-            : textOverlayPosition <= 15
+            : textOverlayPosition <= 40
               ? "left"
               : "center",
       };
@@ -2932,20 +2931,24 @@ function App() {
           key={block.id}
           className={`chapter-text-background ${alignClass}`}
           style={{
-            backgroundImage: `url("${mediaUrl}")`,
-            backgroundPosition: block.object_position || "50% 50%",
+
           }}
         >
+          <img
+            src={mediaUrl}
+            alt=""
+            className="chapter-text-background-image"
+            style={{ objectPosition: block.object_position || "50% 50%" }}
+          />
+          <div
+            className="chapter-text-background-dim"
+            style={{
+              opacity: Math.min(1, Math.max(0, Number(block.text_overlay_opacity ?? 0.62))),
+            }}
+          />
           <div
             className="chapter-text-on-image-shell"
-            style={{
-              ...textOverlayStyle,
-              ...overlayPlacementStyle,
-              background: `rgba(7, 6, 9, ${Math.min(
-                1,
-                Math.max(0, Number(block.text_overlay_opacity ?? 0.62))
-              )})`,
-            }}
+            style={{ ...textOverlayStyle, ...overlayPlacementStyle }}
           >
             <p
               className="chapter-text chapter-text-on-image"
