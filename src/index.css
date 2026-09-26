@@ -4718,3 +4718,15 @@ select:focus-visible {
     justify-content: space-between;
   }
 }
+
+.side-menu-history-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side-menu-history-icon svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
