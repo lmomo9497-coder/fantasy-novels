@@ -3911,36 +3911,10 @@ function App() {
                   </small>
                 </div>
 
-                <div className="form-group">
-                  <label>العرض بالبكسل</label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    value={newBlockWidth}
-                    onChange={(event) =>
-                      setNewBlockWidth(
-                        event.target.value
-                      )
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>الارتفاع بالبكسل</label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    value={newBlockHeight}
-                    onChange={(event) =>
-                      setNewBlockHeight(
-                        event.target.value
-                      )
-                    }
-                    placeholder="اختياري"
-                  />
+                <div className="form-group form-group-full">
+                  <small className="form-hint">
+                    المقاس يتم ضبطه بعد إضافة العنصر بالسحب من الزوايا، بدون كتابة أرقام.
+                  </small>
                 </div>
               </>
             )}
