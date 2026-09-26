@@ -2121,15 +2121,28 @@ function App() {
         </div>
 
         <div className="library-tools card">
-          <div className="library-search">
+          <form
+            className="library-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearchQuery((current) => current.trim());
+            }}
+          >
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="بحث عن رواية أو وصف..."
               aria-label="بحث في الروايات"
             />
-            <span>⌕</span>
-          </div>
+            <button
+              type="submit"
+              className="library-search-button"
+              aria-label="بحث"
+              title="بحث"
+            >
+              ⌕
+            </button>
+          </form>
 
           <div className="library-filters">
             <button
