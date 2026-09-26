@@ -2332,19 +2332,6 @@ function App() {
                 )}
               </div>
 
-              <div className="side-owner-card" aria-label="المالك">
-                {ownerProfile?.avatar_url ? (
-                  <img
-                    src={ownerProfile.avatar_url}
-                    alt="المالك"
-                    className="side-owner-avatar"
-                  />
-                ) : (
-                  <span className="side-owner-avatar side-profile-placeholder">👤</span>
-                )}
-                <span>المالك</span>
-              </div>
-
               <nav className="side-menu-nav">
                 <button
                   type="button"
@@ -2394,6 +2381,21 @@ function App() {
                     <span className="side-menu-icon">▣</span>
                     <span>لوحة الإدارة</span>
                   </button>
+                )}
+
+                {user && (
+                  <div className="side-owner-card" aria-label="المالك">
+                    {ownerProfile?.avatar_url ? (
+                      <img
+                        src={ownerProfile.avatar_url}
+                        alt="المالك"
+                        className="side-owner-avatar"
+                      />
+                    ) : (
+                      <span className="side-owner-avatar side-profile-placeholder">👤</span>
+                    )}
+                    <span>المالك</span>
+                  </div>
                 )}
 
                 {user && (
