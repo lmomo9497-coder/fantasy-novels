@@ -4140,9 +4140,18 @@ select:focus-visible {
   justify-content: center;
   background-color: #151218;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
   background-position: center;
   box-sizing: border-box;
+}
+
+.chapter-text-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.28);
+  pointer-events: none;
 }
 
 .chapter-text-on-image-shell {
