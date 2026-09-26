@@ -253,7 +253,6 @@ function App() {
   }, [
     activeSection,
     canManage,
-    readerProgress,
     selectedChapter,
     selectedNovel,
     selectedNovelAdminView,
