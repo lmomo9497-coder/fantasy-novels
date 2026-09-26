@@ -1883,36 +1883,6 @@ function App() {
             </p>
           </div>
 
-          <div className="auth-tabs">
-            <button
-              className={
-                authMode === "login"
-                  ? "active"
-                  : ""
-              }
-              onClick={() => {
-                setAuthMode("login");
-                setAuthMessage("");
-              }}
-            >
-              تسجيل الدخول
-            </button>
-
-            <button
-              className={
-                authMode === "register"
-                  ? "active"
-                  : ""
-              }
-              onClick={() => {
-                setAuthMode("register");
-                setAuthMessage("");
-              }}
-            >
-              إنشاء حساب
-            </button>
-          </div>
-
           <div className="form-group">
             <label>البريد الإلكتروني</label>
             <input
@@ -1962,12 +1932,42 @@ function App() {
           </div>
 
           <button
-            className="secondary-button full-width"
+            className="secondary-button full-width google-auth-button"
             onClick={signInWithGoogle}
             disabled={authLoading}
           >
             الدخول باستخدام Google
           </button>
+
+          <div className="auth-switch">
+            {authMode === "login" ? (
+              <>
+                <span>ليس لديك حساب؟</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("register");
+                    setAuthMessage("");
+                  }}
+                >
+                  إنشاء حساب
+                </button>
+              </>
+            ) : (
+              <>
+                <span>لديك حساب بالفعل؟</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setAuthMessage("");
+                  }}
+                >
+                  تسجيل الدخول
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </section>
     );
