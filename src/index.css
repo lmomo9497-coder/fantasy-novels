@@ -4521,3 +4521,200 @@ select:focus-visible {
 .chapter-reader-page {
   overflow-x: hidden;
 }
+
+
+/* =========================
+   نظام الإشعارات والإصدارات الجديدة
+========================= */
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.notification-bell-button {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 46px;
+  padding: 0;
+  border: 1px solid #403744;
+  border-radius: 12px;
+  background: #17141a;
+  color: #ddd5df;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.notification-bell-button:hover {
+  background: #231e28;
+  border-color: rgba(199, 166, 201, 0.38);
+  transform: translateY(-1px);
+}
+
+.notification-bell-button svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.notification-bell-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid #0b0a0d;
+  border-radius: 999px;
+  background: #b66f86;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.new-releases-section {
+  margin-bottom: 42px;
+}
+
+.new-releases-heading {
+  margin-bottom: 16px;
+}
+
+.novel-card-new-release {
+  border-color: rgba(199, 166, 201, 0.22);
+}
+
+.novel-new-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  padding: 5px 9px;
+  border: 1px solid rgba(199, 166, 201, 0.35);
+  border-radius: 999px;
+  background: rgba(18, 15, 20, 0.92);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+}
+
+.chapter-statuses {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.chapter-new-badge,
+.chapter-read-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.chapter-new-badge {
+  border: 1px solid rgba(199, 166, 201, 0.34);
+  background: rgba(199, 166, 201, 0.10);
+  color: #dfc1df;
+}
+
+.chapter-read-badge {
+  border: 1px solid rgba(150, 150, 150, 0.20);
+  background: rgba(125, 125, 125, 0.08);
+  color: #8f8a90;
+}
+
+.chapter-card.is-read {
+  border-color: #2c292e;
+  background: linear-gradient(
+    145deg,
+    rgba(27, 25, 29, 0.82),
+    rgba(18, 17, 20, 0.88)
+  );
+}
+
+.chapter-card.is-read .chapter-main-button {
+  color: #8f8a91;
+}
+
+.chapter-card.is-read .chapter-number {
+  color: #777279;
+}
+
+.chapter-card.is-read .chapter-title {
+  color: #8e898f;
+}
+
+.chapter-card.is-read .chapter-main-button:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.notification-heading-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .header-actions {
+    gap: 7px;
+  }
+
+  .notification-bell-button {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .novel-new-badge {
+    top: 10px;
+    left: 10px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .chapter-main-button {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .chapter-title {
+    flex: 1 1 160px;
+    white-space: normal;
+    line-height: 1.65;
+  }
+
+  .chapter-statuses {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .notification-heading-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
