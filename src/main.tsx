@@ -1943,13 +1943,13 @@ function App() {
   }
 
   function editChapter(chapter: Chapter) {
-    setSelectedChapter(null);
-    setChapterBlocks([]);
     setEditingChapterId(chapter.id);
     setChapterNumber(String(chapter.chapter_number));
     setChapterTitle(chapter.title || "");
     setChapterMessage("");
-    setShowChapterForm(true);
+    setShowChapterForm(false);
+    setSelectedNovelAdminView(true);
+    void openChapter(chapter);
   }
 
   async function saveChapter(publish: boolean) {
