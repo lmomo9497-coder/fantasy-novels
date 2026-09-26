@@ -2839,3 +2839,223 @@ select:focus-visible {
   background: var(--accent);
   transition: width .2s ease;
 }
+
+
+/* =========================
+   فلتر التصنيفات - ترتيب محسّن
+========================= */
+
+.library-filters {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.library-filters > .category-filter-button,
+.library-filters > select {
+  flex: 0 0 auto;
+}
+
+.category-filter-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 78px;
+  padding: 9px 13px;
+  border: 1px solid #39323e;
+  border-radius: 11px;
+  background: #17141a;
+  color: #d8d0da;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.category-filter-button:hover,
+.category-filter-button.active {
+  border-color: rgba(199, 166, 201, 0.5);
+  background: rgba(199, 166, 201, 0.1);
+  color: #eee3ef;
+}
+
+.category-filter-menu {
+  position: relative;
+  flex: 0 0 220px;
+  min-width: 220px;
+}
+
+.category-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid rgba(199, 166, 201, 0.28);
+  border-radius: 6px;
+  background: rgba(199, 166, 201, 0.12);
+  color: #e6d5e7;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.category-filter-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  min-width: 16px;
+  color: #bbaebe;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.category-filter-dropdown {
+  position: relative;
+  z-index: 5;
+  top: auto;
+  right: auto;
+  width: 100%;
+  max-height: 330px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #3a333d;
+  border-radius: 14px;
+  background: #17141a;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.28);
+}
+
+.category-filter-dropdown-title {
+  padding: 8px 10px 9px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #2b262e;
+  color: #918793;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.category-filter-clear {
+  width: 100%;
+  min-height: 34px;
+  margin: 2px 0 5px;
+  padding: 7px 10px;
+  border: 1px solid #332c36;
+  border-radius: 8px;
+  background: #120f14;
+  color: #a99eab;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.category-filter-clear:hover {
+  border-color: rgba(199, 166, 201, 0.3);
+  color: #e2d7e3;
+}
+
+.category-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: #ddd5df;
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.category-filter-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.category-filter-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.category-filter-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  border: 1px solid #5a515d;
+  border-radius: 5px;
+  background: #110f13;
+  color: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.category-filter-option input:checked + .category-filter-check {
+  border-color: #c7a6c9;
+  background: #c7a6c9;
+  color: #17141a;
+}
+
+.category-filter-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.library-filters > select {
+  width: auto;
+  min-width: 120px;
+  min-height: 46px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .library-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .library-filters > .category-filter-button {
+    width: 100%;
+  }
+
+  .library-filters > select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .library-filters > .category-filter-button:first-child {
+    grid-column: 1;
+  }
+
+  .category-filter-menu {
+    width: 100%;
+    min-width: 0;
+    flex-basis: auto;
+  }
+
+  .category-filter-menu .category-filter-button {
+    width: 100%;
+  }
+
+  .category-filter-dropdown {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .library-filters > select {
+    grid-column: 2;
+  }
+}
