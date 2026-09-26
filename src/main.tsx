@@ -3695,6 +3695,13 @@ function App() {
                   className="primary-button"
                   onClick={() => {
                     resetChapterForm();
+                    const nextChapterNumber =
+                      chapters.length > 0
+                        ? Math.max(
+                            ...chapters.map((chapter) => chapter.chapter_number)
+                          ) + 1
+                        : 1;
+                    setChapterNumber(String(nextChapterNumber));
                     setShowChapterForm(true);
                   }}
                 >
