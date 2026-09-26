@@ -943,7 +943,7 @@ function App() {
     setSiteMessage("تم حذف الرواية.");
   }
 
-  async async function openNovel(
+  async function openNovel(
     novel: Novel,
     adminView: boolean = false
   ) {
