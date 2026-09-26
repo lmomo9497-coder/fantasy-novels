@@ -2909,7 +2909,7 @@ function App() {
           block.height && block.height > 0
             ? `${block.height}px`
             : undefined,
-        maxWidth: "calc(100% - 28px)",
+        maxWidth: "72%",
         boxSizing: "border-box",
       };
 
