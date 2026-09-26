@@ -2841,26 +2841,38 @@ function App() {
     }
 
     if (block.block_type === "text" && mediaUrl) {
+      const textOverlayStyle: React.CSSProperties = {
+        width:
+          block.width && block.width > 0
+            ? `${block.width}px`
+            : "min(100%, 760px)",
+        minHeight:
+          block.height && block.height > 0
+            ? `${block.height}px`
+            : undefined,
+        maxWidth: "100%",
+      };
+
       return (
         <div
           key={block.id}
           className={`chapter-text-background ${alignClass}`}
           style={{
-            ...textSizeStyle,
             backgroundImage: `url("${mediaUrl}")`,
             backgroundPosition: block.object_position || "50% 50%",
           }}
         >
           <div
-            className="chapter-text-background-overlay"
-            aria-hidden="true"
-          />
-          <p
-            className="chapter-text chapter-text-on-image"
-            dir={selectedNovel?.direction || "rtl"}
+            className="chapter-text-on-image-shell"
+            style={textOverlayStyle}
           >
-            {block.content}
-          </p>
+            <p
+              className="chapter-text chapter-text-on-image"
+              dir={selectedNovel?.direction || "rtl"}
+            >
+              {block.content}
+            </p>
+          </div>
         </div>
       );
     }
