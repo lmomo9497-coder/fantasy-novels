@@ -4734,3 +4734,55 @@ select:focus-visible {
   height: 19px;
   display: block;
 }
+
+
+/* Final library card layout: keep normal novel cards stable in RTL */
+.novel-card {
+  direction: rtl;
+}
+
+.novel-card .novel-cover {
+  grid-column: 1;
+}
+
+.novel-card .novel-card-body {
+  grid-column: 2;
+}
+
+/* New releases: swipe horizontally like a story/image carousel */
+.new-releases-grid {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 14px;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.new-releases-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.new-releases-grid > .novel-card {
+  flex: 0 0 min(420px, calc(100% - 56px));
+  scroll-snap-align: start;
+}
+
+@media (max-width: 700px) {
+  .new-releases-grid {
+    gap: 12px;
+    padding-inline: 1px;
+  }
+
+  .new-releases-grid > .novel-card {
+    flex-basis: min(88vw, 360px);
+  }
+}
