@@ -3496,11 +3496,11 @@ select:focus-visible {
 
 .side-menu-logout {
   margin-top: 12px;
-  color: #e1aaaa !important;
+  color: #ff6b6b !important;
 }
 
 .side-menu-logout .side-menu-icon {
-  color: #e1aaaa;
+  color: #ff6b6b;
 }
 
 /* صورة الحساب */
