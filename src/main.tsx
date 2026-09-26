@@ -3772,7 +3772,9 @@ function App() {
                                   }}
                                 />
                               </label>
-                            </>                           {(block.block_type === "image" ||
+                            </>
+
+                              {(block.block_type === "image" ||
                              block.block_type === "gif") && (
                              <div className="image-crop-editor">
                                <span className="editor-control-title">
@@ -3815,10 +3817,11 @@ function App() {
                                  مددي العرض والارتفاع، ثم حرّكي المؤشرين لاختيار المشهد الظاهر داخل الصورة.
                                </small>
                              </div>
-                           )}
+                              )}
 
-
+                            </>
                           )}
+
 
                           <span className="editor-placement-hint">
                             الأسهم تحرك العنصر وتحفظ مكانه فورًا. العرض والارتفاع يحفظان المقاس.
