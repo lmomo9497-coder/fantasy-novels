@@ -857,6 +857,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [siteMessage, setSiteMessage] = useState("");
+  const [loginToast, setLoginToast] = useState("");
   const [logoutToast, setLogoutToast] = useState("");
 
   const isOwner = profile?.role === "owner";
@@ -1118,6 +1119,11 @@ function App() {
       if (!mounted) return;
 
       setUser(session?.user ?? null);
+
+      if (_event === "SIGNED_IN" && session?.user) {
+        setLoginToast("تم تسجيل الدخول بنجاح.");
+        window.setTimeout(() => setLoginToast(""), 3500);
+      }
 
       if (session?.user) {
         await loadProfile(session.user.id);
@@ -6074,6 +6080,13 @@ function App() {
   return (
     <div className="app-shell" dir="rtl">
       {renderHeader()}
+
+      {loginToast && (
+        <div className="site-toast" role="status" aria-live="polite">
+          <span className="site-toast-icon">✓</span>
+          <span>{loginToast}</span>
+        </div>
+      )}
 
       {logoutToast && (
         <div className="site-toast site-toast-logout" role="status" aria-live="polite">
