@@ -2654,37 +2654,31 @@ function App() {
                   </div>
                 )}
 
-                {newBlockType !== "audio" && (
-                  <div className="form-group">
-                    <label>مكان الصورة</label>
+                <div className="form-group">
+                  <label>مكان العنصر</label>
 
-                    <select
-                      value={newBlockAlign}
-                      onChange={(event) =>
-                        setNewBlockAlign(
-                          event.target.value as
-                            | "right"
-                            | "left"
-                            | "center"
-                            | "full"
-                        )
-                      }
-                    >
-                      <option value="right">
-                        يمين
-                      </option>
-                      <option value="center">
-                        وسط
-                      </option>
-                      <option value="left">
-                        يسار
-                      </option>
-                      <option value="full">
-                        عرض كامل
-                      </option>
-                    </select>
-                  </div>
-                )}
+                  <select
+                    value={newBlockAlign}
+                    onChange={(event) =>
+                      setNewBlockAlign(
+                        event.target.value as
+                          | "right"
+                          | "left"
+                          | "center"
+                          | "full"
+                      )
+                    }
+                  >
+                    <option value="right">يمين</option>
+                    <option value="center">وسط</option>
+                    <option value="left">يسار</option>
+                    <option value="full">عرض كامل</option>
+                  </select>
+
+                  <small className="form-hint">
+                    اختاري مكان الصورة أو الملف الصوتي أو النص. يمكن وضع أكثر من عنصر في الجهة نفسها، أو جعل عنصر بعرض كامل.
+                  </small>
+                </div>
 
                 <div className="form-group">
                   <label>العرض بالبكسل</label>
