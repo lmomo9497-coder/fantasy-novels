@@ -3574,3 +3574,59 @@ select:focus-visible {
     flex-basis: 76px;
   }
 }
+
+
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.confirm-dialog {
+  width: min(360px, 100%);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.confirm-dialog p {
+  margin: 0 0 20px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.confirm-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  direction: ltr;
+}
+
+.confirm-dialog-actions button {
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.confirm-delete-button {
+  border: 1px solid #c94b5a;
+  background: #c94b5a;
+  color: #fff;
+}
+
+.confirm-cancel-button {
+  border: 1px solid var(--line);
+  background: rgba(199, 166, 201, 0.08);
+  color: var(--text);
+}
