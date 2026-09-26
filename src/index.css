@@ -3667,3 +3667,39 @@ select:focus-visible {
   object-fit: cover;
   border: 1px solid rgba(199, 166, 201, 0.4);
 }
+
+
+/* Final library filter layout: three equal controls on one row */
+.library-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.library-filters > .category-filter-button,
+.library-filters > .category-filter-menu,
+.library-filters > select {
+  width: 100%;
+  min-width: 0;
+}
+
+.library-filters > .category-filter-menu {
+  min-width: 0;
+  flex: none;
+}
+
+.library-filters > .category-filter-menu .category-filter-button {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .library-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .library-filters > .category-filter-button:first-child,
+  .library-filters > select {
+    grid-column: auto;
+  }
+}
