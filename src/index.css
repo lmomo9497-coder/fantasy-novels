@@ -3828,3 +3828,14 @@ select:focus-visible {
   align-items: center;
   gap: 4px;
 }
+
+
+/* Keep chapter two-column layout correct for RTL reading pages */
+.chapter-content {
+  direction: rtl;
+}
+
+.chapter-layout-item {
+  min-width: 0;
+  align-self: start;
+}
