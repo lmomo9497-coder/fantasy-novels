@@ -3780,3 +3780,44 @@ select:focus-visible {
     gap: 10px;
   }
 }
+
+
+/* Chapter media positioning and sizing controls */
+.editor-move-controls {
+  display: grid;
+  gap: 6px;
+}
+
+.editor-control-title {
+  color: #9d939f;
+  font-size: 11px;
+}
+
+.editor-arrow-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.editor-block-placement {
+  grid-template-columns: minmax(0, 1fr) 110px;
+}
+
+.editor-block-placement > label {
+  min-width: 0;
+}
+
+.editor-block-placement .icon-button {
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .editor-block-placement {
+    grid-template-columns: 1fr 90px;
+  }
+
+  .editor-move-controls {
+    grid-column: 1 / -1;
+  }
+}
