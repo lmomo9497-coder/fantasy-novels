@@ -71,6 +71,7 @@ type ChapterBlock = {
   width: number | null;
   height: number | null;
   object_position?: string | null;
+  text_overlay_opacity?: number | null;
 };
 
 type AccountSection =
@@ -2640,6 +2641,32 @@ function App() {
     setChapterMessage("تم حفظ مقاس العنصر.");
   }
 
+  async function updateChapterBlockTextOverlayOpacity(
+    block: ChapterBlock,
+    value: number
+  ) {
+    if (!canManage || block.block_type !== "text") return;
+
+    const safeOpacity = Math.min(1, Math.max(0, Number(value)));
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({ text_overlay_opacity: safeOpacity })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id
+          ? { ...item, text_overlay_opacity: safeOpacity }
+          : item
+      )
+    );
+    setChapterMessage("تم حفظ تعتيم خلف النص.");
+  }
   async function updateChapterBlockObjectPosition(
     block: ChapterBlock,
     x: number,
@@ -2864,7 +2891,13 @@ function App() {
         >
           <div
             className="chapter-text-on-image-shell"
-            style={textOverlayStyle}
+            style={{
+              ...textOverlayStyle,
+              background: `rgba(7, 6, 9, ${Math.min(
+                1,
+                Math.max(0, Number(block.text_overlay_opacity ?? 0.62))
+              )})`,
+            }}
           >
             <p
               className="chapter-text chapter-text-on-image"
@@ -4242,18 +4275,43 @@ function App() {
 
 
                           {isText && (
-                             <TextResizeEditor
-                               width={block.width}
-                               height={block.height}
-                               onSaveSize={(nextWidth, nextHeight) =>
-                                 updateChapterBlockSize(
-                                   block,
-                                   nextWidth,
-                                   nextHeight
-                                 )
-                               }
-                             />
-                           )}
+                            <>
+                              <TextResizeEditor
+                                width={block.width}
+                                height={block.height}
+                                onSaveSize={(nextWidth, nextHeight) =>
+                                  updateChapterBlockSize(
+                                    block,
+                                    nextWidth,
+                                    nextHeight
+                                  )
+                                }
+                              />
+
+                              {block.media_path && block.block_type === "text" && (
+                                <label className="text-overlay-opacity-control">
+                                  تعتيم خلف النص — {Math.round(
+                                    (block.text_overlay_opacity ?? 0.62) * 100
+                                  )}%
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={Math.round(
+                                      (block.text_overlay_opacity ?? 0.62) * 100
+                                    )}
+                                    onChange={(event) => {
+                                      void updateChapterBlockTextOverlayOpacity(
+                                        block,
+                                        Number(event.target.value) / 100
+                                      );
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </>
+                          )}
 
                            <span className="editor-placement-hint">
                              الأسهم تحرك العنصر وتحفظ مكانه فورًا. المقاس يتم ضبطه بالسحب من الزوايا.
