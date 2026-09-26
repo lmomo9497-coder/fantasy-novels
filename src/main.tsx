@@ -133,6 +133,7 @@ function App() {
   const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [adminNovelSearch, setAdminNovelSearch] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string[]>([]);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
@@ -233,6 +234,16 @@ function App() {
     selectedCategoryFilter,
     selectedStatusFilter,
   ]);
+
+  const filteredAdminNovels = useMemo(() => {
+    const query = normalizeSearchText(adminNovelSearch);
+    if (!query) return novels;
+    return novels.filter((novel) => {
+      const title = normalizeSearchText(novel.title);
+      const description = normalizeSearchText(novel.description || "");
+      return title.includes(query) || description.includes(query);
+    });
+  }, [novels, adminNovelSearch]);
 
   const currentChapterIndex = useMemo(
     () =>
@@ -3407,101 +3418,61 @@ function App() {
         <div className="admin-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">
-                المكتبة
-              </span>
-
+              <span className="eyebrow">المكتبة</span>
               <h2>إدارة الروايات</h2>
             </div>
+            <span className="count-badge">{novels.length}</span>
+          </div>
 
-            <span className="count-badge">
-              {novels.length}
-            </span>
+          <div className="admin-novel-search">
+            <span className="admin-novel-search-icon">⌕</span>
+            <input
+              value={adminNovelSearch}
+              onChange={(event) => setAdminNovelSearch(event.target.value)}
+              placeholder="بحث عن رواية تريدين تعديلها..."
+              aria-label="بحث عن رواية في الإدارة"
+            />
           </div>
 
           {novels.length === 0 ? (
-            <div className="empty-state">
-              لا توجد روايات بعد.
-            </div>
+            <div className="empty-state">لا توجد روايات بعد.</div>
+          ) : filteredAdminNovels.length === 0 ? (
+            <div className="empty-state">لا توجد رواية مطابقة للبحث.</div>
           ) : (
             <div className="admin-novel-list">
-              {novels.map((novel) => (
-                <article
-                  className="admin-novel-row"
-                  key={novel.id}
-                >
+              {filteredAdminNovels.map((novel) => (
+                <article className="admin-novel-row" key={novel.id}>
+                  <div className="admin-novel-cover-wrap">
+                    {novel.cover_path ? (
+                      <img
+                        className="admin-novel-cover"
+                        src={getPublicMediaUrl("covers", novel.cover_path)}
+                        alt={novel.title}
+                      />
+                    ) : (
+                      <div className="admin-novel-cover admin-novel-cover-empty">غلاف</div>
+                    )}
+                  </div>
+
                   <div className="admin-novel-info">
                     <h3>{novel.title}</h3>
-
                     <div className="novel-meta">
-                      {novel.categories?.name && (
-                        <span>
-                          {novel.categories.name}
-                        </span>
-                      )}
-
-                      <span>
-                        {novel.status ===
-                        "ongoing"
-                          ? "مستمرة"
-                          : "مكتملة"}
-                      </span>
-
-                      <span
-                        className={
-                          novel.published
-                            ? "status-published"
-                            : "status-draft"
-                        }
-                      >
-                        {novel.published
-                          ? "منشورة"
-                          : "مسودة"}
+                      {novel.categories?.name && <span>{novel.categories.name}</span>}
+                      <span>{novel.status === "ongoing" ? "مستمرة" : "مكتملة"}</span>
+                      <span className={novel.published ? "status-published" : "status-draft"}>
+                        {novel.published ? "منشورة" : "مسودة"}
                       </span>
                     </div>
                   </div>
 
                   <div className="admin-row-actions">
-                    <button
-                      className="secondary-button"
-                      onClick={() =>
-                        openNovel(novel, true)
-                      }
-                    >
-                      الفصول
+                    <button className="secondary-button" onClick={() => openNovel(novel, true)}>الفصول</button>
+                    <button className="secondary-button" onClick={() => editNovel(novel)}>تعديل</button>
+                    <button className="secondary-button" onClick={() => toggleNovelPublished(novel)}>
+                      {novel.published ? "إلغاء النشر" : "نشر"}
                     </button>
-
-                    <button
-                      className="secondary-button"
-                      onClick={() =>
-                        editNovel(novel)
-                      }
-                    >
-                      تعديل
-                    </button>
-
-                    <button
-                      className="secondary-button"
-                      onClick={() =>
-                        toggleNovelPublished(
-                          novel
-                        )
-                      }
-                    >
-                      {novel.published
-                        ? "إلغاء النشر"
-                        : "نشر"}
-                    </button>
-
                     {isOwner && (
-                      <button
-                        className="danger-button"
-                        onClick={() =>
-                          deleteNovel(novel)
-                        }
-                      >
-                        حذف
-                      </button>
+                      <button className="danger-button" onClick={() => deleteNovel(novel)}>حذف</button>
                     )}
                   </div>
                 </article>
