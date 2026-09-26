@@ -3856,3 +3856,40 @@ select:focus-visible {
 .novel-description-section > p {
   margin-top: 0;
 }
+
+
+/* Short description shown on novel cards; full description remains on the novel page */
+.novel-card-description {
+  margin: 0 0 14px;
+}
+
+.novel-card-description > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #c7a6c9;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.novel-card-description > p {
+  margin: 0;
+  color: #aaa0ad;
+  font-size: 13px;
+  line-height: 1.8;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .novel-card-description {
+    margin-bottom: 10px;
+  }
+
+  .novel-card-description > p {
+    font-size: 11px;
+    line-height: 1.8;
+    -webkit-line-clamp: 2;
+  }
+}
