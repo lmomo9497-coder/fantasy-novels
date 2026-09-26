@@ -4194,7 +4194,7 @@ function App() {
               <span className="count-badge">{newReleaseNovels.length}</span>
             </div>
 
-            <div className="novels-grid">
+            <div className="new-releases-grid">
               {newReleaseNovels.map(({ novel, activityLabel }) =>
                 renderNovelCard(novel, activityLabel)
               )}
