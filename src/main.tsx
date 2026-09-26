@@ -1671,7 +1671,18 @@ function App() {
   }
 
   function parseBlockPlacement(block: ChapterBlock) {
-    const match = String(block.align || "").match(/^(left|right|full):(\\d+)$/);
+    const raw = String(block.align || "");
+    const parts = raw.split(":");
+    if (
+      parts.length === 2 &&
+      ["left", "right", "full"].includes(parts[0]) &&
+      Number(parts[1]) > 0
+    ) {
+      return {
+        column: parts[0] as "left" | "right" | "full",
+        row: Number(parts[1]),
+      };
+    }
     if (match) {
       return {
         column: match[1] as "left" | "right" | "full",
@@ -1687,6 +1698,33 @@ function App() {
             : "full",
       row: Math.max(1, block.block_order),
     };
+  }
+
+  async function updateChapterBlockPlacement(
+    block: ChapterBlock,
+    column: "left" | "right" | "full",
+    row: number
+  ) {
+    if (!canManage) return;
+
+    const safeRow = Math.max(1, Number(row) || 1);
+    const align = column + ":" + safeRow;
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({ align })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id ? { ...item, align } : item
+      )
+    );
   }
 
   function renderChapterBlock(
@@ -2865,6 +2903,53 @@ function App() {
                         </button>
                       )}
                     </div>
+                  </div>
+
+                  <div className="editor-block-placement">
+                    {(() => {
+                      const placement = parseBlockPlacement(block);
+                      return (
+                        <>
+                          <label>
+                            العمود
+                            <select
+                              value={placement.column}
+                              onChange={(event) =>
+                                updateChapterBlockPlacement(
+                                  block,
+                                  event.target.value as "left" | "right" | "full",
+                                  placement.row
+                                )
+                              }
+                            >
+                              <option value="right">اليمين — النص</option>
+                              <option value="left">اليسار — الصور والصوت</option>
+                              <option value="full">عرض كامل</option>
+                            </select>
+                          </label>
+
+                          <label>
+                            الصف
+                            <input
+                              type="number"
+                              min="1"
+                              value={placement.row}
+                              onChange={(event) =>
+                                updateChapterBlockPlacement(
+                                  block,
+                                  placement.column,
+                                  Number(event.target.value)
+                                )
+                              }
+                            />
+                          </label>
+
+                          <span className="editor-placement-hint">
+                            نفس رقم الصف = عناصر بجانب بعضها.
+                          </span>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div className="editor-block-preview">
