@@ -573,6 +573,77 @@ function TextPositionEditor({ x, y, onSavePosition }: TextPositionEditorProps) {
   );
 }
 
+type ImageFocusEditorProps = {
+  src: string;
+  objectPosition: string | null | undefined;
+  onSavePosition: (x: number, y: number) => void | Promise<void>;
+};
+
+function ImageFocusEditor({
+  src,
+  objectPosition,
+  onSavePosition,
+}: ImageFocusEditorProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef<number | null>(null);
+  const local = parseObjectPosition(objectPosition);
+  const positionRef = useRef(local);
+
+  useEffect(() => {
+    positionRef.current = parseObjectPosition(objectPosition);
+  }, [objectPosition]);
+
+  function move(event: React.PointerEvent<HTMLDivElement>) {
+    if (draggingRef.current !== event.pointerId) return;
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    positionRef.current = {
+      x: Math.round(Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100))),
+      y: Math.round(Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100))),
+    };
+    event.currentTarget.style.setProperty("--focus-x", positionRef.current.x + "%");
+    event.currentTarget.style.setProperty("--focus-y", positionRef.current.y + "%");
+  }
+
+  async function finish(event: React.PointerEvent<HTMLDivElement>) {
+    if (draggingRef.current !== event.pointerId) return;
+    draggingRef.current = null;
+    await onSavePosition(positionRef.current.x, positionRef.current.y);
+  }
+
+  return (
+    <div className="image-focus-controls">
+      <span className="editor-control-title">اختيار المشهد الظاهر من الصورة الخلفية</span>
+      <div
+        ref={stageRef}
+        className="image-focus-stage"
+        style={
+          {
+            "--focus-x": local.x + "%",
+            "--focus-y": local.y + "%",
+            "--focus-image": `url("${src}")`,
+          } as React.CSSProperties
+        }
+        onPointerDown={(event) => {
+          event.preventDefault();
+          draggingRef.current = event.pointerId;
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+          move(event);
+        }}
+        onPointerMove={move}
+        onPointerUp={(event) => void finish(event)}
+        onPointerCancel={(event) => void finish(event)}
+      >
+        <div className="image-focus-marker">✦</div>
+      </div>
+      <small className="form-hint">
+        اسحبي العلامة داخل الصورة لاختيار الجزء الذي تريدين ظهوره.
+      </small>
+    </div>
+  );
+}
+
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -4422,10 +4493,30 @@ function App() {
                                     />
                                   </label>
 
+                                  {block.media_path && (
+                                    <ImageFocusEditor
+                                      src={getPublicMediaUrl("chapter-media", block.media_path)}
+                                      objectPosition={block.object_position}
+                                      onSavePosition={(x, y) =>
+                                        updateChapterBlockObjectPosition(
+                                          block,
+                                          x,
+                                          y
+                                        )
+                                      }
+                                    />
+                                  )}
+
                                   <TextPositionEditor
                                     x={block.text_position_x}
                                     y={block.text_position_y}
-                                    onSavePosition={(x, y) => updateChapterBlockTextPosition(block, x, y)}
+                                    onSavePosition={(x, y) =>
+                                      updateChapterBlockTextPosition(
+                                        block,
+                                        x,
+                                        y
+                                      )
+                                    }
                                   />
 
                                   <label className="text-overlay-opacity-control">
