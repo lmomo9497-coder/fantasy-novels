@@ -3340,3 +3340,237 @@ select:focus-visible {
     flex: 1 1 calc(50% - 7px);
   }
 }
+
+
+/* القائمة الجانبية */
+.menu-button {
+  width: 44px;
+  height: 44px;
+  margin-inline-start: auto;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  border: 1px solid rgba(199, 166, 201, 0.2);
+  border-radius: 12px;
+  background: #171319;
+  color: var(--text);
+}
+
+.menu-button span {
+  display: block;
+  width: 21px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--accent-strong);
+}
+
+.side-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.side-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.58);
+  cursor: default;
+}
+
+.side-menu {
+  position: relative;
+  width: min(330px, 86vw);
+  height: 100%;
+  margin-inline-start: auto;
+  padding: 24px 18px;
+  overflow-y: auto;
+  border-inline-start: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, #18151b 0%, #0f0d12 100%);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.35);
+  animation: sideMenuIn 0.2s ease-out;
+}
+
+@keyframes sideMenuIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.side-menu-profile {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.side-profile-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(199, 166, 201, 0.06);
+  color: var(--text);
+  text-align: right;
+}
+
+.side-profile-button:hover {
+  background: rgba(199, 166, 201, 0.11);
+}
+
+.side-profile-button strong,
+.side-profile-button small {
+  display: block;
+}
+
+.side-profile-button small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.side-profile-avatar {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(199, 166, 201, 0.35);
+}
+
+.side-profile-placeholder {
+  display: grid;
+  place-items: center;
+  background: #211c25;
+  color: var(--accent-strong);
+  font-size: 22px;
+}
+
+.side-menu-nav {
+  display: grid;
+  gap: 7px;
+  padding-top: 18px;
+}
+
+.side-menu-nav button {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #ddd5df;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.side-menu-nav button:hover {
+  background: rgba(199, 166, 201, 0.08);
+  border-color: rgba(199, 166, 201, 0.12);
+}
+
+.side-menu-icon {
+  width: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  color: var(--accent-strong);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.side-menu-logout {
+  margin-top: 12px;
+  color: #e1aaaa !important;
+}
+
+.side-menu-logout .side-menu-icon {
+  color: #e1aaaa;
+}
+
+/* صورة الحساب */
+.profile-avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 20px 0 26px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(199, 166, 201, 0.04);
+}
+
+.account-profile-avatar {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(199, 166, 201, 0.35);
+}
+
+.account-profile-avatar-empty {
+  display: grid;
+  place-items: center;
+  background: #211c25;
+  color: var(--accent-strong);
+  font-size: 32px;
+}
+
+.profile-avatar-editor strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.profile-avatar-editor p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(199, 166, 201, 0.12);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-upload-button input {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .profile-avatar-editor {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-profile-avatar {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+  }
+}
