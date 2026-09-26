@@ -72,6 +72,14 @@ type ChapterBlock = {
   height: number | null;
   object_position?: string | null;
   text_overlay_opacity?: number | null;
+  background_opacity?: number | null;
+  text_position_x?: number | null;
+  text_position_y?: number | null;
+  effect_audio_path?: string | null;
+  text_font_size?: number | null;
+  text_color?: string | null;
+  text_align?: "left" | "center" | "right" | null;
+  text_width_percent?: number | null;
 };
 
 type AccountSection =
@@ -520,6 +528,212 @@ function makeStorageId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+type TextSceneEditorProps = {
+  src: string;
+  content: string;
+  positionX: number;
+  positionY: number;
+  fontSize: number;
+  color: string;
+  textAlign: "left" | "center" | "right";
+  widthPercent: number;
+  onChangePosition: (x: number, y: number) => void;
+  onChangeFontSize: (size: number) => void;
+  onChangeColor: (color: string) => void;
+  onChangeAlign: (align: "left" | "center" | "right") => void;
+  onChangeWidth: (width: number) => void;
+};
+
+function TextSceneEditor({
+  src,
+  content,
+  positionX,
+  positionY,
+  fontSize,
+  color,
+  textAlign,
+  widthPercent,
+  onChangePosition,
+  onChangeFontSize,
+  onChangeColor,
+  onChangeAlign,
+  onChangeWidth,
+}: TextSceneEditorProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
+
+  const [localPosition, setLocalPosition] = useState({
+    x: positionX,
+    y: positionY,
+  });
+
+  useEffect(() => {
+    setLocalPosition({ x: positionX, y: positionY });
+  }, [positionX, positionY]);
+
+  function updateFromPointer(clientX: number, clientY: number) {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x =
+      ((clientX - rect.left) / Math.max(1, rect.width)) * 100 -
+      (dragRef.current?.offsetX || 0);
+    const y =
+      ((clientY - rect.top) / Math.max(1, rect.height)) * 100 -
+      (dragRef.current?.offsetY || 0);
+
+    setLocalPosition({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const currentX = (localPosition.x / 100) * rect.width;
+    const currentY = (localPosition.y / 100) * rect.height;
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      offsetX:
+        ((event.clientX - rect.left - currentX) / Math.max(1, rect.width)) *
+        100,
+      offsetY:
+        ((event.clientY - rect.top - currentY) / Math.max(1, rect.height)) *
+        100,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    updateFromPointer(event.clientX, event.clientY);
+  }
+
+  function finishDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+
+    const next = { ...localPosition };
+    dragRef.current = null;
+
+    onChangePosition(
+      Math.min(100, Math.max(0, Math.round(next.x))),
+      Math.min(100, Math.max(0, Math.round(next.y)))
+    );
+  }
+
+  const safeWidth = Math.min(100, Math.max(25, widthPercent));
+  const safeSize = Math.min(64, Math.max(12, fontSize));
+  const safeX = Math.min(100, Math.max(0, localPosition.x));
+  const safeY = Math.min(100, Math.max(0, localPosition.y));
+
+  return (
+    <div className="text-scene-editor">
+      <div
+        ref={stageRef}
+        className="text-scene-editor-stage"
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+      >
+        <img src={src} alt="" className="text-scene-editor-image" />
+        <div className="text-scene-editor-dim" />
+        <div
+          className="text-scene-editor-text"
+          style={{
+            left: "clamp(12px, " + safeX + "%, calc(100% - 12px))",
+            top: "clamp(12px, " + safeY + "%, calc(100% - 12px))",
+            width: "min(" + safeWidth + "%, calc(100% - 24px))",
+            transform:
+              safeX >= 85
+                ? "translate(-100%, -100%)"
+                : safeX <= 15
+                  ? "translate(0, 0)"
+                  : safeY >= 85
+                    ? "translate(-50%, -100%)"
+                    : safeY <= 15
+                      ? "translate(-50%, 0)"
+                      : "translate(-50%, -50%)",
+            color,
+            fontSize: safeSize + "px",
+            textAlign,
+          }}
+          onPointerDown={handlePointerDown}
+        >
+          {content}
+        </div>
+      </div>
+
+      <div className="text-scene-editor-controls">
+        <label>
+          حجم النص
+          <input
+            type="range"
+            min="12"
+            max="64"
+            step="1"
+            value={safeSize}
+            onChange={(event) => onChangeFontSize(Number(event.target.value))}
+          />
+          <span>{safeSize}px</span>
+        </label>
+
+        <label>
+          عرض النص
+          <input
+            type="range"
+            min="25"
+            max="100"
+            step="1"
+            value={safeWidth}
+            onChange={(event) => onChangeWidth(Number(event.target.value))}
+          />
+          <span>{safeWidth}%</span>
+        </label>
+
+        <label>
+          محاذاة النص
+          <select
+            value={textAlign}
+            onChange={(event) =>
+              onChangeAlign(
+                event.target.value as "left" | "center" | "right"
+              )
+            }
+          >
+            <option value="right">يمين</option>
+            <option value="center">وسط</option>
+            <option value="left">يسار</option>
+          </select>
+        </label>
+
+        <label>
+          لون النص
+          <input
+            type="color"
+            value={color}
+            onChange={(event) => onChangeColor(event.target.value)}
+          />
+        </label>
+
+        <small>
+          اسحبي النص بالإصبع داخل الصورة لتحريكه. موضعه محفوظ كنسبة من المشهد.
+        </small>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -596,6 +810,8 @@ function App() {
   const [chapterBlocks, setChapterBlocks] = useState<ChapterBlock[]>([]);
   const [loadingChapterBlocks, setLoadingChapterBlocks] = useState(false);
   const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
+  const activeEffectAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [activeEffectBlockId, setActiveEffectBlockId] = useState<string | null>(null);
 
   const [newBlockType, setNewBlockType] =
     useState<ChapterBlockType>("text");
@@ -614,6 +830,7 @@ function App() {
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
+  const [uploadingEffectAudioId, setUploadingEffectAudioId] = useState<string | null>(null);
 
   const [authMode, setAuthMode] =
     useState<"login" | "register">("login");
@@ -2762,6 +2979,182 @@ function App() {
       nextColumn,
       placement.row
     );
+  }
+
+  async function toggleChapterEffectAudio(block: ChapterBlock) {
+    if (!block.effect_audio_path) return;
+
+    if (
+      activeEffectBlockId === block.id &&
+      activeEffectAudioRef.current
+    ) {
+      activeEffectAudioRef.current.pause();
+      activeEffectAudioRef.current.currentTime = 0;
+      activeEffectAudioRef.current = null;
+      setActiveEffectBlockId(null);
+      return;
+    }
+
+    activeEffectAudioRef.current?.pause();
+    if (activeEffectAudioRef.current) {
+      activeEffectAudioRef.current.currentTime = 0;
+    }
+
+    const url = getPublicMediaUrl("audio", block.effect_audio_path);
+    if (!url) return;
+
+    const audio = new Audio(url);
+    audio.preload = "auto";
+    audio.onended = () => {
+      if (activeEffectAudioRef.current === audio) {
+        activeEffectAudioRef.current = null;
+        setActiveEffectBlockId(null);
+      }
+    };
+
+    activeEffectAudioRef.current = audio;
+    setActiveEffectBlockId(block.id);
+
+    try {
+      await audio.play();
+    } catch {
+      if (activeEffectAudioRef.current === audio) {
+        activeEffectAudioRef.current = null;
+        setActiveEffectBlockId(null);
+      }
+    }
+  }
+
+  async function updateTextSceneProperty(
+    block: ChapterBlock,
+    patch: Partial<Pick<
+      ChapterBlock,
+      "text_position_x" |
+      "text_position_y" |
+      "text_font_size" |
+      "text_color" |
+      "text_align" |
+      "text_width_percent"
+    >>
+  ) {
+    if (!canManage || block.block_type !== "text") return;
+
+    const safePatch: Record<string, unknown> = { ...patch };
+
+    if (patch.text_position_x !== undefined) {
+      safePatch.text_position_x = Math.min(100, Math.max(0, Number(patch.text_position_x)));
+    }
+    if (patch.text_position_y !== undefined) {
+      safePatch.text_position_y = Math.min(100, Math.max(0, Number(patch.text_position_y)));
+    }
+    if (patch.text_font_size !== undefined) {
+      safePatch.text_font_size = Math.min(64, Math.max(12, Number(patch.text_font_size)));
+    }
+    if (patch.text_width_percent !== undefined) {
+      safePatch.text_width_percent = Math.min(100, Math.max(25, Number(patch.text_width_percent)));
+    }
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update(safePatch)
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id ? { ...item, ...safePatch } : item
+      )
+    );
+  }
+
+  async function uploadEffectAudio(block: ChapterBlock, file: File | null) {
+    if (!canManage || block.block_type !== "text" || !file) return;
+
+    setUploadingEffectAudioId(block.id);
+    setChapterMessage("");
+
+    try {
+      const extension =
+        file.name.split(".").pop()?.toLowerCase() || "mp3";
+      const path = "text-effects/" + block.id + "-" + makeStorageId() + "." + extension;
+
+      const { error } = await supabase.storage
+        .from("audio")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type || undefined,
+        });
+
+      if (error) {
+        setChapterMessage("تعذر رفع المؤثر: " + error.message);
+        return;
+      }
+
+      if (block.effect_audio_path) {
+        await supabase.storage
+          .from("audio")
+          .remove([block.effect_audio_path]);
+      }
+
+      const { error: updateError } = await supabase
+        .from("chapter_blocks")
+        .update({ effect_audio_path: path })
+        .eq("id", block.id);
+
+      if (updateError) {
+        setChapterMessage(updateError.message);
+        return;
+      }
+
+      setChapterBlocks((current) =>
+        current.map((item) =>
+          item.id === block.id
+            ? { ...item, effect_audio_path: path }
+            : item
+        )
+      );
+      setChapterMessage("تم ربط المؤثر الصوتي بهذا النص.");
+    } finally {
+      setUploadingEffectAudioId(null);
+    }
+  }
+
+  async function removeEffectAudio(block: ChapterBlock) {
+    if (!canManage || block.block_type !== "text") return;
+
+    activeEffectAudioRef.current?.pause();
+    activeEffectAudioRef.current = null;
+    setActiveEffectBlockId(null);
+
+    if (block.effect_audio_path) {
+      await supabase.storage
+        .from("audio")
+        .remove([block.effect_audio_path]);
+    }
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({ effect_audio_path: null })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id
+          ? { ...item, effect_audio_path: null }
+          : item
+      )
+    );
+    setChapterMessage("تم حذف المؤثر الصوتي من النص.");
   }
 
   function renderChapterBlock(
