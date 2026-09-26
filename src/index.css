@@ -4140,7 +4140,7 @@ select:focus-visible {
   justify-content: center;
   background-color: #151218;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   box-sizing: border-box;
 }
@@ -4159,6 +4159,7 @@ select:focus-visible {
   z-index: 1;
   box-sizing: border-box;
   max-width: 100%;
+  flex: 0 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 12px 18px;
@@ -4242,4 +4243,20 @@ select:focus-visible {
 .site-toast-logout .site-toast-icon {
   background: rgba(210, 72, 72, 0.2);
   color: #ff9b9b;
+}
+
+
+/* Final text-over-image positioning: image stays whole, text can move independently */
+.chapter-text-background {
+  display: flex;
+  align-items: center;
+}
+
+.chapter-text-on-image-shell {
+  margin: 0;
+}
+
+.text-overlay-position-control {
+  display: grid;
+  gap: 7px;
 }
