@@ -115,6 +115,7 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showAccount, setShowAccount] = useState(false);
+  const [showSideMenu, setShowSideMenu] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showNovels, setShowNovels] = useState(true);
 
@@ -484,6 +485,59 @@ function App() {
           : item
       )
     );
+  }
+
+  async function uploadProfileAvatar(file: File) {
+    if (!user) return;
+
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      setSiteMessage("اختاري صورة JPG أو PNG أو WEBP أو GIF.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSiteMessage("حجم الصورة يجب ألا يتجاوز 5 ميجابايت.");
+      return;
+    }
+
+    setSiteMessage("");
+
+    try {
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${makeStorageId()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        setSiteMessage(uploadError.message);
+        return;
+      }
+
+      const avatarUrl = getPublicMediaUrl("avatars", path);
+      const { data, error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id)
+        .select("*")
+        .single();
+
+      if (profileError) {
+        setSiteMessage(profileError.message);
+        return;
+      }
+
+      setProfile(data as Profile);
+      setSiteMessage("تم تحديث صورة الحساب.");
+    } catch (error: any) {
+      setSiteMessage(error?.message || "تعذر رفع صورة الحساب.");
+    }
   }
 
   async function logout() {
@@ -1983,59 +2037,155 @@ function App() {
 
   function renderHeader() {
     return (
-      <header className="site-header">
-        <div className="header-inner">
-          <button
-            className="brand-button"
-            onClick={goHome}
-          >
-            <span className="brand-mark">✦</span>
-            <span>روايات خيالية</span>
-          </button>
-
-          <nav className="header-nav">
-            <button onClick={goHome}>
-              الروايات
+      <>
+        <header className="site-header">
+          <div className="header-inner">
+            <button
+              className="brand-button"
+              onClick={goHome}
+            >
+              <span className="brand-mark">✦</span>
+              <span>روايات خيالية</span>
             </button>
 
-            {user && (
-              <button
-                onClick={() => openAccount("profile")}
-              >
-                حسابي
-              </button>
-            )}
+            <button
+              type="button"
+              className="menu-button"
+              onClick={() => setShowSideMenu(true)}
+              aria-label="فتح القائمة"
+              aria-expanded={showSideMenu}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+          </div>
+        </header>
 
-            {canManage && (
-              <button onClick={openAdmin}>
-                لوحة الإدارة
-              </button>
-            )}
+        {showSideMenu && (
+          <div className="side-menu-layer">
+            <button
+              className="side-menu-backdrop"
+              aria-label="إغلاق القائمة"
+              onClick={() => setShowSideMenu(false)}
+            />
 
-            {user ? (
-              <button
-                className="logout-button"
-                onClick={logout}
-              >
-                تسجيل الخروج
-              </button>
-            ) : (
-              <button
-                className="primary-button small-button"
-                onClick={() => {
-                  setShowAccount(true);
-                  setShowNovels(false);
-                  setShowAdmin(false);
-                  setSelectedNovel(null);
-                  setSelectedChapter(null);
-                }}
-              >
-                تسجيل الدخول
-              </button>
-            )}
-          </nav>
-        </div>
-      </header>
+            <aside className="side-menu" aria-label="القائمة الرئيسية">
+              <div className="side-menu-profile">
+                {user ? (
+                  <button
+                    type="button"
+                    className="side-profile-button"
+                    onClick={() => {
+                      setShowSideMenu(false);
+                      openAccount("profile");
+                    }}
+                  >
+                    {profile?.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt="صورة الحساب"
+                        className="side-profile-avatar"
+                      />
+                    ) : (
+                      <span className="side-profile-avatar side-profile-placeholder">
+                        {profile?.display_name?.charAt(0) || "👤"}
+                      </span>
+                    )}
+                    <span>
+                      <strong>{profile?.display_name || "حسابي"}</strong>
+                      <small>الملف الشخصي</small>
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="side-profile-button"
+                    onClick={() => {
+                      setShowSideMenu(false);
+                      setShowAccount(true);
+                      setShowNovels(false);
+                      setShowAdmin(false);
+                    }}
+                  >
+                    <span className="side-profile-avatar side-profile-placeholder">👤</span>
+                    <span>
+                      <strong>تسجيل الدخول</strong>
+                      <small>الدخول إلى حسابك</small>
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <nav className="side-menu-nav">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSideMenu(false);
+                    goHome();
+                  }}
+                >
+                  <span className="side-menu-icon">⌂</span>
+                  <span>الرئيسية</span>
+                </button>
+
+                {user && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSideMenu(false);
+                        openAccount("favorites");
+                      }}
+                    >
+                      <span className="side-menu-icon">♥</span>
+                      <span>المفضلة</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSideMenu(false);
+                        openAccount("history");
+                      }}
+                    >
+                      <span className="side-menu-icon">◉</span>
+                      <span>آخر المشاهدات</span>
+                    </button>
+                  </>
+                )}
+
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSideMenu(false);
+                      openAdmin();
+                    }}
+                  >
+                    <span className="side-menu-icon">▣</span>
+                    <span>لوحة الإدارة</span>
+                  </button>
+                )}
+
+                {user && (
+                  <button
+                    type="button"
+                    className="side-menu-logout"
+                    onClick={() => {
+                      setShowSideMenu(false);
+                      logout();
+                    }}
+                  >
+                    <span className="side-menu-icon">↪</span>
+                    <span>تسجيل الخروج</span>
+                  </button>
+                )}
+              </nav>
+            </aside>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -3686,6 +3836,35 @@ function App() {
                 <h2>
                   معلومات الحساب
                 </h2>
+
+                <div className="profile-avatar-editor">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="صورة الحساب"
+                      className="account-profile-avatar"
+                    />
+                  ) : (
+                    <div className="account-profile-avatar account-profile-avatar-empty">👤</div>
+                  )}
+
+                  <div>
+                    <strong>صورة الحساب</strong>
+                    <p>اختاري صورة تظهر لك في القائمة الجانبية.</p>
+                    <label className="profile-upload-button">
+                      رفع صورة
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void uploadProfileAvatar(file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
 
                 <div className="profile-info">
                   <div>
