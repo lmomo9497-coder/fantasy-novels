@@ -2067,6 +2067,80 @@ function App() {
     );
   }
 
+  async function updateChapterBlockSize(
+    block: ChapterBlock,
+    width: number | null,
+    height: number | null
+  ) {
+    if (!canManage) return;
+
+    const safeWidth =
+      width !== null && Number.isFinite(width) && width > 0
+        ? Math.round(width)
+        : null;
+    const safeHeight =
+      height !== null && Number.isFinite(height) && height > 0
+        ? Math.round(height)
+        : null;
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({
+        width: safeWidth,
+        height: safeHeight,
+      })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id
+          ? { ...item, width: safeWidth, height: safeHeight }
+          : item
+      )
+    );
+    setChapterMessage("تم حفظ مقاس العنصر.");
+  }
+
+  function changeChapterBlockDirection(
+    block: ChapterBlock,
+    direction: "left" | "right" | "up" | "down"
+  ) {
+    const placement = parseBlockPlacement(block);
+
+    if (direction === "up" || direction === "down") {
+      const nextRow = Math.max(
+        1,
+        placement.row + (direction === "up" ? -1 : 1)
+      );
+      void updateChapterBlockPlacement(
+        block,
+        placement.column,
+        nextRow
+      );
+      return;
+    }
+
+    const nextColumn =
+      placement.column === "full"
+        ? direction === "left"
+          ? "left"
+          : "right"
+        : direction === "left"
+          ? "left"
+          : "right";
+
+    void updateChapterBlockPlacement(
+      block,
+      nextColumn,
+      placement.row
+    );
+  }
+
   function renderChapterBlock(
     block: ChapterBlock,
     reader = true
@@ -3382,8 +3456,61 @@ function App() {
                   <div className="editor-block-placement">
                     {(() => {
                       const placement = parseBlockPlacement(block);
+                      const isMedia =
+                        block.block_type === "image" ||
+                        block.block_type === "gif" ||
+                        block.block_type === "audio";
+
                       return (
                         <>
+                          <div className="editor-move-controls">
+                            <span className="editor-control-title">
+                              مكان العنصر
+                            </span>
+                            <div className="editor-arrow-row">
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() =>
+                                  changeChapterBlockDirection(block, "right")
+                                }
+                                title="تحريك لليمين"
+                              >
+                                →
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() =>
+                                  changeChapterBlockDirection(block, "down")
+                                }
+                                title="تحريك لأسفل"
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() =>
+                                  changeChapterBlockDirection(block, "up")
+                                }
+                                title="تحريك لأعلى"
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() =>
+                                  changeChapterBlockDirection(block, "left")
+                                }
+                                title="تحريك لليسار"
+                              >
+                                ←
+                              </button>
+                            </div>
+                          </div>
+
                           <label>
                             العمود
                             <select
@@ -3396,8 +3523,8 @@ function App() {
                                 )
                               }
                             >
-                              <option value="right">اليمين — النص</option>
-                              <option value="left">اليسار — الصور والصوت</option>
+                              <option value="right">اليمين</option>
+                              <option value="left">اليسار</option>
                               <option value="full">عرض كامل</option>
                             </select>
                           </label>
@@ -3418,8 +3545,48 @@ function App() {
                             />
                           </label>
 
+                          {isMedia && (
+                            <>
+                              <label>
+                                العرض بالبكسل
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={block.width ?? ""}
+                                  placeholder="تلقائي"
+                                  onChange={(event) => {
+                                    const value = event.target.value;
+                                    void updateChapterBlockSize(
+                                      block,
+                                      value ? Number(value) : null,
+                                      block.height
+                                    );
+                                  }}
+                                />
+                              </label>
+
+                              <label>
+                                الارتفاع بالبكسل
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={block.height ?? ""}
+                                  placeholder="تلقائي"
+                                  onChange={(event) => {
+                                    const value = event.target.value;
+                                    void updateChapterBlockSize(
+                                      block,
+                                      block.width,
+                                      value ? Number(value) : null
+                                    );
+                                  }}
+                                />
+                              </label>
+                            </>
+                          )}
+
                           <span className="editor-placement-hint">
-                            نفس رقم الصف = عناصر بجانب بعضها.
+                            الأسهم تحرك العنصر وتحفظ مكانه فورًا. العرض والارتفاع يحفظان المقاس.
                           </span>
                         </>
                       );
