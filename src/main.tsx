@@ -2126,7 +2126,7 @@ function App() {
                   }}
                 >
                   <span className="side-menu-icon" aria-hidden="true">🏠</span>
-                  <span>هوم</span>
+                  <span>الرئيسية</span>
                 </button>
 
                 {user && (
