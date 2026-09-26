@@ -3703,3 +3703,35 @@ select:focus-visible {
     grid-column: auto;
   }
 }
+
+
+/* Final side menu sizing and category dropdown behavior */
+.side-menu {
+  width: min(300px, 82vw);
+  padding: 18px 14px;
+}
+.side-menu-profile { padding-bottom: 14px; }
+.side-profile-button { gap: 11px; padding: 8px; }
+.side-profile-avatar { width: 50px; height: 50px; flex-basis: 50px; }
+.side-profile-button strong { font-size: 15px; }
+.side-profile-button small { font-size: 12px; }
+.side-menu-nav { gap: 5px; padding-top: 14px; }
+.side-menu-nav button { min-height: 46px; gap: 11px; padding: 8px 11px; font-size: 16px; }
+.side-menu-icon { width: 28px; flex-basis: 28px; font-size: 19px; }
+.side-menu-logout { margin-top: 8px; }
+.side-owner-card { padding: 12px 0 14px; gap: 6px; font-size: 14px; }
+.side-owner-avatar { width: 54px; height: 54px; }
+
+.library-filters { align-items: start; }
+.category-filter-menu { position: relative; align-self: start; }
+.category-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  width: 100%;
+  margin-top: 0;
+}
+@media (max-width: 640px) {
+  .category-filter-dropdown { width: 100%; max-height: 300px; }
+}
