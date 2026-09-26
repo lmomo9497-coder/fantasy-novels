@@ -2172,8 +2172,25 @@ select:focus-visible {
   }
 
   .library-filters {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .library-filters > .category-filter-button,
+  .library-filters > .category-filter-menu,
+  .library-filters > select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .library-filters > .category-filter-menu {
+    display: block;
+  }
+
+  .library-filters > .category-filter-menu .category-filter-button {
+    width: 100%;
   }
 
 .category-filter-button {
