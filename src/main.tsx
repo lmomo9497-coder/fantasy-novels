@@ -1499,6 +1499,8 @@ function App() {
         if (error) {
           setAuthMessage(error.message);
         } else {
+          setLoginToast("تم تسجيل الدخول بنجاح.");
+          window.setTimeout(() => setLoginToast(""), 3500);
           setAuthEmail("");
           setAuthPassword("");
           setShowAccount(false);
