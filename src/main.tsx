@@ -2256,6 +2256,11 @@ function App() {
     setNewBlockColumn("right");
     setNewBlockRow("1");
     setNewBlockTextPosition("100");
+    setNewTextPositionY(50);
+    setNewTextFontSize(18);
+    setNewTextColor("#ffffff");
+    setNewTextAlign("right");
+    setNewTextWidthPercent(72);
     setNewBlockWidth("");
     setNewBlockHeight("");
   }
