@@ -110,6 +110,241 @@ function parseObjectPosition(value: string | null | undefined) {
   return { x: Number(match[1]), y: Number(match[2]) };
 }
 
+type ImageCropEditorProps = {
+  src: string;
+  width: number | null;
+  height: number | null;
+  objectPosition: string | null | undefined;
+  onSaveSize: (width: number, height: number) => void | Promise<void>;
+  onSavePosition: (x: number, y: number) => void | Promise<void>;
+};
+
+function ImageCropEditor({
+  src,
+  width,
+  height,
+  objectPosition,
+  onSaveSize,
+  onSavePosition,
+}: ImageCropEditorProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    type: "resize" | "move";
+    corner?: "nw" | "ne" | "sw" | "se";
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    startPositionX: number;
+    startPositionY: number;
+    scale: number;
+    displayWidth: number;
+    displayHeight: number;
+  } | null>(null);
+
+  const latestWidthRef = useRef(width ?? 360);
+  const latestHeightRef = useRef(height ?? 220);
+  const latestPositionRef = useRef(parseObjectPosition(objectPosition));
+
+  const [localWidth, setLocalWidth] = useState(width ?? 360);
+  const [localHeight, setLocalHeight] = useState(height ?? 220);
+  const [localPosition, setLocalPosition] = useState(
+    parseObjectPosition(objectPosition)
+  );
+
+  useEffect(() => {
+    const nextWidth = width ?? 360;
+    const nextHeight = height ?? 220;
+    latestWidthRef.current = nextWidth;
+    latestHeightRef.current = nextHeight;
+    setLocalWidth(nextWidth);
+    setLocalHeight(nextHeight);
+  }, [width, height]);
+
+  useEffect(() => {
+    const nextPosition = parseObjectPosition(objectPosition);
+    latestPositionRef.current = nextPosition;
+    setLocalPosition(nextPosition);
+  }, [objectPosition]);
+
+  function getMetrics() {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) {
+      return {
+        scale: 1,
+        displayWidth: localWidth,
+        displayHeight: localHeight,
+      };
+    }
+
+    const scale = Math.max(
+      0.1,
+      Math.min(
+        1,
+        (rect.width - 24) / Math.max(1, localWidth),
+        (rect.height - 24) / Math.max(1, localHeight)
+      )
+    );
+
+    return {
+      scale,
+      displayWidth: localWidth * scale,
+      displayHeight: localHeight * scale,
+    };
+  }
+
+  function startDrag(
+    event: React.PointerEvent<HTMLElement>,
+    type: "resize" | "move",
+    corner?: "nw" | "ne" | "sw" | "se"
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const metrics = getMetrics();
+    dragRef.current = {
+      type,
+      corner,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: latestWidthRef.current,
+      startHeight: latestHeightRef.current,
+      startPositionX: latestPositionRef.current.x,
+      startPositionY: latestPositionRef.current.y,
+      scale: metrics.scale,
+      displayWidth: metrics.displayWidth,
+      displayHeight: metrics.displayHeight,
+    };
+
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveDrag(event: React.PointerEvent<HTMLElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    if (drag.type === "move") {
+      const dxPercent =
+        ((event.clientX - drag.startX) /
+          Math.max(1, drag.displayWidth)) *
+        100;
+      const dyPercent =
+        ((event.clientY - drag.startY) /
+          Math.max(1, drag.displayHeight)) *
+        100;
+
+      const nextPosition = {
+        x: Math.min(
+          100,
+          Math.max(0, Math.round(drag.startPositionX - dxPercent))
+        ),
+        y: Math.min(
+          100,
+          Math.max(0, Math.round(drag.startPositionY - dyPercent))
+        ),
+      };
+
+      latestPositionRef.current = nextPosition;
+      setLocalPosition(nextPosition);
+      return;
+    }
+
+    const dx = (event.clientX - drag.startX) / drag.scale;
+    const dy = (event.clientY - drag.startY) / drag.scale;
+
+    let nextWidth = drag.startWidth;
+    let nextHeight = drag.startHeight;
+
+    if (drag.corner?.includes("e")) nextWidth += dx;
+    if (drag.corner?.includes("w")) nextWidth -= dx;
+    if (drag.corner?.includes("s")) nextHeight += dy;
+    if (drag.corner?.includes("n")) nextHeight -= dy;
+
+    const safeWidth = Math.min(2000, Math.max(80, Math.round(nextWidth)));
+    const safeHeight = Math.min(2000, Math.max(80, Math.round(nextHeight)));
+
+    latestWidthRef.current = safeWidth;
+    latestHeightRef.current = safeHeight;
+    setLocalWidth(safeWidth);
+    setLocalHeight(safeHeight);
+  }
+
+  async function finishDrag() {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    dragRef.current = null;
+
+    if (drag.type === "move") {
+      const position = latestPositionRef.current;
+      await onSavePosition(position.x, position.y);
+      return;
+    }
+
+    await onSaveSize(
+      latestWidthRef.current,
+      latestHeightRef.current
+    );
+  }
+
+  const metrics = getMetrics();
+
+  return (
+    <div className="image-crop-controls">
+      <span className="editor-control-title">
+        كبّري أو صغّري الصورة بالسحب من الزوايا، واسحبي الصورة نفسها لاختيار المشهد.
+      </span>
+
+      <div
+        ref={stageRef}
+        className="image-crop-stage"
+        onPointerMove={moveDrag}
+        onPointerUp={() => void finishDrag()}
+        onPointerCancel={() => void finishDrag()}
+      >
+        <div
+          className="image-crop-frame"
+          style={{
+            width: metrics.displayWidth + "px",
+            height: metrics.displayHeight + "px",
+          }}
+          onPointerDown={(event) => startDrag(event, "move")}
+        >
+          <img
+            src={src}
+            alt=""
+            draggable={false}
+            style={{
+              objectFit: "cover",
+              objectPosition:
+                localPosition.x + "% " + localPosition.y + "%",
+            }}
+          />
+
+          {(["nw", "ne", "sw", "se"] as const).map((corner) => (
+            <button
+              key={corner}
+              type="button"
+              aria-label="تغيير حجم الصورة"
+              className={"image-crop-handle image-crop-handle-" + corner}
+              onPointerDown={(event) =>
+                startDrag(event, "resize", corner)
+              }
+            />
+          ))}
+        </div>
+      </div>
+
+      <small className="form-hint">
+        اسحبي الصورة داخل الإطار لتحريك المشهد. اسحبي أي زاوية لتمديدها طولًا أو عرضًا.
+      </small>
+    </div>
+  );
+}
+
+
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -3737,118 +3972,75 @@ function App() {
 
                           {isMedia && (
                             <>
-                              <label>
-                                العرض بالبكسل
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={block.width ?? ""}
-                                  placeholder="تلقائي"
-                                  onChange={(event) => {
-                                    const value = event.target.value;
-                                    void updateChapterBlockSize(
-                                      block,
-                                      value ? Number(value) : null,
-                                      block.height
-                                    );
-                                  }}
-                                />
-                              </label>
+                              {block.block_type === "image" ||
+                              block.block_type === "gif" ? (
+                                block.media_path ? (
+                                  <ImageCropEditor
+                                    src={getPublicMediaUrl(
+                                      "chapter-media",
+                                      block.media_path
+                                    )}
+                                    width={block.width}
+                                    height={block.height}
+                                    objectPosition={block.object_position}
+                                    onSaveSize={(nextWidth, nextHeight) =>
+                                      updateChapterBlockSize(
+                                        block,
+                                        nextWidth,
+                                        nextHeight
+                                      )
+                                    }
+                                    onSavePosition={(x, y) =>
+                                      updateChapterBlockObjectPosition(
+                                        block,
+                                        x,
+                                        y
+                                      )
+                                    }
+                                  />
+                                ) : null
+                              ) : (
+                                <>
+                                  <label>
+                                    العرض بالبكسل
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={block.width ?? ""}
+                                      placeholder="تلقائي"
+                                      onChange={(event) => {
+                                        const value = event.target.value;
+                                        void updateChapterBlockSize(
+                                          block,
+                                          value ? Number(value) : null,
+                                          block.height
+                                        );
+                                      }}
+                                    />
+                                  </label>
 
-                              <label>
-                                الارتفاع بالبكسل
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={block.height ?? ""}
-                                  placeholder="تلقائي"
-                                  onChange={(event) => {
-                                    const value = event.target.value;
-                                    void updateChapterBlockSize(
-                                      block,
-                                      block.width,
-                                      value ? Number(value) : null
-                                    );
-                                  }}
-                                />
-                              </label>
-
-                              {(block.block_type === "image" ||
-                                block.block_type === "gif") && (
-                                <div className="image-crop-editor">
-                                  <span className="editor-control-title">
-                                    اختيار المشهد داخل الصورة
-                                  </span>
-
-                                  {block.media_path && (
-                                    <div className="image-crop-preview">
-                                      <img
-                                        src={getPublicMediaUrl(
-                                          "chapter-media",
-                                          block.media_path
-                                        )}
-                                        alt=""
-                                        style={{
-                                          objectFit: "cover",
-                                          objectPosition:
-                                            block.object_position || "50% 50%",
-                                        }}
-                                      />
-                                    </div>
-                                  )}
-
-                                  {(() => {
-                                    const position = parseObjectPosition(
-                                      block.object_position
-                                    );
-
-                                    return (
-                                      <>
-                                        <label>
-                                          أفقي: {position.x}%
-                                          <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={position.x}
-                                            onChange={(event) =>
-                                              void updateChapterBlockObjectPosition(
-                                                block,
-                                                Number(event.target.value),
-                                                position.y
-                                              )
-                                            }
-                                          />
-                                        </label>
-
-                                        <label>
-                                          عمودي: {position.y}%
-                                          <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            value={position.y}
-                                            onChange={(event) =>
-                                              void updateChapterBlockObjectPosition(
-                                                block,
-                                                position.x,
-                                                Number(event.target.value)
-                                              )
-                                            }
-                                          />
-                                        </label>
-                                      </>
-                                    );
-                                  })()}
-
-                                  <small className="form-hint">
-                                    مددي العرض والارتفاع، ثم حرّكي المؤشرين لاختيار
-                                    المشهد الظاهر داخل الصورة.
-                                  </small>
-                                </div>
+                                  <label>
+                                    الارتفاع بالبكسل
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={block.height ?? ""}
+                                      placeholder="تلقائي"
+                                      onChange={(event) => {
+                                        const value = event.target.value;
+                                        void updateChapterBlockSize(
+                                          block,
+                                          block.width,
+                                          value ? Number(value) : null
+                                        );
+                                      }}
+                                    />
+                                  </label>
+                                </>
                               )}
                             </>
                           )}
+
 
                           <span className="editor-placement-hint">
                             الأسهم تحرك العنصر وتحفظ مكانه فورًا. العرض والارتفاع يحفظان المقاس.
