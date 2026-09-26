@@ -2289,7 +2289,7 @@ function App() {
       maxWidth: "100%",
       objectFit:
         block.width && block.height
-          ? "fill"
+          ? "cover"
           : "contain",
     };
 
