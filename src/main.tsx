@@ -2055,6 +2055,12 @@ function App() {
                 <span>◉</span><strong>آخر المشاهدات</strong>
               </button>
 
+              {canManage && (
+                <button className="side-menu-item" onClick={() => { setShowSideMenu(false); openAdmin(); }}>
+                  <span>⚙</span><strong>لوحة الإدارة</strong>
+                </button>
+              )}
+
               <div className="side-menu-spacer" />
 
               {user && (
