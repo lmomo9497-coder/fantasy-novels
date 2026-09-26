@@ -2125,8 +2125,8 @@ function App() {
                     goHome();
                   }}
                 >
-                  <span className="side-menu-icon">⌂</span>
-                  <span>الرئيسية</span>
+                  <span className="side-menu-icon" aria-hidden="true">🏠</span>
+                  <span>هوم</span>
                 </button>
 
                 {user && (
@@ -2149,7 +2149,7 @@ function App() {
                         openAccount("history");
                       }}
                     >
-                      <span className="side-menu-icon">◉</span>
+                      <span className="side-menu-icon" aria-hidden="true">👁</span>
                       <span>آخر المشاهدات</span>
                     </button>
                   </>
