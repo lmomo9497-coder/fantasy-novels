@@ -34,6 +34,7 @@ type Novel = {
   created_at: string;
   updated_at?: string;
   categories?: Category | null;
+  novel_categories?: { category: Category }[];
 };
 
 type Chapter = {
@@ -155,7 +156,7 @@ function App() {
 
   const [novelTitle, setNovelTitle] = useState("");
   const [novelDescription, setNovelDescription] = useState("");
-  const [novelCategory, setNovelCategory] = useState("");
+  const [novelCategories, setNovelCategories] = useState<string[]>([]);
   const [novelStatus, setNovelStatus] =
     useState<"ongoing" | "completed">("ongoing");
   const [novelLanguage, setNovelLanguage] = useState("العربية");
@@ -271,10 +272,13 @@ function App() {
         !query ||
         title.includes(query) ||
         description.includes(query);
+      const novelCategoryIds = [
+        ...(novel.category_id ? [novel.category_id] : []),
+        ...(novel.novel_categories?.map((item) => item.category.id) ?? []),
+      ];
       const matchesCategory =
         selectedCategoryFilter.length === 0 ||
-        (novel.category_id !== null &&
-          selectedCategoryFilter.includes(novel.category_id));
+        selectedCategoryFilter.some((id) => novelCategoryIds.includes(id));
       const matchesStatus =
         selectedStatusFilter === "all" ||
         novel.status === selectedStatusFilter;
@@ -570,7 +574,7 @@ function App() {
   async function loadPublishedNovels() {
     const { data, error } = await supabase
       .from("novels")
-      .select("*, categories(*)")
+      .select("*, categories(*), novel_categories(category:categories(*))")
       .eq("published", true)
       .order("created_at", { ascending: false });
 
@@ -585,7 +589,7 @@ function App() {
   async function loadAdminData() {
     const { data, error } = await supabase
       .from("novels")
-      .select("*, categories(*)")
+      .select("*, categories(*), novel_categories(category:categories(*))")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -912,7 +916,7 @@ function App() {
     setEditingNovelId(null);
     setNovelTitle("");
     setNovelDescription("");
-    setNovelCategory("");
+    setNovelCategories([]);
     setNovelStatus("ongoing");
     setNovelLanguage("العربية");
     setNovelDirection("rtl");
@@ -924,7 +928,10 @@ function App() {
     setEditingNovelId(novel.id);
     setNovelTitle(novel.title);
     setNovelDescription(novel.description || "");
-    setNovelCategory(novel.category_id || "");
+    setNovelCategories([...new Set([
+      ...(novel.category_id ? [novel.category_id] : []),
+      ...(novel.novel_categories?.map((item) => item.category.id) ?? []),
+    ])]);
     setNovelStatus(novel.status);
     setNovelLanguage(novel.language || "العربية");
     setNovelDirection(novel.direction || "rtl");
@@ -960,7 +967,7 @@ function App() {
         slug,
         description: novelDescription.trim() || null,
         cover_path: novelCoverPath || null,
-        category_id: novelCategory || null,
+        category_id: novelCategories[0] || null,
         status: novelStatus,
         language: novelLanguage.trim() || "العربية",
         direction: novelDirection,
@@ -983,7 +990,7 @@ function App() {
             published: payload.published,
           })
           .eq("id", editingNovelId)
-          .select("*, categories(*)")
+          .select("*, categories(*), novel_categories(category:categories(*))")
           .single();
 
         if (error) {
@@ -991,40 +998,62 @@ function App() {
           return;
         }
 
+        const { error: categoryDeleteError } = await supabase
+          .from("novel_categories")
+          .delete()
+          .eq("novel_id", editingNovelId);
+
+        if (categoryDeleteError) {
+          setNovelMessage(categoryDeleteError.message);
+          return;
+        }
+
+        if (novelCategories.length > 0) {
+          const { error: categoryInsertError } = await supabase
+            .from("novel_categories")
+            .insert(novelCategories.map((categoryId) => ({
+              novel_id: editingNovelId,
+              category_id: categoryId,
+            })));
+
+          if (categoryInsertError) {
+            setNovelMessage(categoryInsertError.message);
+            return;
+          }
+        }
+
+        const refreshed = {
+          ...(data as Novel),
+          novel_categories: novelCategories
+            .map((categoryId) => categories.find((item) => item.id === categoryId))
+            .filter(Boolean)
+            .map((category) => ({ category: category as Category })),
+        };
+
         setNovels((current) =>
           current.map((item) =>
-            item.id === editingNovelId
-              ? (data as Novel)
-              : item
+            item.id === editingNovelId ? refreshed : item
           )
         );
 
         setPublishedNovels((current) => {
-          if (!data.published) {
-            return current.filter(
-              (item) => item.id !== editingNovelId
-            );
+          if (!refreshed.published) {
+            return current.filter((item) => item.id !== editingNovelId);
           }
 
-          const exists = current.some(
-            (item) => item.id === editingNovelId
-          );
+          const exists = current.some((item) => item.id === editingNovelId);
 
           if (exists) {
             return current.map((item) =>
-              item.id === editingNovelId
-                ? (data as Novel)
-                : item
+              item.id === editingNovelId ? refreshed : item
             );
           }
 
-          return [data as Novel, ...current];
+          return [refreshed, ...current];
         });
 
         setSelectedNovel((current) =>
-          current?.id === editingNovelId
-            ? (data as Novel)
-            : current
+          current?.id === editingNovelId ? refreshed : current
         );
 
         setNovelMessage(
@@ -1036,7 +1065,7 @@ function App() {
         const { data, error } = await supabase
           .from("novels")
           .insert(payload)
-          .select("*, categories(*)")
+          .select("*, categories(*), novel_categories(category:categories(*))")
           .single();
 
         if (error) {
@@ -1044,13 +1073,32 @@ function App() {
           return;
         }
 
-        setNovels((current) => [data as Novel, ...current]);
+        if (novelCategories.length > 0) {
+          const { error: categoryInsertError } = await supabase
+            .from("novel_categories")
+            .insert(novelCategories.map((categoryId) => ({
+              novel_id: data.id,
+              category_id: categoryId,
+            })));
+
+          if (categoryInsertError) {
+            setNovelMessage(categoryInsertError.message);
+            return;
+          }
+        }
+
+        const refreshed = {
+          ...(data as Novel),
+          novel_categories: novelCategories
+            .map((categoryId) => categories.find((item) => item.id === categoryId))
+            .filter(Boolean)
+            .map((category) => ({ category: category as Category })),
+        };
+
+        setNovels((current) => [refreshed, ...current]);
 
         if (data.published) {
-          setPublishedNovels((current) => [
-            data as Novel,
-            ...current,
-          ]);
+          setPublishedNovels((current) => [refreshed, ...current]);
         }
 
         setNovelMessage(
@@ -1080,7 +1128,7 @@ function App() {
         published: nextPublished,
       })
       .eq("id", novel.id)
-      .select("*, categories(*)")
+      .select("*, categories(*), novel_categories(category:categories(*))")
       .single();
 
     if (error) {
@@ -2467,9 +2515,14 @@ function App() {
             )}
           </div>
 
-          {novel.categories?.name && (
+          {(novel.novel_categories?.length || novel.categories?.name) && (
             <div className="novel-category">
-              {novel.categories.name}
+              {(novel.novel_categories?.length
+                ? novel.novel_categories.map((item) => item.category.name)
+                : novel.categories?.name
+                  ? [novel.categories.name]
+                  : []
+              ).join(" · ")}
             </div>
           )}
 
@@ -2686,12 +2739,17 @@ function App() {
           </div>
 
           <div className="form-group">
-            <label>التصنيف</label>
+            <label>التصنيفات (يمكن اختيار أكثر من تصنيف)</label>
             <select
-              value={novelCategory}
-              onChange={(event) =>
-                setNovelCategory(event.target.value)
-              }
+              value={novelCategories}
+              multiple
+              size={5}
+              onChange={(event) => {
+                const selected = Array.from(event.target.selectedOptions).map(
+                  (option) => option.value
+                );
+                setNovelCategories(selected);
+              }}
             >
               <option value="">
                 بدون تصنيف
@@ -3840,7 +3898,14 @@ function App() {
                   <div className="admin-novel-info">
                     <h3>{novel.title}</h3>
                     <div className="novel-meta">
-                      {novel.categories?.name && <span>{novel.categories.name}</span>}
+                      {(novel.novel_categories?.length || novel.categories?.name) && (
+                        <span>
+                          {(novel.novel_categories?.length
+                            ? novel.novel_categories.map((item) => item.category.name)
+                            : [novel.categories?.name]
+                          ).filter(Boolean).join(" · ")}
+                        </span>
+                      )}
                       <span>{novel.status === "ongoing" ? "مستمرة" : "مكتملة"}</span>
                       <span className={novel.published ? "status-published" : "status-draft"}>
                         {novel.published ? "منشورة" : "مسودة"}
