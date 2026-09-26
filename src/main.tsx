@@ -610,6 +610,7 @@ function App() {
   const [newBlockColumn, setNewBlockColumn] =
     useState<"left" | "right" | "full">("right");
   const [newBlockRow, setNewBlockRow] = useState("1");
+  const [newBlockTextPosition, setNewBlockTextPosition] = useState("100");
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
@@ -2031,6 +2032,7 @@ function App() {
     setNewBlockMediaFile(null);
     setNewBlockColumn("right");
     setNewBlockRow("1");
+    setNewBlockTextPosition("100");
     setNewBlockWidth("");
     setNewBlockHeight("");
   }
@@ -2200,7 +2202,13 @@ function App() {
                   .filter(Boolean)
                   .join(" — ") || null
               : newBlockMediaLabel.trim() || null,
-          align: `${safeColumn}:${safeRow}`,
+          align: makeBlockAlign(
+            safeColumn,
+            safeRow,
+            newBlockType === "text"
+              ? Number(newBlockTextPosition)
+              : undefined
+          ),
           width: newBlockWidth
             ? Number(newBlockWidth)
             : null,
@@ -2509,7 +2517,8 @@ function App() {
 
   function parseBlockPlacement(block: ChapterBlock) {
     const raw = String(block.align || "");
-    const parts = raw.split(":");
+    const placementRaw = raw.split("|")[0];
+    const parts = placementRaw.split(":");
     if (
       parts.length === 2 &&
       ["left", "right", "full"].includes(parts[0]) &&
@@ -2523,13 +2532,30 @@ function App() {
 
     return {
       column:
-        block.align === "left"
+        placementRaw === "left"
           ? "left"
-          : block.align === "right"
+          : placementRaw === "right"
             ? "right"
             : "full",
       row: Math.max(1, block.block_order),
     };
+  }
+
+  function parseTextOverlayPosition(block: ChapterBlock) {
+    const match = String(block.align || "").match(/(?:^|\\|)textpos:(0|[1-9][0-9]?|100)(?:$|\\|)/);
+    if (!match) return 50;
+    return Number(match[1]);
+  }
+
+  function makeBlockAlign(
+    column: "left" | "right" | "full",
+    row: number,
+    textPosition?: number
+  ) {
+    const base = column + ":" + row;
+    if (textPosition === undefined) return base;
+    const safe = Math.min(100, Math.max(0, Math.round(textPosition)));
+    return base + "|textpos:" + safe;
   }
 
   function getSafeChapterBlockPlacement(
@@ -2575,7 +2601,15 @@ function App() {
       column,
       row
     );
-    const align = placement.column + ":" + placement.row;
+    const textPosition =
+      block.block_type === "text"
+        ? parseTextOverlayPosition(block)
+        : undefined;
+    const align = makeBlockAlign(
+      placement.column,
+      placement.row,
+      textPosition
+    );
 
     const { error } = await supabase
       .from("chapter_blocks")
@@ -2868,16 +2902,29 @@ function App() {
     }
 
     if (block.block_type === "text" && mediaUrl) {
+      const textOverlayPosition = parseTextOverlayPosition(block);
       const textOverlayStyle: React.CSSProperties = {
-        width:
-          block.width && block.width > 0
-            ? `${block.width}px`
-            : "min(100%, 760px)",
+        width: block.width && block.width > 0 ? `${block.width}px` : "min(100%, 760px)",
         minHeight:
           block.height && block.height > 0
             ? `${block.height}px`
             : undefined,
         maxWidth: "100%",
+      };
+
+      const overlayPlacementStyle: React.CSSProperties = {
+        justifyContent:
+          textOverlayPosition >= 85
+            ? "flex-end"
+            : textOverlayPosition <= 15
+              ? "flex-start"
+              : "center",
+        textAlign:
+          textOverlayPosition >= 85
+            ? "right"
+            : textOverlayPosition <= 15
+              ? "left"
+              : "center",
       };
 
       return (
@@ -2893,6 +2940,7 @@ function App() {
             className="chapter-text-on-image-shell"
             style={{
               ...textOverlayStyle,
+              ...overlayPlacementStyle,
               background: `rgba(7, 6, 9, ${Math.min(
                 1,
                 Math.max(0, Number(block.text_overlay_opacity ?? 0.62))
@@ -2902,6 +2950,7 @@ function App() {
             <p
               className="chapter-text chapter-text-on-image"
               dir={selectedNovel?.direction || "rtl"}
+              style={{ textAlign: overlayPlacementStyle.textAlign }}
             >
               {block.content}
             </p>
@@ -3954,7 +4003,28 @@ function App() {
                       «القارئ — أحمد» أو «مؤثرات صوتية — المطر».
                     </small>
                   </div>
-                )}                <div className="form-group">
+                )}                {newBlockType === "text" && (
+                  <div className="form-group">
+                    <label>مكان النص فوق الصورة</label>
+                    <select
+                      value={newBlockTextPosition}
+                      onChange={(event) =>
+                        setNewBlockTextPosition(event.target.value)
+                      }
+                    >
+                      <option value="100">أقصى اليمين</option>
+                      <option value="75">يمين</option>
+                      <option value="50">منتصف</option>
+                      <option value="25">يسار</option>
+                      <option value="0">أقصى اليسار</option>
+                    </select>
+                    <small className="form-hint">
+                      هذا يحرّك النص فوق الصورة فقط، ولا يغيّر عمود العنصر.
+                    </small>
+                  </div>
+                )}
+
+                <div className="form-group">
                   <label>العمود</label>
                   <select
                     value={newBlockColumn}
@@ -4276,6 +4346,43 @@ function App() {
 
                           {isText && (
                             <>
+                              {block.block_type === "text" && block.media_path && (
+                                <label className="text-overlay-position-control">
+                                  مكان النص فوق الصورة
+                                  <select
+                                    value={String(parseTextOverlayPosition(block))}
+                                    onChange={async (event) => {
+                                      const value = Number(event.target.value);
+                                      const placement = parseBlockPlacement(block);
+                                      const align = makeBlockAlign(
+                                        placement.column,
+                                        placement.row,
+                                        value
+                                      );
+                                      const { error } = await supabase
+                                        .from("chapter_blocks")
+                                        .update({ align })
+                                        .eq("id", block.id);
+                                      if (error) {
+                                        setChapterMessage(error.message);
+                                        return;
+                                      }
+                                      setChapterBlocks((current) =>
+                                        current.map((item) =>
+                                          item.id === block.id ? { ...item, align } : item
+                                        )
+                                      );
+                                    }}
+                                  >
+                                    <option value="100">أقصى اليمين</option>
+                                    <option value="75">يمين</option>
+                                    <option value="50">منتصف</option>
+                                    <option value="25">يسار</option>
+                                    <option value="0">أقصى اليسار</option>
+                                  </select>
+                                </label>
+                              )}
+
                               <TextResizeEditor
                                 width={block.width}
                                 height={block.height}
