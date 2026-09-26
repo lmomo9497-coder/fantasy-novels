@@ -2940,7 +2940,10 @@ function App() {
           <div
             className="chapter-text-background-dim"
             style={{
-              opacity: Math.min(1, Math.max(0, Number(block.text_overlay_opacity ?? 0.62))),
+              opacity: Math.min(
+                1,
+                Math.max(0, Number(block.text_overlay_opacity ?? 0.24))
+              ),
             }}
           />
           <div
@@ -4403,8 +4406,8 @@ function App() {
 
                               {block.media_path && block.block_type === "text" && (
                                 <label className="text-overlay-opacity-control">
-                                  تعتيم خلف النص — {Math.round(
-                                    (block.text_overlay_opacity ?? 0.62) * 100
+                                  تظليل خفيف خلف النص — {Math.round(
+                                    (block.text_overlay_opacity ?? 0.24) * 100
                                   )}%
                                   <input
                                     type="range"
@@ -4412,7 +4415,7 @@ function App() {
                                     max="100"
                                     step="1"
                                     value={Math.round(
-                                      (block.text_overlay_opacity ?? 0.62) * 100
+                                      (block.text_overlay_opacity ?? 0.24) * 100
                                     )}
                                     onChange={(event) => {
                                       void updateChapterBlockTextOverlayOpacity(
@@ -4522,7 +4525,12 @@ function App() {
                 return (
                   <div
                     key={block.id}
-                    className="chapter-layout-item"
+                    className={
+                      "chapter-layout-item" +
+                      (block.block_type === "text" && block.media_path
+                        ? " chapter-layout-item-text-image"
+                        : "")
+                    }
                     style={{
                       gridColumn:
                         placement.column === "full"
