@@ -574,7 +574,7 @@ function App() {
   async function loadPublishedNovels() {
     const { data, error } = await supabase
       .from("novels")
-      .select("*, categories(*), novel_categories(category:categories(*))")
+      .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
       .eq("published", true)
       .order("created_at", { ascending: false });
 
@@ -589,7 +589,7 @@ function App() {
   async function loadAdminData() {
     const { data, error } = await supabase
       .from("novels")
-      .select("*, categories(*), novel_categories(category:categories(*))")
+      .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -990,7 +990,7 @@ function App() {
             published: payload.published,
           })
           .eq("id", editingNovelId)
-          .select("*, categories(*), novel_categories(category:categories(*))")
+          .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
           .single();
 
         if (error) {
@@ -1065,7 +1065,7 @@ function App() {
         const { data, error } = await supabase
           .from("novels")
           .insert(payload)
-          .select("*, categories(*), novel_categories(category:categories(*))")
+          .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
           .single();
 
         if (error) {
@@ -1128,7 +1128,7 @@ function App() {
         published: nextPublished,
       })
       .eq("id", novel.id)
-      .select("*, categories(*), novel_categories(category:categories(*))")
+      .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
       .single();
 
     if (error) {
