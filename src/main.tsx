@@ -4712,7 +4712,9 @@ function App() {
                     </div>
                   </div>
 
-                  {isText && canManage && (
+                  {(block.block_type === "text" ||
+                    block.block_type === "heading" ||
+                    block.block_type === "quote") && canManage && (
                     <div className="editor-text-content-editor">
                       <label>
                         تعديل النص
