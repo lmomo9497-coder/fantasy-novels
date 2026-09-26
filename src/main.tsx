@@ -33,6 +33,8 @@ type Novel = {
   created_by: string | null;
   created_at: string;
   updated_at?: string;
+  published_at?: string | null;
+  latest_chapter_published_at?: string | null;
   categories?: Category | null;
   novel_categories?: { category: Category }[];
   reader_count?: number;
@@ -109,6 +111,16 @@ function normalizeSearchText(value: string) {
     .replace(/ـ/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+const NEW_CHAPTER_WINDOW_MS = 36 * 60 * 60 * 1000;
+
+function isChapterNew(chapter: Chapter, nowMs = Date.now()) {
+  if (!chapter.published_at) return false;
+  const publishedMs = new Date(chapter.published_at).getTime();
+  if (!Number.isFinite(publishedMs)) return false;
+  const age = nowMs - publishedMs;
+  return age >= 0 && age < NEW_CHAPTER_WINDOW_MS;
 }
 
 function parseObjectPosition(value: string | null | undefined) {
@@ -772,7 +784,9 @@ function App() {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [readChapterIds, setReadChapterIds] = useState<Set<string>>(new Set());
   const [loadingAccountData, setLoadingAccountData] = useState(false);
+  const [currentTimeMs, setCurrentTimeMs] = useState(() => Date.now());
 
   const [novels, setNovels] = useState<Novel[]>([]);
   const [publishedNovels, setPublishedNovels] = useState<Novel[]>([]);
@@ -949,6 +963,35 @@ function App() {
     });
   }, [novels, adminNovelSearch]);
 
+  const newReleaseNovels = useMemo(() => {
+    return publishedNovels
+      .map((novel) => {
+        const novelAt = novel.published_at
+          ? new Date(novel.published_at).getTime()
+          : 0;
+        const chapterAt = novel.latest_chapter_published_at
+          ? new Date(novel.latest_chapter_published_at).getTime()
+          : 0;
+        const latestAt = Math.max(
+          Number.isFinite(novelAt) ? novelAt : 0,
+          Number.isFinite(chapterAt) ? chapterAt : 0
+        );
+
+        return {
+          novel,
+          latestAt,
+          activityLabel:
+            novelAt >= chapterAt && novelAt > 0
+              ? "رواية جديدة"
+              : chapterAt > 0
+                ? "فصل جديد"
+                : "جديدة",
+        };
+      })
+      .sort((a, b) => b.latestAt - a.latestAt)
+      .slice(0, 6);
+  }, [publishedNovels]);
+
   const currentChapterIndex = useMemo(
     () =>
       selectedChapter
@@ -1120,11 +1163,6 @@ function App() {
 
       setUser(session?.user ?? null);
 
-      if (_event === "SIGNED_IN" && session?.user) {
-        setLoginToast("تم تسجيل الدخول بنجاح.");
-        window.setTimeout(() => setLoginToast(""), 3500);
-      }
-
       if (session?.user) {
         await loadProfile(session.user.id);
       } else {
@@ -1141,6 +1179,11 @@ function App() {
 
       setUser(session?.user ?? null);
 
+      if (_event === "SIGNED_IN" && session?.user) {
+        setLoginToast("تم تسجيل الدخول بنجاح.");
+        window.setTimeout(() => setLoginToast(""), 3500);
+      }
+
       if (session?.user) {
         await loadProfile(session.user.id);
       } else {
@@ -1148,6 +1191,7 @@ function App() {
         setFavorites([]);
         setHistory([]);
         setNotifications([]);
+        setReadChapterIds(new Set());
       }
     });
 
@@ -1178,6 +1222,24 @@ function App() {
       loadAccountData();
     }
   }, [user]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTimeMs(Date.now());
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const timer = window.setInterval(() => {
+      void loadNotificationsOnly();
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, [user?.id]);
 
   async function loadOwnerProfile() {
     const { data, error } = await supabase
@@ -1268,8 +1330,38 @@ function App() {
       return;
     }
 
+    const publishedNovelRows = (data ?? []) as Novel[];
+    const novelIds = publishedNovelRows.map((novel) => novel.id);
+    const latestChapterByNovel = new Map<string, string | null>();
+
+    if (novelIds.length > 0) {
+      const { data: chapterData, error: chapterError } = await supabase
+        .from("chapters")
+        .select("novel_id, published_at")
+        .in("novel_id", novelIds)
+        .eq("published", true)
+        .order("published_at", { ascending: false });
+
+      if (!chapterError) {
+        (chapterData ?? []).forEach((chapter) => {
+          if (!latestChapterByNovel.has(chapter.novel_id)) {
+            latestChapterByNovel.set(
+              chapter.novel_id,
+              chapter.published_at || null
+            );
+          }
+        });
+      }
+    }
+
+    const novelsWithActivity = publishedNovelRows.map((novel) => ({
+      ...novel,
+      latest_chapter_published_at:
+        latestChapterByNovel.get(novel.id) ?? null,
+    }));
+
     const novelsWithReaderCounts = await attachNovelReaderCounts(
-      (data ?? []) as Novel[]
+      novelsWithActivity
     );
     setPublishedNovels(novelsWithReaderCounts);
   }
@@ -1321,13 +1413,28 @@ function App() {
     }
   }
 
+  async function loadNotificationsOnly() {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .is("ignored_at", null)
+      .order("created_at", { ascending: false });
+
+    if (!error) {
+      setNotifications(data ?? []);
+    }
+  }
+
   async function loadAccountData() {
     if (!user) return;
 
     setLoadingAccountData(true);
 
     try {
-      const [favoritesResult, historyResult, notificationsResult] =
+      const [favoritesResult, historyResult, notificationsResult, readsResult] =
         await Promise.all([
           supabase
             .from("favorites")
@@ -1345,7 +1452,13 @@ function App() {
             .from("notifications")
             .select("*")
             .eq("user_id", user.id)
+            .is("ignored_at", null)
             .order("created_at", { ascending: false }),
+
+          supabase
+            .from("chapter_reads")
+            .select("chapter_id")
+            .eq("user_id", user.id),
         ]);
 
       if (!favoritesResult.error) {
@@ -1358,6 +1471,16 @@ function App() {
 
       if (!notificationsResult.error) {
         setNotifications(notificationsResult.data ?? []);
+      }
+
+      if (!readsResult.error) {
+        setReadChapterIds(
+          new Set(
+            (readsResult.data ?? [])
+              .map((item) => String(item.chapter_id))
+              .filter(Boolean)
+          )
+        );
       }
     } finally {
       setLoadingAccountData(false);
@@ -1390,6 +1513,55 @@ function App() {
           : item
       )
     );
+  }
+
+  async function dismissAllNotifications() {
+    if (!user || notifications.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({
+        ignored_at: now,
+        read_at: now,
+      })
+      .eq("user_id", user.id)
+      .is("ignored_at", null);
+
+    if (error) {
+      setSiteMessage(error.message);
+      return;
+    }
+
+    setNotifications([]);
+  }
+
+  async function markChapterRead(chapterId: string) {
+    if (!user) return;
+
+    const now = new Date().toISOString();
+
+    setReadChapterIds((current) => {
+      const next = new Set(current);
+      next.add(chapterId);
+      return next;
+    });
+
+    const { error } = await supabase
+      .from("chapter_reads")
+      .upsert(
+        {
+          user_id: user.id,
+          chapter_id: chapterId,
+          read_at: now,
+        },
+        { onConflict: "user_id,chapter_id" }
+      );
+
+    if (error) {
+      console.error("Chapter read tracking error:", error);
+    }
   }
 
   async function uploadProfileAvatar(file: File) {
@@ -1658,6 +1830,10 @@ function App() {
     try {
       const slug = makeSlug(novelTitle);
 
+      const existingNovel = editingNovelId
+        ? novels.find((item) => item.id === editingNovelId)
+        : null;
+
       const payload = {
         title: novelTitle.trim(),
         slug,
@@ -1668,6 +1844,11 @@ function App() {
         language: novelLanguage.trim() || "العربية",
         direction: novelDirection,
         published: publish,
+        published_at: publish
+          ? existingNovel?.published && existingNovel.published_at
+            ? existingNovel.published_at
+            : new Date().toISOString()
+          : null,
         created_by: user?.id ?? null,
       };
 
@@ -1684,6 +1865,7 @@ function App() {
             language: payload.language,
             direction: payload.direction,
             published: payload.published,
+            published_at: payload.published_at,
           })
           .eq("id", editingNovelId)
           .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
@@ -1822,6 +2004,9 @@ function App() {
       .from("novels")
       .update({
         published: nextPublished,
+        published_at: nextPublished
+          ? novel.published_at || new Date().toISOString()
+          : null,
       })
       .eq("id", novel.id)
       .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
@@ -1957,7 +2142,7 @@ function App() {
     setChapterMessage("");
     setShowChapterForm(false);
     setSelectedNovelAdminView(true);
-    void openChapter(chapter);
+    void openChapter(chapter, true);
   }
 
   async function saveChapter(publish: boolean) {
@@ -1975,6 +2160,10 @@ function App() {
 
     try {
       if (editingChapterId) {
+        const existingChapter = chapters.find(
+          (item) => item.id === editingChapterId
+        );
+
         const { data, error } = await supabase
           .from("chapters")
           .update({
@@ -1982,7 +2171,9 @@ function App() {
             title: chapterTitle.trim() || null,
             published: publish,
             published_at: publish
-              ? new Date().toISOString()
+              ? existingChapter?.published && existingChapter.published_at
+                ? existingChapter.published_at
+                : new Date().toISOString()
               : null,
           })
           .eq("id", editingChapterId)
@@ -2104,8 +2295,13 @@ function App() {
     });
   }
 
-  async function openChapter(chapter: Chapter) {
+  async function openChapter(
+    chapter: Chapter,
+    adminViewOverride?: boolean
+  ) {
     if (!selectedNovel) return;
+
+    const isAdminView = adminViewOverride ?? selectedNovelAdminView;
 
     setSelectedChapter(chapter);
     setReaderProgress(0);
@@ -2128,7 +2324,9 @@ function App() {
       setChapterBlocks((data ?? []) as ChapterBlock[]);
 
       let savedProgress = 0;
-      if (!selectedNovelAdminView && user) {
+      if (!isAdminView && user) {
+        void markChapterRead(chapter.id);
+
         const { data: progress } = await supabase
           .from("reading_progress")
           .select("chapter_id, progress_percent")
@@ -2144,7 +2342,7 @@ function App() {
         await saveReadingProgress(selectedNovel.id, chapter.id, savedProgress);
       }
 
-      if (!selectedNovelAdminView) {
+      if (!isAdminView) {
         window.setTimeout(() => {
           if (savedProgress > 2) {
             window.scrollTo({
@@ -2643,6 +2841,10 @@ function App() {
     setShowNovels(false);
     setSelectedNovel(null);
     setSelectedChapter(null);
+
+    if (user) {
+      void loadAccountData();
+    }
   }
 
   function openAdmin() {
@@ -3625,17 +3827,47 @@ function App() {
               <span>روايات خيالية</span>
             </button>
 
-            <button
-              type="button"
-              className="menu-button"
-              onClick={() => setShowSideMenu(true)}
-              aria-label="فتح القائمة"
-              aria-expanded={showSideMenu}
-            >
-              <span></span>
-              <span></span>
-              <span></span>
-            </button>
+            <div className="header-actions">
+              {user && (
+                <button
+                  type="button"
+                  className="notification-bell-button"
+                  onClick={() => openAccount("notifications")}
+                  aria-label="الإشعارات"
+                  title="الإشعارات"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                    <path d="M10 21h4" />
+                  </svg>
+                  {unreadNotifications > 0 && (
+                    <span className="notification-bell-badge">
+                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="menu-button"
+                onClick={() => setShowSideMenu(true)}
+                aria-label="فتح القائمة"
+                aria-expanded={showSideMenu}
+              >
+                <span></span>
+                <span></span>
+                <span></span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -3787,16 +4019,22 @@ function App() {
     );
   }
 
-  function renderNovelCard(novel: Novel) {
+  function renderNovelCard(novel: Novel, activityLabel?: string) {
     const favorite = isFavorite(novel.id);
     const image = coverUrl(novel);
 
     return (
       <article
         key={novel.id}
-        className="novel-card"
+        className={
+          "novel-card" + (activityLabel ? " novel-card-new-release" : "")
+        }
         onClick={() => openNovel(novel, false)}
       >
+        {activityLabel && (
+          <span className="novel-new-badge">{activityLabel}</span>
+        )}
+
         <div className="novel-cover">
           {image ? (
             <img
@@ -3887,6 +4125,24 @@ function App() {
             </p>
           </div>
         </div>
+
+        {newReleaseNovels.length > 0 && (
+          <section className="new-releases-section">
+            <div className="section-heading new-releases-heading">
+              <div>
+                <span className="eyebrow">آخر ما نُشر</span>
+                <h2>الروايات الجديدة</h2>
+              </div>
+              <span className="count-badge">{newReleaseNovels.length}</span>
+            </div>
+
+            <div className="novels-grid">
+              {newReleaseNovels.map(({ novel, activityLabel }) =>
+                renderNovelCard(novel, activityLabel)
+              )}
+            </div>
+          </section>
+        )}
 
         <div className="library-tools card">
           <form
@@ -5422,7 +5678,10 @@ function App() {
             <div className="chapter-list">
               {chapters.map((chapter) => (
                 <article
-                  className="chapter-card"
+                  className={
+                    "chapter-card" +
+                    (readChapterIds.has(chapter.id) ? " is-read" : "")
+                  }
                   key={chapter.id}
                 >
                   <button
@@ -5439,6 +5698,15 @@ function App() {
                     <span className="chapter-title">
                       {chapter.title ||
                         "بدون عنوان"}
+                    </span>
+
+                    <span className="chapter-statuses">
+                      {isChapterNew(chapter, currentTimeMs) && (
+                        <span className="chapter-new-badge">جديد</span>
+                      )}
+                      {readChapterIds.has(chapter.id) && (
+                        <span className="chapter-read-badge">شاهدت هذا الفصل</span>
+                      )}
                     </span>
                   </button>
 
@@ -6003,12 +6271,23 @@ function App() {
                     </h2>
                   </div>
 
-                  {unreadNotifications >
-                    0 && (
-                    <span className="count-badge">
-                      {unreadNotifications}
-                    </span>
-                  )}
+                  <div className="notification-heading-actions">
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        className="secondary-button small-button"
+                        onClick={() => void dismissAllNotifications()}
+                      >
+                        تجاهل الإشعارات
+                      </button>
+                    )}
+
+                    {unreadNotifications > 0 && (
+                      <span className="count-badge">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {notifications.length ===
