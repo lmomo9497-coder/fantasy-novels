@@ -86,6 +86,19 @@ function makeSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLocaleLowerCase("ar")
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ـ/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -197,12 +210,14 @@ function App() {
   );
 
   const filteredNovels = useMemo(() => {
-    const query = searchQuery.trim().toLocaleLowerCase("ar");
+    const query = normalizeSearchText(searchQuery);
     return publishedNovels.filter((novel) => {
+      const title = normalizeSearchText(novel.title);
+      const description = normalizeSearchText(novel.description || "");
       const matchesQuery =
         !query ||
-        novel.title.toLocaleLowerCase("ar").includes(query) ||
-        (novel.description || "").toLocaleLowerCase("ar").includes(query);
+        title.includes(query) ||
+        description.includes(query);
       const matchesCategory =
         selectedCategoryFilter.length === 0 ||
         (novel.category_id !== null &&
