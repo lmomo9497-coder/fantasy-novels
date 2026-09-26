@@ -4149,6 +4149,7 @@ select:focus-visible {
   isolation: isolate;
   width: 100%;
   min-width: 0;
+  min-height: 1px;
   padding: 0;
   border-radius: 18px;
   overflow: hidden;
@@ -4158,30 +4159,20 @@ select:focus-visible {
 }
 
 .chapter-text-background-image {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 0;
   display: block;
   width: 100%;
-  height: auto;
-  max-width: 100%;
-  object-fit: contain;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
   object-position: center;
   background: #151218;
 }
 
 .chapter-text-background-dim {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse at center,
-      rgba(0, 0, 0, 0.42) 0%,
-      rgba(0, 0, 0, 0.20) 36%,
-      rgba(0, 0, 0, 0.05) 62%,
-      transparent 80%
-    );
+  display: none;
 }
 
 .chapter-text-on-image-shell {
@@ -4217,6 +4208,15 @@ select:focus-visible {
   text-shadow:
     0 2px 4px rgba(0, 0, 0, 0.96),
     0 5px 18px rgba(0, 0, 0, 0.72);
+}
+
+.chapter-text-on-image-highlight {
+  display: inline;
+  padding: 0.08em 0.20em;
+  border-radius: 0.32em;
+  background: rgba(0, 0, 0, 0.46);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .chapter-effect-audio-button {
@@ -4294,9 +4294,9 @@ select:focus-visible {
   position: absolute;
   z-index: 2;
   padding: 9px 12px;
-  border: 1px dashed rgba(238, 213, 243, 0.78);
+  border: 0;
   border-radius: 10px;
-  background: rgba(8, 7, 10, 0.20);
+  background: transparent;
   font-weight: 700;
   line-height: 1.8;
   overflow-wrap: anywhere;
