@@ -3821,3 +3821,10 @@ select:focus-visible {
     grid-column: 1 / -1;
   }
 }
+
+
+.novel-reader-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
