@@ -5229,7 +5229,7 @@ function App() {
       {renderHeader()}
 
       {logoutToast && (
-        <div className="site-toast site-toast-success" role="status" aria-live="polite">
+        <div className="site-toast site-toast-logout" role="status" aria-live="polite">
           <span className="site-toast-icon">✓</span>
           <span>{logoutToast}</span>
         </div>
