@@ -4941,27 +4941,11 @@ function App() {
                                   مكان النص فوق الصورة
                                   <select
                                     value={String(parseTextOverlayPosition(block))}
-                                    onChange={async (event) => {
+                                    onChange={(event) => {
                                       const value = Number(event.target.value);
-                                      const placement = parseBlockPlacement(block);
-                                      const align = makeBlockAlign(
-                                        placement.column,
-                                        placement.row,
-                                        value
-                                      );
-                                      const { error } = await supabase
-                                        .from("chapter_blocks")
-                                        .update({ align })
-                                        .eq("id", block.id);
-                                      if (error) {
-                                        setChapterMessage(error.message);
-                                        return;
-                                      }
-                                      setChapterBlocks((current) =>
-                                        current.map((item) =>
-                                          item.id === block.id ? { ...item, align } : item
-                                        )
-                                      );
+                                      void updateTextSceneProperty(block, {
+                                        text_position_x: value,
+                                      });
                                     }}
                                   >
                                     <option value="100">أقصى اليمين</option>
