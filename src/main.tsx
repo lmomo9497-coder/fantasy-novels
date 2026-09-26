@@ -621,6 +621,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [siteMessage, setSiteMessage] = useState("");
+  const [logoutToast, setLogoutToast] = useState("");
 
   const isOwner = profile?.role === "owner";
   const isStaff = profile?.role === "staff";
@@ -1212,6 +1213,9 @@ function App() {
     setShowAccount(false);
     setShowAdmin(false);
     setShowNovels(true);
+    setShowSideMenu(false);
+    setLogoutToast("تم تسجيل الخروج بنجاح.");
+    window.setTimeout(() => setLogoutToast(""), 3500);
   }
 
   async function signInWithGoogle() {
@@ -5223,6 +5227,13 @@ function App() {
   return (
     <div className="app-shell" dir="rtl">
       {renderHeader()}
+
+      {logoutToast && (
+        <div className="site-toast site-toast-success" role="status" aria-live="polite">
+          <span className="site-toast-icon">✓</span>
+          <span>{logoutToast}</span>
+        </div>
+      )}
 
       <main className="site-main">
         {selectedChapter
