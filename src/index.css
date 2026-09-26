@@ -3215,3 +3215,128 @@ select:focus-visible {
     margin-top: 15px;
   }
 }
+
+
+/* إدارة الروايات */
+.admin-novel-search {
+  position: relative;
+  margin: 18px 0 20px;
+}
+
+.admin-novel-search input {
+  width: 100%;
+  min-height: 50px;
+  padding: 11px 48px 11px 14px;
+  border: 1px solid #3a333d;
+  border-radius: 13px;
+  background: #111015;
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
+}
+
+.admin-novel-search input:focus {
+  border-color: rgba(199, 166, 201, 0.55);
+  box-shadow: 0 0 0 3px rgba(199, 166, 201, 0.07);
+}
+
+.admin-novel-search-icon {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 24px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.admin-novel-list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-novel-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 112px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #151218;
+}
+
+.admin-novel-cover-wrap {
+  width: 76px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #211c25;
+}
+
+.admin-novel-cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-novel-cover-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted-2);
+  font-size: 12px;
+}
+
+.admin-novel-info h3 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.admin-novel-info .novel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.admin-row-actions button {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .admin-novel-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .admin-novel-cover-wrap {
+    width: 64px;
+    height: 84px;
+  }
+
+  .admin-novel-info h3 {
+    font-size: 16px;
+  }
+
+  .admin-row-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .admin-row-actions button {
+    flex: 1 1 calc(50% - 7px);
+  }
+}
