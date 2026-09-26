@@ -113,6 +113,7 @@ function makeStorageId() {
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
 
   const [showAccount, setShowAccount] = useState(false);
   const [showSideMenu, setShowSideMenu] = useState(false);
@@ -318,7 +319,7 @@ function App() {
     loadPublishedNovels();
     loadCategories();
   }, []);
-
+\n  useEffect(() => {\n    loadOwnerProfile();\n  }, []);\n
   useEffect(() => {
     if (canManage) {
       loadAdminData();
@@ -331,6 +332,22 @@ function App() {
       loadAccountData();
     }
   }, [user]);
+
+  async function loadOwnerProfile() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "owner")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Owner profile error:", error);
+      return;
+    }
+
+    setOwnerProfile(data as Profile | null);
+  }
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
@@ -2119,6 +2136,19 @@ function App() {
                     </span>
                   </button>
                 )}
+              </div>
+
+              <div className="side-owner-card" aria-label="المالك">
+                {ownerProfile?.avatar_url ? (
+                  <img
+                    src={ownerProfile.avatar_url}
+                    alt="المالك"
+                    className="side-owner-avatar"
+                  />
+                ) : (
+                  <span className="side-owner-avatar side-profile-placeholder">👤</span>
+                )}
+                <span>المالك</span>
               </div>
 
               <nav className="side-menu-nav">
