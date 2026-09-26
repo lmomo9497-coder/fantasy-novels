@@ -4632,11 +4632,13 @@ function App() {
                     className="chapter-layout-item"
                     style={{
                       gridColumn:
-                        placement.column === "full"
+                        block.block_type === "text" && block.media_path
                           ? "1 / -1"
-                          : placement.column === "right"
-                            ? "1"
-                            : "2",
+                          : placement.column === "full"
+                            ? "1 / -1"
+                            : placement.column === "right"
+                              ? "1"
+                              : "2",
                       gridRow: placement.row,
                     }}
                   >
