@@ -115,6 +115,7 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [showAccount, setShowAccount] = useState(false);
+  const [showSideMenu, setShowSideMenu] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showNovels, setShowNovels] = useState(true);
 
@@ -1988,131 +1989,83 @@ function App() {
 
   function renderHeader() {
     return (
-      <header className="site-header">
-        <div className="header-inner">
-          <button
-            className="brand-button"
-            onClick={goHome}
-          >
-            <span className="brand-mark">✦</span>
-            <span>روايات خيالية</span>
-          </button>
-
-          <nav className="header-nav">
-            <button onClick={goHome}>
-              الروايات
+      <>
+        <header className="site-header">
+          <div className="header-inner">
+            <button className="menu-button" onClick={() => setShowSideMenu(true)} aria-label="فتح القائمة">
+              ☰
             </button>
 
-            {user && (
-              <button
-                onClick={() => openAccount("profile")}
-              >
-                حسابي
-              </button>
-            )}
+            <button className="brand-button" onClick={goHome}>
+              <span className="brand-mark">✦</span>
+              <span>روايات خيالية</span>
+            </button>
 
-            {canManage && (
-              <button onClick={openAdmin}>
-                لوحة الإدارة
-              </button>
-            )}
-
-            {user ? (
-              <button
-                className="logout-button"
-                onClick={logout}
-              >
-                تسجيل الخروج
-              </button>
-            ) : (
-              <button
-                className="primary-button small-button"
-                onClick={() => {
-                  setShowAccount(true);
-                  setShowNovels(false);
-                  setShowAdmin(false);
-                  setSelectedNovel(null);
-                  setSelectedChapter(null);
-                }}
-              >
-                تسجيل الدخول
-              </button>
-            )}
-          </nav>
-        </div>
-      </header>
-    );
-  }
-
-  function renderNovelCard(novel: Novel) {
-    const favorite = isFavorite(novel.id);
-    const image = coverUrl(novel);
-
-    return (
-      <article
-        key={novel.id}
-        className="novel-card"
-        onClick={() => openNovel(novel, false)}
-      >
-        <div className="novel-cover">
-          {image ? (
-            <img
-              src={image}
-              alt={novel.title}
-            />
-          ) : (
-            <div className="cover-placeholder">
-              <span>✦</span>
-              <small>رواية</small>
-            </div>
-          )}
-        </div>
-
-        <div className="novel-card-body">
-          <div className="novel-card-top">
-            <h2>{novel.title}</h2>
-
-            {user && (
-              <button
-                className={`favorite-button ${
-                  favorite ? "is-favorite" : ""
-                }`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleFavorite(novel);
-                }}
-                title={
-                  favorite
-                    ? "إزالة من المفضلة"
-                    : "إضافة للمفضلة"
-                }
-              >
-                {favorite ? "♥" : "♡"}
-              </button>
-            )}
+            <nav className="header-nav">
+              <button onClick={goHome}>الروايات</button>
+              {user && <button onClick={() => openAccount("profile")}>حسابي</button>}
+              {canManage && <button onClick={openAdmin}>لوحة الإدارة</button>}
+              {user ? (
+                <button className="logout-button" onClick={logout}>تسجيل الخروج</button>
+              ) : (
+                <button onClick={() => openAccount("profile")}>دخول</button>
+              )}
+            </nav>
           </div>
+        </header>
 
-          {novel.categories?.name && (
-            <div className="novel-category">
-              {novel.categories.name}
-            </div>
-          )}
+        {showSideMenu && (
+          <div className="side-menu-backdrop" onClick={() => setShowSideMenu(false)}>
+            <aside className="side-menu" onClick={(event) => event.stopPropagation()}>
+              <button className="side-menu-close" onClick={() => setShowSideMenu(false)} aria-label="إغلاق">×</button>
 
-          {novel.description && (
-            <p>{novel.description}</p>
-          )}
+              {user ? (
+                <button className="side-profile" onClick={() => { setShowSideMenu(false); openAccount("profile"); }}>
+                  <span className="side-avatar">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="صورة الحساب" />
+                    ) : (
+                      <span>👤</span>
+                    )}
+                  </span>
+                  <span className="side-profile-text">
+                    <strong>{profile?.display_name || "حسابي"}</strong>
+                    <small>الحساب الشخصي</small>
+                  </span>
+                </button>
+              ) : (
+                <button className="side-profile" onClick={() => { setShowSideMenu(false); openAccount("profile"); }}>
+                  <span className="side-avatar">👤</span>
+                  <span className="side-profile-text">
+                    <strong>تسجيل الدخول</strong>
+                    <small>ادخلي لحسابك</small>
+                  </span>
+                </button>
+              )}
 
-          <div className="novel-meta">
-            <span>
-              {novel.status === "ongoing"
-                ? "مستمرة"
-                : "مكتملة"}
-            </span>
+              <div className="side-menu-divider" />
 
-            <span>{novel.language}</span>
+              <button className="side-menu-item" onClick={() => { setShowSideMenu(false); goHome(); }}>
+                <span>⌂</span><strong>الرئيسية</strong>
+              </button>
+              <button className="side-menu-item" onClick={() => { setShowSideMenu(false); user ? openAccount("favorites") : openAccount("profile"); }}>
+                <span>♡</span><strong>المفضلة</strong>
+              </button>
+              <button className="side-menu-item" onClick={() => { setShowSideMenu(false); user ? openAccount("history") : openAccount("profile"); }}>
+                <span>◉</span><strong>آخر المشاهدات</strong>
+              </button>
+
+              <div className="side-menu-spacer" />
+
+              {user && (
+                <button className="side-menu-item side-menu-logout" onClick={() => { setShowSideMenu(false); logout(); }}>
+                  <span>↪</span><strong>تسجيل الخروج</strong>
+                </button>
+              )}
+            </aside>
           </div>
-        </div>
-      </article>
+        )}
+      </>
     );
   }
 
