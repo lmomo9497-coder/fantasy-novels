@@ -2125,7 +2125,7 @@ function App() {
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="ابحثي عن رواية أو وصف..."
+              placeholder="بحث عن رواية أو وصف..."
               aria-label="بحث في الروايات"
             />
             <span>⌕</span>
