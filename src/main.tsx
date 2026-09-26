@@ -70,6 +70,7 @@ type ChapterBlock = {
   align: string;
   width: number | null;
   height: number | null;
+  object_position?: string | null;
 };
 
 type AccountSection =
@@ -99,6 +100,14 @@ function normalizeSearchText(value: string) {
     .replace(/ـ/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function parseObjectPosition(value: string | null | undefined) {
+  const match = String(value || "").match(
+    /^(0|[1-9][0-9]?|100)% (0|[1-9][0-9]?|100)%$/
+  );
+  if (!match) return { x: 50, y: 50 };
+  return { x: Number(match[1]), y: Number(match[2]) };
 }
 
 function makeStorageId() {
@@ -1795,6 +1804,7 @@ function App() {
           height: newBlockHeight
             ? Number(newBlockHeight)
             : null,
+          object_position: "50% 50%",
         })
         .select("*")
         .single();
@@ -2228,6 +2238,34 @@ function App() {
     setChapterMessage("تم حفظ مقاس العنصر.");
   }
 
+  async function updateChapterBlockObjectPosition(
+    block: ChapterBlock,
+    x: number,
+    y: number
+  ) {
+    if (!canManage) return;
+
+    const safeX = Math.min(100, Math.max(0, Math.round(x)));
+    const safeY = Math.min(100, Math.max(0, Math.round(y)));
+    const object_position = safeX + "% " + safeY + "%";
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({ object_position })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id ? { ...item, object_position } : item
+      )
+    );
+  }
+
   function changeChapterBlockDirection(
     block: ChapterBlock,
     direction: "left" | "right" | "up" | "down"
@@ -2291,6 +2329,7 @@ function App() {
         block.width && block.height
           ? "cover"
           : "contain",
+       objectPosition: block.object_position || "50% 50%",
     };
 
     const placement = parseBlockPlacement(block);
@@ -3733,7 +3772,52 @@ function App() {
                                   }}
                                 />
                               </label>
-                            </>
+                            </>                           {(block.block_type === "image" ||
+                             block.block_type === "gif") && (
+                             <div className="image-crop-editor">
+                               <span className="editor-control-title">
+                                 اختيار المشهد داخل الصورة
+                               </span>
+                               {block.media_path && (
+                                 <div className="image-crop-preview">
+                                   <img
+                                     src={getPublicMediaUrl(
+                                       "chapter-media",
+                                       block.media_path
+                                     )}
+                                     alt=""
+                                     style={{
+                                       objectFit: "cover",
+                                       objectPosition:
+                                         block.object_position || "50% 50%",
+                                     }}
+                                   />
+                                 </div>
+                               )}
+                               {(() => {
+                                 const position = parseObjectPosition(block.object_position);
+                                 return (
+                                   <>
+                                     <label>
+                                       أفقي: {position.x}%
+                                       <input type="range" min="0" max="100" value={position.x}
+                                         onChange={(event) => void updateChapterBlockObjectPosition(block, Number(event.target.value), position.y)} />
+                                     </label>
+                                     <label>
+                                       عمودي: {position.y}%
+                                       <input type="range" min="0" max="100" value={position.y}
+                                         onChange={(event) => void updateChapterBlockObjectPosition(block, position.x, Number(event.target.value))} />
+                                     </label>
+                                   </>
+                                 );
+                               })()}
+                               <small className="form-hint">
+                                 مددي العرض والارتفاع، ثم حرّكي المؤشرين لاختيار المشهد الظاهر داخل الصورة.
+                               </small>
+                             </div>
+                           )}
+
+
                           )}
 
                           <span className="editor-placement-hint">
