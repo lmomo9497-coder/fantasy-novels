@@ -827,6 +827,12 @@ function App() {
     useState<"left" | "right" | "full">("right");
   const [newBlockRow, setNewBlockRow] = useState("1");
   const [newBlockTextPosition, setNewBlockTextPosition] = useState("100");
+  const [newTextPositionY, setNewTextPositionY] = useState(50);
+  const [newTextFontSize, setNewTextFontSize] = useState(18);
+  const [newTextColor, setNewTextColor] = useState("#ffffff");
+  const [newTextAlign, setNewTextAlign] =
+    useState<"left" | "center" | "right">("right");
+  const [newTextWidthPercent, setNewTextWidthPercent] = useState(72);
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
@@ -2903,6 +2909,31 @@ function App() {
     setChapterMessage("تم حفظ مقاس العنصر.");
   }
 
+  async function updateChapterBlockContent(
+    block: ChapterBlock,
+    content: string
+  ) {
+    if (!canManage || !["text", "heading", "quote"].includes(block.block_type)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("chapter_blocks")
+      .update({ content })
+      .eq("id", block.id);
+
+    if (error) {
+      setChapterMessage(error.message);
+      return;
+    }
+
+    setChapterBlocks((current) =>
+      current.map((item) =>
+        item.id === block.id ? { ...item, content } : item
+      )
+    );
+  }
+
   async function updateChapterBlockTextOverlayOpacity(
     block: ChapterBlock,
     value: number
@@ -4502,7 +4533,33 @@ function App() {
                       «القارئ — أحمد» أو «مؤثرات صوتية — المطر».
                     </small>
                   </div>
-                )}                {newBlockType === "text" && (
+                )}                {newBlockType === "text" &&
+                  newBlockMediaPreviewUrl &&
+                  newBlockContent.trim() && (
+                    <div className="form-group form-group-full">
+                      <label>معاينة المشهد قبل الحفظ</label>
+                      <TextSceneEditor
+                        src={newBlockMediaPreviewUrl}
+                        content={newBlockContent}
+                        positionX={Number(newBlockTextPosition)}
+                        positionY={newTextPositionY}
+                        fontSize={newTextFontSize}
+                        color={newTextColor}
+                        textAlign={newTextAlign}
+                        widthPercent={newTextWidthPercent}
+                        onChangePosition={(x, y) => {
+                          setNewBlockTextPosition(String(x));
+                          setNewTextPositionY(y);
+                        }}
+                        onChangeFontSize={setNewTextFontSize}
+                        onChangeColor={setNewTextColor}
+                        onChangeAlign={setNewTextAlign}
+                        onChangeWidth={setNewTextWidthPercent}
+                      />
+                    </div>
+                  )}
+
+                {newBlockType === "text" && (
                   <div className="form-group">
                     <label>مكان النص فوق الصورة</label>
                     <select
@@ -4674,6 +4731,24 @@ function App() {
                       )}
                     </div>
                   </div>
+
+                  {isText && canManage && (
+                    <div className="editor-text-content-editor">
+                      <label>
+                        تعديل النص
+                        <textarea
+                          value={block.content || ""}
+                          rows={4}
+                          onChange={(event) =>
+                            void updateChapterBlockContent(
+                              block,
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                  )}
 
                   <div className="editor-block-placement">
                     {(() => {
