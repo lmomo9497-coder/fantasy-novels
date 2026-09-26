@@ -4131,8 +4131,7 @@ select:focus-visible {
 .chapter-text-background {
   position: relative;
   isolation: isolate;
-  width: 100%;
-  min-height: 420px;
+  min-height: 320px;
   padding: 28px 20px;
   border-radius: 16px;
   overflow: hidden;
