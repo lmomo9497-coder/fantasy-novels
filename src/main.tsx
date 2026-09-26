@@ -659,17 +659,54 @@ function TextSceneEditor({
   const safeSize = Math.min(64, Math.max(12, fontSize));
   const safeX = Math.min(100, Math.max(0, localPosition.x));
   const safeY = Math.min(100, Math.max(0, localPosition.y));
+  const viewportWidth =
+    typeof window !== "undefined" ? window.innerWidth : 1024;
+  const estimatedTextWidthPx =
+    Math.max(180, viewportWidth * (safeWidth / 100));
+  const estimatedCharsPerLine = Math.max(
+    10,
+    Math.floor(
+      estimatedTextWidthPx / Math.max(7, safeSize * 0.55)
+    )
+  );
+  const estimatedTextLines = Math.max(
+    1,
+    Math.ceil(String(content || "").length / estimatedCharsPerLine)
+  );
+  const estimatedSceneHeight = Math.max(
+    0,
+    Math.ceil(
+      estimatedTextLines * Math.max(28, safeSize * 2) + 36
+    )
+  );
 
   return (
     <div className="text-scene-editor">
       <div
         ref={stageRef}
         className="text-scene-editor-stage"
+        style={{
+          minHeight:
+            estimatedSceneHeight > 0
+              ? estimatedSceneHeight + "px"
+              : undefined,
+        }}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
         onPointerCancel={finishDrag}
       >
-        <img src={src} alt="" className="text-scene-editor-image" />
+        <img
+          src={src}
+          alt=""
+          className="text-scene-editor-image"
+          onLoad={(event) => {
+            const image = event.currentTarget;
+            image.parentElement?.style.setProperty(
+              "--text-scene-image-ratio",
+              image.naturalWidth + " / " + image.naturalHeight
+            );
+          }}
+        />
         <div className="text-scene-editor-dim" />
         <div
           className="text-scene-editor-text"
@@ -3643,7 +3680,16 @@ function App() {
             src={mediaUrl}
             alt=""
             className="chapter-text-background-image"
-            style={{ objectPosition: block.object_position || "50% 50%" }}
+            style={{
+              objectPosition: block.object_position || "50% 50%",
+            }}
+            onLoad={(event) => {
+              const image = event.currentTarget;
+              image.parentElement?.style.setProperty(
+                "--chapter-image-ratio",
+                image.naturalWidth + " / " + image.naturalHeight
+              );
+            }}
           />
           <div
             className="chapter-text-background-dim"
