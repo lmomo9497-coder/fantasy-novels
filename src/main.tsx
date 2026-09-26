@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
@@ -124,6 +124,10 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showNovels, setShowNovels] = useState(true);
 
+  const navigationReadyRef = useRef(false);
+  const suppressNavigationPushRef = useRef(false);
+  const currentRouteKeyRef = useRef("");
+
   const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
   const [selectedNovelAdminView, setSelectedNovelAdminView] = useState(false);
 
@@ -216,6 +220,50 @@ function App() {
     [notifications]
   );
 
+  const currentRoute = useMemo(() => {
+    if (selectedChapter && selectedNovel) {
+      return {
+        type: "chapter",
+        novelId: selectedNovel.id,
+        adminView: selectedNovelAdminView,
+        chapter: selectedChapter,
+        readerProgress,
+      };
+    }
+
+    if (selectedNovel) {
+      return {
+        type: "novel",
+        novelId: selectedNovel.id,
+        adminView: selectedNovelAdminView,
+      };
+    }
+
+    if (showAdmin && canManage) {
+      return { type: "admin" };
+    }
+
+    if (showAccount) {
+      return {
+        type: "account",
+        section: activeSection,
+      };
+    }
+
+    return { type: "home" };
+  }, [
+    activeSection,
+    canManage,
+    readerProgress,
+    selectedChapter,
+    selectedNovel,
+    selectedNovelAdminView,
+    showAccount,
+    showAdmin,
+  ]);
+
+  const currentRouteKey = JSON.stringify(currentRoute);
+
   const filteredNovels = useMemo(() => {
     const query = normalizeSearchText(searchQuery);
     return publishedNovels.filter((novel) => {
@@ -270,6 +318,146 @@ function App() {
     () => [...chapterBlocks].sort((a, b) => a.block_order - b.block_order),
     [chapterBlocks]
   );
+
+  useEffect(() => {
+    if (!navigationReadyRef.current) {
+      window.history.replaceState(
+        { fantasyNovelsRoute: currentRoute },
+        "",
+        window.location.href
+      );
+      navigationReadyRef.current = true;
+      currentRouteKeyRef.current = currentRouteKey;
+      return;
+    }
+
+    if (suppressNavigationPushRef.current) {
+      suppressNavigationPushRef.current = false;
+      currentRouteKeyRef.current = currentRouteKey;
+      return;
+    }
+
+    if (currentRouteKeyRef.current === currentRouteKey) return;
+
+    window.history.pushState(
+      { fantasyNovelsRoute: currentRoute },
+      "",
+      window.location.href
+    );
+    currentRouteKeyRef.current = currentRouteKey;
+  }, [currentRouteKey]);
+
+  useEffect(() => {
+    const restoreRoute = async (route: any) => {
+      suppressNavigationPushRef.current = true;
+      currentRouteKeyRef.current = JSON.stringify(route);
+
+      if (route?.type === "home") {
+        setSelectedChapter(null);
+        setSelectedNovel(null);
+        setSelectedNovelAdminView(false);
+        setShowAccount(false);
+        setShowAdmin(false);
+        setShowNovels(true);
+        return;
+      }
+
+      if (route?.type === "account") {
+        setActiveSection(route.section || "profile");
+        setShowAccount(true);
+        setShowAdmin(false);
+        setShowNovels(false);
+        setSelectedNovel(null);
+        setSelectedChapter(null);
+        setSelectedNovelAdminView(false);
+        return;
+      }
+
+      if (route?.type === "admin") {
+        if (!canManage) {
+          setSelectedChapter(null);
+          setSelectedNovel(null);
+          setSelectedNovelAdminView(false);
+          setShowAccount(false);
+          setShowAdmin(false);
+          setShowNovels(true);
+          return;
+        }
+
+        setSelectedChapter(null);
+        setSelectedNovel(null);
+        setSelectedNovelAdminView(false);
+        setShowAccount(false);
+        setShowAdmin(true);
+        setShowNovels(false);
+        return;
+      }
+
+      if (route?.type === "novel" || route?.type === "chapter") {
+        const source = [...publishedNovels, ...novels];
+        const novel = source.find((item) => item.id === route.novelId);
+
+        if (!novel) {
+          setSelectedChapter(null);
+          setSelectedNovel(null);
+          setSelectedNovelAdminView(false);
+          setShowAccount(false);
+          setShowAdmin(false);
+          setShowNovels(true);
+          return;
+        }
+
+        setSelectedNovel(novel);
+        setSelectedNovelAdminView(Boolean(route.adminView));
+        setShowAccount(false);
+        setShowAdmin(false);
+        setShowNovels(false);
+
+        if (route.type === "chapter" && route.chapter) {
+          setSelectedChapter(route.chapter as Chapter);
+          setReaderProgress(Number(route.readerProgress || 0));
+          setChapterMessage("");
+          setLoadingChapterBlocks(true);
+
+          const { data, error } = await supabase
+            .from("chapter_blocks")
+            .select("*")
+            .eq("chapter_id", route.chapter.id)
+            .order("block_order", { ascending: true });
+
+          if (!error) {
+            setChapterBlocks((data ?? []) as ChapterBlock[]);
+          } else {
+            setChapterBlocks([]);
+            setChapterMessage(error.message);
+          }
+
+          setLoadingChapterBlocks(false);
+          return;
+        }
+
+        setSelectedChapter(null);
+        setChapterBlocks([]);
+        return;
+      }
+
+      setSelectedChapter(null);
+      setSelectedNovel(null);
+      setSelectedNovelAdminView(false);
+      setShowAccount(false);
+      setShowAdmin(false);
+      setShowNovels(true);
+    };
+
+    const handlePopState = (event: PopStateEvent) => {
+      const route = event.state?.fantasyNovelsRoute;
+      if (!route) return;
+      void restoreRoute(route);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [canManage, novels, publishedNovels]);
 
   useEffect(() => {
     let mounted = true;
@@ -1621,6 +1809,11 @@ function App() {
   }
 
   function closeChapter() {
+    if (window.history.state?.fantasyNovelsRoute) {
+      window.history.back();
+      return;
+    }
+
     setSelectedChapter(null);
     setChapterBlocks([]);
     setChapterMessage("");
@@ -3312,7 +3505,13 @@ function App() {
       <section className="novel-page">
         <button
           className="secondary-button back-button"
-          onClick={goHome}
+          onClick={() => {
+            if (window.history.state?.fantasyNovelsRoute) {
+              window.history.back();
+              return;
+            }
+            goHome();
+          }}
         >
           ← العودة للروايات
         </button>
