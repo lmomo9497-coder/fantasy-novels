@@ -504,7 +504,11 @@ function App() {
     loadPublishedNovels();
     loadCategories();
   }, []);
-\n  useEffect(() => {\n    loadOwnerProfile();\n  }, []);\n
+
+  useEffect(() => {
+    loadOwnerProfile();
+  }, []);
+
   useEffect(() => {
     if (canManage) {
       loadAdminData();
