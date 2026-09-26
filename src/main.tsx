@@ -1739,6 +1739,30 @@ function App() {
             ) + 1
           : 1;
 
+      let safeColumn = newBlockColumn;
+      let safeRow = Math.max(1, Number(newBlockRow) || 1);
+
+      // Prevent a full-width block from being hidden underneath
+      // a side-column block (or vice versa) when both use the same row.
+      while (
+        chapterBlocks.some((block) => {
+          const placement = parseBlockPlacement(block);
+          const sameRow = placement.row === safeRow;
+          if (!sameRow) return false;
+
+          if (safeColumn === "full") {
+            return true;
+          }
+
+          return (
+            placement.column === "full" ||
+            placement.column === safeColumn
+          );
+        })
+      ) {
+        safeRow += 1;
+      }
+
       const { data, error } = await supabase
         .from("chapter_blocks")
         .insert({
@@ -1752,7 +1776,7 @@ function App() {
           media_path: mediaPath || null,
           media_label:
             newBlockMediaLabel.trim() || null,
-          align: `${newBlockColumn}:${Math.max(1, Number(newBlockRow) || 1)}`,
+          align: `${safeColumn}:${safeRow}`,
           width: newBlockWidth
             ? Number(newBlockWidth)
             : null,
@@ -1775,7 +1799,11 @@ function App() {
       );
 
       resetBlockForm();
-      setChapterMessage("تمت إضافة العنصر.");
+      setChapterMessage(
+        safeRow !== Math.max(1, Number(newBlockRow) || 1)
+          ? `تمت إضافة العنصر في الصف ${safeRow} لتجنب تغطية عنصر موجود.`
+          : "تمت إضافة العنصر."
+      );
     } finally {
       setSavingChapterBlocks(false);
     }
