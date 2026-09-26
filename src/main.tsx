@@ -35,6 +35,7 @@ type Novel = {
   updated_at?: string;
   categories?: Category | null;
   novel_categories?: { category: Category }[];
+  reader_count?: number;
 };
 
 type Chapter = {
@@ -571,6 +572,38 @@ function App() {
     setCategories((data ?? []) as Category[]);
   }
 
+  async function attachNovelReaderCounts(novelsList: Novel[]) {
+    if (novelsList.length === 0) return novelsList;
+
+    const { data, error } = await supabase
+      .from("novel_reader_counts")
+      .select("novel_id, reader_count")
+      .in(
+        "novel_id",
+        novelsList.map((novel) => novel.id)
+      );
+
+    if (error) {
+      console.error("Novel reader counts error:", error);
+      return novelsList.map((novel) => ({
+        ...novel,
+        reader_count: 0,
+      }));
+    }
+
+    const counts = new Map(
+      (data ?? []).map((item) => [
+        item.novel_id,
+        Number(item.reader_count || 0),
+      ])
+    );
+
+    return novelsList.map((novel) => ({
+      ...novel,
+      reader_count: counts.get(novel.id) ?? 0,
+    }));
+  }
+
   async function loadPublishedNovels() {
     const { data, error } = await supabase
       .from("novels")
@@ -583,7 +616,10 @@ function App() {
       return;
     }
 
-    setPublishedNovels((data ?? []) as Novel[]);
+    const novelsWithReaderCounts = await attachNovelReaderCounts(
+      (data ?? []) as Novel[]
+    );
+    setPublishedNovels(novelsWithReaderCounts);
   }
 
   async function loadAdminData() {
@@ -597,7 +633,10 @@ function App() {
       return;
     }
 
-    setNovels((data ?? []) as Novel[]);
+    const novelsWithReaderCounts = await attachNovelReaderCounts(
+      (data ?? []) as Novel[]
+    );
+    setNovels(novelsWithReaderCounts);
   }
 
   async function loadStaffMembers() {
@@ -2612,6 +2651,10 @@ function App() {
             </span>
 
             <span>{novel.language}</span>
+
+            <span className="novel-reader-count">
+              👥 {novel.reader_count ?? 0} قرّاء
+            </span>
           </div>
         </div>
       </article>
