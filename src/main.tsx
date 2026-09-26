@@ -3772,56 +3772,83 @@ function App() {
                                   }}
                                 />
                               </label>
-                            </>
 
                               {(block.block_type === "image" ||
-                             block.block_type === "gif") && (
-                             <div className="image-crop-editor">
-                               <span className="editor-control-title">
-                                 اختيار المشهد داخل الصورة
-                               </span>
-                               {block.media_path && (
-                                 <div className="image-crop-preview">
-                                   <img
-                                     src={getPublicMediaUrl(
-                                       "chapter-media",
-                                       block.media_path
-                                     )}
-                                     alt=""
-                                     style={{
-                                       objectFit: "cover",
-                                       objectPosition:
-                                         block.object_position || "50% 50%",
-                                     }}
-                                   />
-                                 </div>
-                               )}
-                               {(() => {
-                                 const position = parseObjectPosition(block.object_position);
-                                 return (
-                                   <>
-                                     <label>
-                                       أفقي: {position.x}%
-                                       <input type="range" min="0" max="100" value={position.x}
-                                         onChange={(event) => void updateChapterBlockObjectPosition(block, Number(event.target.value), position.y)} />
-                                     </label>
-                                     <label>
-                                       عمودي: {position.y}%
-                                       <input type="range" min="0" max="100" value={position.y}
-                                         onChange={(event) => void updateChapterBlockObjectPosition(block, position.x, Number(event.target.value))} />
-                                     </label>
-                                   </>
-                                 );
-                               })()}
-                               <small className="form-hint">
-                                 مددي العرض والارتفاع، ثم حرّكي المؤشرين لاختيار المشهد الظاهر داخل الصورة.
-                               </small>
-                             </div>
-                              )}
+                                block.block_type === "gif") && (
+                                <div className="image-crop-editor">
+                                  <span className="editor-control-title">
+                                    اختيار المشهد داخل الصورة
+                                  </span>
 
+                                  {block.media_path && (
+                                    <div className="image-crop-preview">
+                                      <img
+                                        src={getPublicMediaUrl(
+                                          "chapter-media",
+                                          block.media_path
+                                        )}
+                                        alt=""
+                                        style={{
+                                          objectFit: "cover",
+                                          objectPosition:
+                                            block.object_position || "50% 50%",
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {(() => {
+                                    const position = parseObjectPosition(
+                                      block.object_position
+                                    );
+
+                                    return (
+                                      <>
+                                        <label>
+                                          أفقي: {position.x}%
+                                          <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={position.x}
+                                            onChange={(event) =>
+                                              void updateChapterBlockObjectPosition(
+                                                block,
+                                                Number(event.target.value),
+                                                position.y
+                                              )
+                                            }
+                                          />
+                                        </label>
+
+                                        <label>
+                                          عمودي: {position.y}%
+                                          <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={position.y}
+                                            onChange={(event) =>
+                                              void updateChapterBlockObjectPosition(
+                                                block,
+                                                position.x,
+                                                Number(event.target.value)
+                                              )
+                                            }
+                                          />
+                                        </label>
+                                      </>
+                                    );
+                                  })()}
+
+                                  <small className="form-hint">
+                                    مددي العرض والارتفاع، ثم حرّكي المؤشرين لاختيار
+                                    المشهد الظاهر داخل الصورة.
+                                  </small>
+                                </div>
+                              )}
                             </>
                           )}
-
 
                           <span className="editor-placement-hint">
                             الأسهم تحرك العنصر وتحفظ مكانه فورًا. العرض والارتفاع يحفظان المقاس.
