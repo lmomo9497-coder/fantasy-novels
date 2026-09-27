@@ -4850,3 +4850,190 @@ select:focus-visible {
     flex-basis: min(88vw, 360px);
   }
 }
+
+
+/* Novel cover focal-point editor */
+.cover-crop-editor {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #302934;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.025);
+}
+
+.cover-crop-stage {
+  position: relative;
+  width: min(250px, 100%);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  margin-inline: auto;
+  border: 1px solid #4a3c4d;
+  border-radius: 12px;
+  background: #100e12;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.cover-crop-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cover-crop-focus {
+  position: absolute;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255,255,255,0.85);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(199,166,201,0.4),
+    0 0 18px rgba(199,166,201,0.42);
+  pointer-events: none;
+}
+
+.cover-crop-focus::before,
+.cover-crop-focus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(255,255,255,0.82);
+  transform: translate(-50%, -50%);
+}
+
+.cover-crop-focus::before {
+  width: 12px;
+  height: 1px;
+}
+
+.cover-crop-focus::after {
+  width: 1px;
+  height: 12px;
+}
+
+.cover-crop-focus span {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 50%;
+}
+
+/* Full cover viewer */
+.novel-hero-cover {
+  position: relative;
+}
+
+.novel-hero-cover-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: transparent;
+  cursor: zoom-in;
+  font: inherit;
+}
+
+.novel-hero-cover-button img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.novel-cover-view-hint {
+  position: absolute;
+  inset-inline: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(10,8,12,0.78);
+  color: #f1e9f2;
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .18s ease, transform .18s ease;
+  pointer-events: none;
+}
+
+.novel-hero-cover-button:hover .novel-cover-view-hint,
+.novel-hero-cover-button:focus-visible .novel-cover-view-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.novel-cover-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(5,4,7,0.9);
+  backdrop-filter: blur(7px);
+}
+
+.novel-cover-full-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(94vw, 900px);
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+}
+
+.novel-cover-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50%;
+  background: rgba(18,15,21,0.85);
+  color: #fff;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .cover-crop-stage {
+    width: min(210px, 68vw);
+  }
+
+  .novel-cover-modal {
+    padding: 14px;
+  }
+
+  .novel-cover-full-image {
+    max-width: 96vw;
+    max-height: 86vh;
+    border-radius: 10px;
+  }
+
+  .novel-cover-modal-close {
+    top: 10px;
+    right: 10px;
+  }
+}
