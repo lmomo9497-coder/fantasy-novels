@@ -1110,17 +1110,7 @@ function TextSceneReader({
             : "translate(-50%, -50%)";
 
   return (
-    <div className="chapter-text-scene-reader">
-      <div className="chapter-text-scene-reader-stage">
-        <img
-          src={src}
-          alt=""
-          className="chapter-text-scene-reader-image"
-          draggable={false}
-          onLoad={() => window.requestAnimationFrame(handleScroll)}
-        />
-
-        <div className="chapter-text-reader-audio-tools">
+    <div className="chapter-text-scene-reader">\n      <div className="chapter-text-reader-toolbar">\n
           {effectAudioPath && onToggleEffectAudio && (
             <button
               type="button"
@@ -1175,8 +1165,13 @@ function TextSceneReader({
               <option value={45}>سريع جدًا</option>
             </select>
           </label>
-        </div>
-
+        </div>\n\n      <div className="chapter-text-scene-reader-stage">\n        <img
+          src={src}
+          alt=""
+          className="chapter-text-scene-reader-image"
+          draggable={false}
+          onLoad={() => window.requestAnimationFrame(handleScroll)}
+        />
 
         <div
           className="chapter-text-scene-reader-window"
