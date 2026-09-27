@@ -798,7 +798,7 @@ function TextSceneEditor({
     onChangePosition(x, y);
   }
 
-  const safeWidth = Math.min(100, Math.max(25, Number(widthPercent) || 72));
+  const safeWidth = Math.min(96, Math.max(60, Number(widthPercent) || 88));
   const safeSize = clampTextFontSize(fontSize);
   const safeX = Math.min(100, Math.max(0, localPosition.x));
   const safeY = Math.min(100, Math.max(0, localPosition.y));
@@ -894,10 +894,10 @@ function TextSceneEditor({
             <div className="text-scene-range-row">
               <input
                 type="range"
-                min="25"
-                max="85"
+                min="60"
+                max="96"
                 step="1"
-                value={Math.min(85, safeWidth)}
+                value={Math.min(96, safeWidth)}
                 onChange={(event) => onChangeWidth(Number(event.target.value))}
               />
               <output>{Math.min(85, safeWidth)}%</output>
@@ -1024,7 +1024,7 @@ function TextSceneReader({
     );
   }
 
-  const safeWidth = Math.min(100, Math.max(25, Number(widthPercent) || 72));
+  const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
   const safeY = Math.min(100, Math.max(0, Number(positionY) || 50));
   const safeReaderSize = clampTextFontSize(readerFontSize);
@@ -3060,7 +3060,7 @@ function App() {
           text_font_size: 18,
           text_color: "#ffffff",
           text_align: "right",
-          text_width_percent: 72,
+          text_width_percent: 88,
           text_overlay_opacity:
             newBlockType === "text" ? 0.24 : 0.62,
         })
@@ -3751,7 +3751,7 @@ function App() {
       safePatch.text_font_size = Math.min(64, Math.max(12, Number(patch.text_font_size)));
     }
     if (patch.text_width_percent !== undefined) {
-      safePatch.text_width_percent = Math.min(100, Math.max(25, Number(patch.text_width_percent)));
+      safePatch.text_width_percent = Math.min(96, Math.max(60, Number(patch.text_width_percent)));
     }
     if (patch.text_image_scale_percent !== undefined) {
       safePatch.text_image_scale_percent = Math.min(
