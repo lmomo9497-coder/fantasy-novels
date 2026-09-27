@@ -4659,7 +4659,7 @@ select:focus-visible {
   position: relative;
   z-index: 3;
   height: 100%;
-  padding: 58px 18px 18px 2px;
+  padding: 18px 18px 18px 2px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
