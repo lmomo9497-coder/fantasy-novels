@@ -1359,7 +1359,19 @@ img {
   max-width: 100% !important;
   height: 48px;
   margin: 0 auto;
+  border: 1px solid rgba(199, 166, 201, 0.22);
   border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(31, 26, 35, 0.98),
+    rgba(18, 15, 22, 0.98)
+  );
+  color: #eee6ef;
+  color-scheme: dark;
+  accent-color: #c7a6c9;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
 }
 
 .chapter-audio-block.block-align-left,
