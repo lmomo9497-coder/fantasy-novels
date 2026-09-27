@@ -4105,7 +4105,10 @@ function App() {
               controls
               preload="metadata"
               src={mediaUrl}
-              style={sizeStyle}
+              style={{
+                width: "min(100%, 560px)",
+                maxWidth: "100%",
+              }}
             />
           ) : (
             <div className="empty-media">
