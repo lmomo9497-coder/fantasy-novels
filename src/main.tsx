@@ -966,7 +966,6 @@ function TextSceneEditor({
           )}
         </div>
       </div>
-</div>
     </div>
   );
 }
