@@ -1035,6 +1035,16 @@ function TextSceneReader({
   const [showHint, setShowHint] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(18);
+  const [autoScrollMenuOpen, setAutoScrollMenuOpen] = useState(false);
+  const autoScrollMenuRef = useRef<HTMLDivElement>(null);
+
+  const autoScrollLevels = [
+    { value: 8, label: "بطيء جدًا" },
+    { value: 14, label: "بطيء" },
+    { value: 18, label: "عادي" },
+    { value: 26, label: "سريع" },
+    { value: 38, label: "سريع جدًا" },
+  ];
 
   function handleScroll() {
     const element = scrollRef.current;
@@ -1042,6 +1052,33 @@ function TextSceneReader({
 
     setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
   }
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        autoScrollMenuRef.current &&
+        !autoScrollMenuRef.current.contains(target)
+      ) {
+        setAutoScrollMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAutoScrollMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(handleScroll);
@@ -1153,20 +1190,55 @@ function TextSceneReader({
             {autoScrollEnabled ? "⏸ إيقاف" : "▶ تمرير تلقائي"}
           </button>
 
-          <label className="chapter-text-autoscroll-speed">
-            <span>السرعة</span>
-            <select
-              value={autoScrollSpeed}
-              onChange={(event) => setAutoScrollSpeed(Number(event.target.value))}
-              aria-label="سرعة التمرير التلقائي"
+          <div
+            ref={autoScrollMenuRef}
+            className={
+              "chapter-text-autoscroll-menu" +
+              (autoScrollMenuOpen ? " is-open" : "")
+            }
+          >
+            <button
+              type="button"
+              className="chapter-text-autoscroll-more"
+              onClick={() => setAutoScrollMenuOpen((current) => !current)}
+              aria-haspopup="menu"
+              aria-expanded={autoScrollMenuOpen}
+              aria-label="مستويات سرعة التمرير"
+              title="مستويات سرعة التمرير"
             >
-              <option value={8}>بطيء جدًا</option>
-              <option value={14}>بطيء</option>
-              <option value={20}>عادي</option>
-              <option value={30}>سريع</option>
-              <option value={45}>سريع جدًا</option>
-            </select>
-          </label>
+              <span aria-hidden="true">⋮</span>
+            </button>
+
+            {autoScrollMenuOpen && (
+              <div className="chapter-text-autoscroll-menu-panel" role="menu">
+                <div className="chapter-text-autoscroll-menu-title">
+                  سرعة التمرير
+                </div>
+
+                {autoScrollLevels.map((level) => (
+                  <button
+                    key={level.value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={autoScrollSpeed === level.value}
+                    className={
+                      "chapter-text-autoscroll-option" +
+                      (autoScrollSpeed === level.value ? " is-selected" : "")
+                    }
+                    onClick={() => {
+                      setAutoScrollSpeed(level.value);
+                      setAutoScrollMenuOpen(false);
+                    }}
+                  >
+                    <span className="chapter-text-autoscroll-option-check">
+                      {autoScrollSpeed === level.value ? "✓" : ""}
+                    </span>
+                    <span>{level.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
       <div className="chapter-text-scene-reader-stage">
