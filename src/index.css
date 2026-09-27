@@ -4696,29 +4696,6 @@ select:focus-visible {
   padding-inline: 2px 8px;
 }
 
-.chapter-text-reader-progress-rail {
-  position: absolute;
-  z-index: 7;
-  top: 34px;
-  right: 7px;
-  bottom: 28px;
-  width: 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.16);
-  pointer-events: none;
-}
-
-.chapter-text-reader-progress-thumb {
-  position: absolute;
-  right: -3px;
-  width: 10px;
-  height: 20px;
-  border-radius: 999px;
-  background: rgba(229, 208, 234, 0.94);
-  box-shadow: 0 0 10px rgba(199,166,201,0.56);
-  transform: translateY(-50%);
-}
-
 .chapter-text-reader-hint {
   position: relative;
   z-index: 1;
