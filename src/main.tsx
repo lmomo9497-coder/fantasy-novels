@@ -1393,6 +1393,13 @@ function App() {
   const [loadingChapterBlocks, setLoadingChapterBlocks] = useState(false);
   const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
   const activeEffectAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastSavedReaderProgressRef = useRef<string>("");
+  const chapterBlockPatchTimersRef = useRef<
+    Map<string, ReturnType<typeof window.setTimeout>>
+  >(new Map());
+  const chapterBlockPendingPatchesRef = useRef<
+    Map<string, Record<string, unknown>>
+  >(new Map());
   const [activeEffectBlockId, setActiveEffectBlockId] = useState<string | null>(null);
 
   const [newBlockType, setNewBlockType] =
@@ -1727,27 +1734,9 @@ function App() {
   useEffect(() => {
     let mounted = true;
 
-    const loadSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!mounted) return;
-
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    };
-
-    loadSession();
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
 
       setUser(session?.user ?? null);
@@ -1757,9 +1746,16 @@ function App() {
         window.setTimeout(() => setLoginToast(""), 3500);
       }
 
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
+      if (
+        session?.user &&
+        (_event === "INITIAL_SESSION" ||
+          _event === "SIGNED_IN" ||
+          _event === "USER_UPDATED")
+      ) {
+        void loadProfile(session.user.id);
+      }
+
+      if (!session?.user) {
         setProfile(null);
         setFavorites([]);
         setHistory([]);
@@ -1780,8 +1776,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadOwnerProfile();
-  }, []);
+    if (user) {
+      loadOwnerProfile();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (canManage) {
@@ -2929,6 +2927,8 @@ function App() {
             ? Number(progress?.progress_percent || 0)
             : 0;
         setReaderProgress(savedProgress);
+        lastSavedReaderProgressRef.current =
+          selectedNovel.id + ":" + chapter.id + ":" + savedProgress;
         await saveReadingProgress(selectedNovel.id, chapter.id, savedProgress);
       }
 
@@ -2958,35 +2958,18 @@ function App() {
   ) {
     if (!user) return;
 
-    const { data: existing, error: findError } = await supabase
+    await supabase
       .from("reading_progress")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("novel_id", novelId)
-      .maybeSingle();
-
-    if (findError) {
-      return;
-    }
-
-    if (existing?.id) {
-      await supabase
-        .from("reading_progress")
-        .update({
+      .upsert(
+        {
+          user_id: user.id,
+          novel_id: novelId,
           chapter_id: chapterId,
           progress_percent: progressPercent,
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.id);
-    } else {
-      await supabase.from("reading_progress").insert({
-        user_id: user.id,
-        novel_id: novelId,
-        chapter_id: chapterId,
-        progress_percent: progressPercent,
-        updated_at: new Date().toISOString(),
-      });
-    }
+        },
+        { onConflict: "user_id,novel_id" }
+      );
 
     // تحديث السجل المحلي بدل إعادة تحميل بيانات الحساب كاملة بعد كل حفظ.
     setHistory((current) => {
@@ -3015,6 +2998,13 @@ function App() {
       Math.max(0, Math.round((window.scrollY / maxScroll) * 100))
     );
     setReaderProgress(percent);
+
+    const progressKey = selectedNovel.id + ":" + selectedChapter.id;
+    if (lastSavedReaderProgressRef.current === progressKey + ":" + percent) {
+      return;
+    }
+
+    lastSavedReaderProgressRef.current = progressKey + ":" + percent;
 
     await supabase
       .from("reading_progress")
@@ -3780,6 +3770,42 @@ function App() {
     setChapterMessage("تم حفظ مقاس العنصر.");
   }
 
+  function queueChapterBlockPatch(
+    blockId: string,
+    patch: Record<string, unknown>,
+    delay = 600
+  ) {
+    const pending = chapterBlockPendingPatchesRef.current.get(blockId) ?? {};
+    chapterBlockPendingPatchesRef.current.set(blockId, {
+      ...pending,
+      ...patch,
+    });
+
+    const existingTimer = chapterBlockPatchTimersRef.current.get(blockId);
+    if (existingTimer) {
+      window.clearTimeout(existingTimer);
+    }
+
+    const timer = window.setTimeout(async () => {
+      chapterBlockPatchTimersRef.current.delete(blockId);
+
+      const nextPatch =
+        chapterBlockPendingPatchesRef.current.get(blockId) ?? {};
+      chapterBlockPendingPatchesRef.current.delete(blockId);
+
+      const { error } = await supabase
+        .from("chapter_blocks")
+        .update(nextPatch)
+        .eq("id", blockId);
+
+      if (error) {
+        setChapterMessage(error.message);
+      }
+    }, delay);
+
+    chapterBlockPatchTimersRef.current.set(blockId, timer);
+  }
+
   async function updateChapterBlockContent(
     block: ChapterBlock,
     content: string
@@ -3788,39 +3814,22 @@ function App() {
       return;
     }
 
-    const { error } = await supabase
-      .from("chapter_blocks")
-      .update({ content })
-      .eq("id", block.id);
-
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
-
     setChapterBlocks((current) =>
       current.map((item) =>
         item.id === block.id ? { ...item, content } : item
       )
     );
+
+    queueChapterBlockPatch(block.id, { content }, 700);
   }
 
-  async function updateChapterBlockTextOverlayOpacity(
+  function updateChapterBlockTextOverlayOpacity(
     block: ChapterBlock,
     value: number
   ) {
     if (!canManage || block.block_type !== "text") return;
 
     const safeOpacity = Math.min(1, Math.max(0, Number(value)));
-    const { error } = await supabase
-      .from("chapter_blocks")
-      .update({ text_overlay_opacity: safeOpacity })
-      .eq("id", block.id);
-
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
 
     setChapterBlocks((current) =>
       current.map((item) =>
@@ -3829,7 +3838,12 @@ function App() {
           : item
       )
     );
-    setChapterMessage("تم حفظ تعتيم خلف النص.");
+
+    queueChapterBlockPatch(
+      block.id,
+      { text_overlay_opacity: safeOpacity },
+      500
+    );
   }
   async function updateChapterBlockObjectPosition(
     block: ChapterBlock,
@@ -3978,21 +3992,13 @@ function App() {
       );
     }
 
-    const { error } = await supabase
-      .from("chapter_blocks")
-      .update(safePatch)
-      .eq("id", block.id);
-
-    if (error) {
-      setChapterMessage(error.message);
-      return;
-    }
-
     setChapterBlocks((current) =>
       current.map((item) =>
         item.id === block.id ? { ...item, ...safePatch } : item
       )
     );
+
+    queueChapterBlockPatch(block.id, safePatch, 500);
   }
 
   async function uploadEffectAudio(block: ChapterBlock, file: File | null) {
