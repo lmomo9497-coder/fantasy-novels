@@ -980,7 +980,7 @@ function TextSceneReader({
     const maxScroll = Math.max(1, element.scrollHeight - element.clientHeight);
     const nextRatio = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
     setScrollRatio(nextRatio);
-    setShowHint(element.scrollHeight <= element.clientHeight + 4 || element.scrollTop < 8);
+    setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
   }
 
   function changeReaderFontSize(delta: number) {
