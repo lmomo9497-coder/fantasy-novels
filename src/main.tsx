@@ -865,37 +865,47 @@ function TextSceneEditor({
       </div>
 
       <div className="text-scene-editor-controls">
-        <div className="text-scene-control-group">
-          <strong>تحكم النص</strong>
+        <div className="text-scene-controls-header">
+          <div>
+            <span className="text-scene-controls-kicker">TEXT STYLE</span>
+            <strong>تنسيق النص</strong>
+          </div>
+          <span className="text-scene-controls-status">يظهر فوق الصورة بدون حجبها</span>
+        </div>
 
-          <label>
-            حجم النص
-            <input
-              type="range"
-              min="12"
-              max="64"
-              step="1"
-              value={safeSize}
-              onChange={(event) => onChangeFontSize(Number(event.target.value))}
-            />
-            <span>{safeSize}px</span>
+        <div className="text-scene-controls-grid">
+          <label className="text-scene-setting">
+            <span>حجم الخط</span>
+            <div className="text-scene-range-row">
+              <input
+                type="range"
+                min="12"
+                max="64"
+                step="1"
+                value={safeSize}
+                onChange={(event) => onChangeFontSize(Number(event.target.value))}
+              />
+              <output>{safeSize}px</output>
+            </div>
           </label>
 
-          <label>
-            عرض النص
-            <input
-              type="range"
-              min="25"
-              max="100"
-              step="1"
-              value={safeWidth}
-              onChange={(event) => onChangeWidth(Number(event.target.value))}
-            />
-            <span>{safeWidth}%</span>
+          <label className="text-scene-setting">
+            <span>عرض النص</span>
+            <div className="text-scene-range-row">
+              <input
+                type="range"
+                min="25"
+                max="85"
+                step="1"
+                value={Math.min(85, safeWidth)}
+                onChange={(event) => onChangeWidth(Number(event.target.value))}
+              />
+              <output>{Math.min(85, safeWidth)}%</output>
+            </div>
           </label>
 
-          <label>
-            محاذاة النص
+          <label className="text-scene-setting">
+            <span>المحاذاة</span>
             <select
               value={textAlign}
               onChange={(event) =>
@@ -910,27 +920,53 @@ function TextSceneEditor({
             </select>
           </label>
 
-          <label>
-            لون النص
-            <input
-              type="color"
-              value={color}
-              onChange={(event) => onChangeColor(event.target.value)}
-            />
+          <label className="text-scene-setting text-scene-color-setting">
+            <span>لون النص</span>
+            <div className="text-scene-color-row">
+              <input
+                type="color"
+                value={color}
+                onChange={(event) => onChangeColor(event.target.value)}
+              />
+              <code>{color.toUpperCase()}</code>
+            </div>
           </label>
-
-          <small>
-            الصورة تبقى ثابتة وبنسبتها الأصلية. اسحبي النص فقط لتغيير موضعه.
-          </small>
         </div>
 
-        <div className="text-effect-audio-editor text-scene-audio-editor">
-          <strong>مؤثرات صوتية</strong>
-          <span className="editor-placement-hint">
-            المؤثر هنا مرتبط بهذا النص، ويظهر للقارئ بجانب مساحة النص.
-          </span>
+        <div className="text-scene-position-note">
+          <span>↕</span>
+          <div>
+            <strong>موضع النص</strong>
+            <small>اسحبي النص داخل الصورة فقط لتحديد مكانه.</small>
+          </div>
+        </div>
+
+        <div className="text-scene-audio-card">
+          <div>
+            <span className="text-scene-controls-kicker">AUDIO</span>
+            <strong>مؤثر صوتي</strong>
+            <small>
+              {effectAudioPath
+                ? "يوجد مؤثر صوتي مرتبط بهذا النص."
+                : "لا يوجد مؤثر صوتي لهذا النص."}
+            </small>
+          </div>
+          {effectAudioPath && onToggleEffectAudio && (
+            <button
+              type="button"
+              className={
+                "text-scene-audio-action" +
+                (effectAudioPlaying ? " is-playing" : "")
+              }
+              onClick={onToggleEffectAudio}
+              aria-label={effectAudioPlaying ? "إيقاف المؤثر الصوتي" : "تشغيل المؤثر الصوتي"}
+            >
+              {effectAudioPlaying ? "إيقاف" : "تشغيل"} 🔊
+            </button>
+          )}
         </div>
       </div>
+</div>
     </div>
   );
 }
