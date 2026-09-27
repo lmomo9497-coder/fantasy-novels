@@ -4217,7 +4217,7 @@ select:focus-visible {
   position: absolute;
   z-index: 2;
   display: block;
-  max-height: 58%;
+  min-height: 0;
   padding: 18px 24px;
   border: 0;
   border-radius: 0;
