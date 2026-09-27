@@ -1110,7 +1110,9 @@ function TextSceneReader({
             : "translate(-50%, -50%)";
 
   return (
-    <div className="chapter-text-scene-reader">\n      <div className="chapter-text-reader-toolbar">\n
+    <div className="chapter-text-scene-reader">
+      <div className="chapter-text-reader-toolbar">
+
           {effectAudioPath && onToggleEffectAudio && (
             <button
               type="button"
@@ -1165,7 +1167,10 @@ function TextSceneReader({
               <option value={45}>سريع جدًا</option>
             </select>
           </label>
-        </div>\n\n      <div className="chapter-text-scene-reader-stage">\n        <img
+        </div>
+
+      <div className="chapter-text-scene-reader-stage">
+        <img
           src={src}
           alt=""
           className="chapter-text-scene-reader-image"
