@@ -4333,6 +4333,14 @@ select:focus-visible {
 .text-scene-audio-editor {
   grid-column: 1 / -1;
 }
+.text-effect-inline-form {
+  grid-column: 1 / -1;
+  padding: 10px;
+  border: 1px solid rgba(199, 166, 201, 0.13);
+  border-radius: 11px;
+  background: rgba(199, 166, 201, 0.025);
+}
+
 
 .chapter-text-scene-reader {
   position: relative;
@@ -4620,7 +4628,7 @@ select:focus-visible {
 
 .editor-text-content-editor textarea {
   width: 100%;
-  min-height: 90px;
+  min-height: 220px;
   resize: vertical;
   box-sizing: border-box;
 }
