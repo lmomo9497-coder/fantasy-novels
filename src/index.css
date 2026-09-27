@@ -4674,7 +4674,7 @@ select:focus-visible {
   position: relative;
   z-index: 3;
   height: 100%;
-  padding: 14px 18px 18px 2px;
+  padding: 58px 18px 18px 2px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -4745,6 +4745,10 @@ select:focus-visible {
 
   .chapter-text-scene-reader-window {
     padding: 13px 14px 30px;
+  }
+
+  .chapter-text-scene-reader-scroll {
+    padding-top: 54px;
   }
 
   .chapter-text-reader-progress-rail {
