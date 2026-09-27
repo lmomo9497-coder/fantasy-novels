@@ -975,7 +975,6 @@ type TextSceneReaderProps = {
   content: string;
   positionX: number;
   positionY: number;
-  fontSize: number;
   color: string;
   textAlign: "left" | "center" | "right";
   widthPercent: number;
@@ -990,7 +989,6 @@ function TextSceneReader({
   content,
   positionX,
   positionY,
-  fontSize,
   color,
   textAlign,
   widthPercent,
@@ -1012,6 +1010,11 @@ function TextSceneReader({
     setScrollRatio(nextRatio);
     setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
   }
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(handleScroll);
+    return () => window.cancelAnimationFrame(frame);
+  }, [readerFontSize, content]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
@@ -1104,6 +1107,7 @@ function TextSceneReader({
     </div>
   );
 }
+
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -3987,7 +3991,6 @@ function App() {
       const textX = Math.min(100, Math.max(0, Number(block.text_position_x ?? 50)));
       const textY = Math.min(100, Math.max(0, Number(block.text_position_y ?? 50)));
       const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 72)));
-      const textFontSize = clampTextFontSize(Number(block.text_font_size ?? 18));
       const textColor = block.text_color || "#ffffff";
       const textAlign =
         block.text_align === "left" ||
@@ -4003,7 +4006,6 @@ function App() {
           content={block.content || ""}
           positionX={textX}
           positionY={textY}
-          fontSize={textFontSize}
           color={textColor}
           textAlign={textAlign}
           widthPercent={textWidth}
