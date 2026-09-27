@@ -74,6 +74,7 @@ type ChapterBlock = {
   height: number | null;
   object_position?: string | null;
   text_overlay_opacity?: number | null;
+  text_image_scale_percent?: number | null;
   background_opacity?: number | null;
   text_position_x?: number | null;
   text_position_y?: number | null;
@@ -82,6 +83,7 @@ type ChapterBlock = {
   text_color?: string | null;
   text_align?: "left" | "center" | "right" | null;
   text_width_percent?: number | null;
+  text_image_scale_percent?: number | null;
 };
 
 type AccountSection =
@@ -129,6 +131,24 @@ function parseObjectPosition(value: string | null | undefined) {
   );
   if (!match) return { x: 50, y: 50 };
   return { x: Number(match[1]), y: Number(match[2]) };
+}
+
+function renderProfessionalTextGlow(content: string | null | undefined) {
+  return String(content || "")
+    .split(/(\s+|[،؛,:.!؟…])/u)
+    .map((part, index) => {
+      if (!part) return null;
+
+      if (/^\s+$/u.test(part)) {
+        return <React.Fragment key={index}>{part}</React.Fragment>;
+      }
+
+      return (
+        <span key={index} className="chapter-text-glow-token">
+          {part}
+        </span>
+      );
+    });
 }
 
 type ImageCropEditorProps = {
@@ -565,13 +585,21 @@ function TextSceneEditor({
   color,
   textAlign,
   widthPercent,
+  imageScalePercent,
   onChangePosition,
   onChangeFontSize,
   onChangeColor,
   onChangeAlign,
   onChangeWidth,
-}: TextSceneEditorProps) {
+  onChangeImageScale,
+  showControls = true,
+}: TextSceneEditorProps & {
+  imageScalePercent: number;
+  onChangeImageScale: (value: number) => void;
+  showControls?: boolean;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const textShellRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     pointerId: number;
     offsetX: number;
@@ -582,10 +610,40 @@ function TextSceneEditor({
     x: positionX,
     y: positionY,
   });
+  const [sceneHeight, setSceneHeight] = useState(220);
 
   useEffect(() => {
     setLocalPosition({ x: positionX, y: positionY });
   }, [positionX, positionY]);
+
+  useEffect(() => {
+    const measure = () => {
+      const textHeight = textShellRef.current?.getBoundingClientRect().height || 0;
+      if (!textHeight) return;
+
+      const safeScale = Math.min(
+        140,
+        Math.max(100, Number(imageScalePercent) || 100)
+      );
+      const baseHeight = Math.ceil(textHeight + 28);
+      const scaledHeight = Math.ceil(textHeight * (safeScale / 100) + 28);
+
+      setSceneHeight(Math.max(150, baseHeight, scaledHeight));
+    };
+
+    measure();
+    const observer =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(measure)
+        : null;
+
+    if (textShellRef.current && observer) {
+      observer.observe(textShellRef.current);
+    }
+
+    window.requestAnimationFrame(measure);
+    return () => observer?.disconnect();
+  }, [content, fontSize, widthPercent, textAlign, imageScalePercent]);
 
   function updateFromPointer(clientX: number, clientY: number) {
     const rect = stageRef.current?.getBoundingClientRect();
@@ -659,140 +717,143 @@ function TextSceneEditor({
   const safeSize = Math.min(64, Math.max(12, fontSize));
   const safeX = Math.min(100, Math.max(0, localPosition.x));
   const safeY = Math.min(100, Math.max(0, localPosition.y));
-  const viewportWidth =
-    typeof window !== "undefined" ? window.innerWidth : 1024;
-  const estimatedTextWidthPx =
-    Math.max(180, viewportWidth * (safeWidth / 100));
-  const estimatedCharsPerLine = Math.max(
-    10,
-    Math.floor(
-      estimatedTextWidthPx / Math.max(7, safeSize * 0.55)
-    )
-  );
-  const estimatedTextLines = Math.max(
-    1,
-    Math.ceil(String(content || "").length / estimatedCharsPerLine)
-  );
-  const estimatedSceneHeight = Math.max(
-    0,
-    Math.ceil(
-      estimatedTextLines * Math.max(28, safeSize * 2) + 36
-    )
+  const safeImageScale = Math.min(
+    140,
+    Math.max(100, Number(imageScalePercent) || 100)
   );
 
+  const transform =
+    safeX >= 85
+      ? "translate(-100%, -100%)"
+      : safeX <= 15
+        ? "translate(0, 0)"
+        : safeY >= 85
+          ? "translate(-50%, -100%)"
+          : safeY <= 15
+            ? "translate(-50%, 0)"
+            : "translate(-50%, -50%)";
+
   return (
-    <div className="text-scene-editor">
+    <div className={showControls ? "text-scene-editor" : "text-scene-editor text-scene-reader-preview"}>
       <div
         ref={stageRef}
         className="text-scene-editor-stage"
-        style={{
-          minHeight:
-            estimatedSceneHeight > 0
-              ? estimatedSceneHeight + "px"
-              : undefined,
-        }}
+        style={{ height: sceneHeight + "px" }}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
         onPointerCancel={finishDrag}
       >
-        <img
-          src={src}
-          alt=""
-          className="text-scene-editor-image"
-          onLoad={(event) => {
-            const image = event.currentTarget;
-            image.parentElement?.style.setProperty(
-              "--text-scene-image-ratio",
-              image.naturalWidth + " / " + image.naturalHeight
-            );
-          }}
-        />
+        <img src={src} alt="" className="text-scene-editor-image" />
         <div className="text-scene-editor-dim" />
         <div
+          ref={textShellRef}
           className="text-scene-editor-text"
           style={{
             left: "clamp(12px, " + safeX + "%, calc(100% - 12px))",
             top: "clamp(12px, " + safeY + "%, calc(100% - 12px))",
             width: "min(" + safeWidth + "%, calc(100% - 24px))",
-            transform:
-              safeX >= 85
-                ? "translate(-100%, -100%)"
-                : safeX <= 15
-                  ? "translate(0, 0)"
-                  : safeY >= 85
-                    ? "translate(-50%, -100%)"
-                    : safeY <= 15
-                      ? "translate(-50%, 0)"
-                      : "translate(-50%, -50%)",
+            transform,
             color,
             fontSize: safeSize + "px",
             textAlign,
           }}
           onPointerDown={handlePointerDown}
         >
-          {content}
+          <div className="chapter-text-glow-content">
+            {renderProfessionalTextGlow(content)}
+          </div>
         </div>
       </div>
 
-      <div className="text-scene-editor-controls">
-        <label>
-          حجم النص
-          <input
-            type="range"
-            min="12"
-            max="64"
-            step="1"
-            value={safeSize}
-            onChange={(event) => onChangeFontSize(Number(event.target.value))}
-          />
-          <span>{safeSize}px</span>
-        </label>
+      {showControls && (
+        <div className="text-scene-editor-controls">
+          <div className="text-scene-control-group">
+            <strong>تحكم النص</strong>
 
-        <label>
-          عرض النص
-          <input
-            type="range"
-            min="25"
-            max="100"
-            step="1"
-            value={safeWidth}
-            onChange={(event) => onChangeWidth(Number(event.target.value))}
-          />
-          <span>{safeWidth}%</span>
-        </label>
+            <label>
+              حجم النص
+              <input
+                type="range"
+                min="12"
+                max="64"
+                step="1"
+                value={safeSize}
+                onChange={(event) => onChangeFontSize(Number(event.target.value))}
+              />
+              <span>{safeSize}px</span>
+            </label>
 
-        <label>
-          محاذاة النص
-          <select
-            value={textAlign}
-            onChange={(event) =>
-              onChangeAlign(
-                event.target.value as "left" | "center" | "right"
-              )
-            }
-          >
-            <option value="right">يمين</option>
-            <option value="center">وسط</option>
-            <option value="left">يسار</option>
-          </select>
-        </label>
+            <label>
+              عرض النص
+              <input
+                type="range"
+                min="25"
+                max="100"
+                step="1"
+                value={safeWidth}
+                onChange={(event) => onChangeWidth(Number(event.target.value))}
+              />
+              <span>{safeWidth}%</span>
+            </label>
 
-        <label>
-          لون النص
-          <input
-            type="color"
-            value={color}
-            onChange={(event) => onChangeColor(event.target.value)}
-          />
-        </label>
+            <label>
+              محاذاة النص
+              <select
+                value={textAlign}
+                onChange={(event) =>
+                  onChangeAlign(
+                    event.target.value as "left" | "center" | "right"
+                  )
+                }
+              >
+                <option value="right">يمين</option>
+                <option value="center">وسط</option>
+                <option value="left">يسار</option>
+              </select>
+            </label>
 
-        <small>
-          اسحبي النص بالإصبع داخل الصورة لتحريكه. موضعه محفوظ كنسبة من المشهد.
-        </small>
-      </div>
+            <label>
+              لون النص
+              <input
+                type="color"
+                value={color}
+                onChange={(event) => onChangeColor(event.target.value)}
+              />
+            </label>
+
+            <small>
+              اسحبي النص بالإصبع داخل الصورة لتحريكه.
+            </small>
+          </div>
+
+          <div className="text-scene-image-controls">
+            <strong>تحكم الصورة</strong>
+
+            <label>
+              طول الصورة مع النص
+              <input
+                type="range"
+                min="100"
+                max="140"
+                step="1"
+                value={safeImageScale}
+                onChange={(event) =>
+                  onChangeImageScale(Number(event.target.value))
+                }
+              />
+              <span>{safeImageScale}%</span>
+            </label>
+
+            <small>
+              الصورة تتمدد بالطول تلقائيًا مع حجم النص، ولا يتم قص أي جزء منها.
+            </small>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function App() {
   const [user, setUser] = useState<any>(null);
@@ -2707,6 +2768,7 @@ function App() {
           text_color: "#ffffff",
           text_align: "right",
           text_width_percent: 72,
+          text_image_scale_percent: 100,
           text_overlay_opacity:
             newBlockType === "text" ? 0.24 : 0.62,
         })
@@ -3339,7 +3401,8 @@ function App() {
       "text_font_size" |
       "text_color" |
       "text_align" |
-      "text_width_percent"
+      "text_width_percent" |
+      "text_image_scale_percent"
     >>
   ) {
     if (!canManage || block.block_type !== "text") return;
@@ -3357,6 +3420,12 @@ function App() {
     }
     if (patch.text_width_percent !== undefined) {
       safePatch.text_width_percent = Math.min(100, Math.max(25, Number(patch.text_width_percent)));
+    }
+    if (patch.text_image_scale_percent !== undefined) {
+      safePatch.text_image_scale_percent = Math.min(
+        140,
+        Math.max(100, Number(patch.text_image_scale_percent))
+      );
     }
 
     const { error } = await supabase
@@ -3605,24 +3674,9 @@ function App() {
       const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 72)));
       const textFontSize = Math.min(64, Math.max(12, Number(block.text_font_size ?? 18)));
       const textColor = block.text_color || "#ffffff";
-      const textContent = String(block.content || "");
-      const viewportWidth =
-        typeof window !== "undefined" ? window.innerWidth : 1024;
-      const estimatedTextWidthPx =
-        Math.max(180, viewportWidth * (textWidth / 100));
-      const estimatedCharsPerLine = Math.max(
-        10,
-        Math.floor(estimatedTextWidthPx / Math.max(7, textFontSize * 0.55))
-      );
-      const estimatedTextLines = Math.max(
-        1,
-        Math.ceil(textContent.length / estimatedCharsPerLine)
-      );
-      const estimatedSceneHeight = Math.max(
-        0,
-        Math.ceil(
-          estimatedTextLines * Math.max(28, textFontSize * 2) + 36
-        )
+      const textImageScale = Math.min(
+        140,
+        Math.max(100, Number(block.text_image_scale_percent ?? 100))
       );
       const textAlign =
         block.text_align === "left" ||
@@ -3666,83 +3720,24 @@ function App() {
       };
 
       return (
-        <div
-          key={block.id}
-          className={"chapter-text-background " + alignClass}
-          style={{
-            minHeight:
-              estimatedSceneHeight > 0
-                ? estimatedSceneHeight + "px"
-                : undefined,
-          }}
-        >
-          <img
-            src={mediaUrl}
-            alt=""
-            className="chapter-text-background-image"
-            style={{
-              objectPosition: block.object_position || "50% 50%",
-            }}
-            onLoad={(event) => {
-              const image = event.currentTarget;
-              image.parentElement?.style.setProperty(
-                "--chapter-image-ratio",
-                image.naturalWidth + " / " + image.naturalHeight
-              );
-            }}
-          />
-          <div
-            className="chapter-text-background-dim"
-            style={{
-              opacity: Math.min(
-                1,
-                Math.max(0, Number(block.text_overlay_opacity ?? 0.24))
-              ),
-            }}
-          />
-          <div
-            className="chapter-text-on-image-shell"
-            style={{ ...textOverlayStyle, ...overlayPlacementStyle }}
-          >
-            <div
-              className="chapter-text-on-image-row"
-              style={{ textAlign }}
-            >
-              <p
-                className="chapter-text chapter-text-on-image"
-                dir={selectedNovel?.direction || "rtl"}
-                style={{ textAlign }}
-              >
-                <span className="chapter-text-on-image-highlight">
-                  {block.content}
-                </span>
-              </p>
-
-              {block.effect_audio_path && (
-                <button
-                  type="button"
-                  className={
-                    "chapter-effect-audio-button" +
-                    (activeEffectBlockId === block.id ? " is-playing" : "")
-                  }
-                  onClick={() => void toggleChapterEffectAudio(block)}
-                  aria-label={
-                    activeEffectBlockId === block.id
-                      ? "إيقاف المؤثر الصوتي"
-                      : "تشغيل المؤثر الصوتي"
-                  }
-                  title={
-                    activeEffectBlockId === block.id
-                      ? "إيقاف المؤثر"
-                      : "تشغيل المؤثر"
-                  }
-                >
-                  🔊
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <TextSceneEditor
+          src={mediaUrl}
+          content={block.content || ""}
+          positionX={textX}
+          positionY={textY}
+          fontSize={textFontSize}
+          color={textColor}
+          textAlign={textAlign}
+          widthPercent={textWidth}
+          imageScalePercent={textImageScale}
+          onChangePosition={() => undefined}
+          onChangeFontSize={() => undefined}
+          onChangeColor={() => undefined}
+          onChangeAlign={() => undefined}
+          onChangeWidth={() => undefined}
+          onChangeImageScale={() => undefined}
+          showControls={false}
+        />
       );
     }
 
@@ -4884,6 +4879,8 @@ function App() {
                         onChangeColor={setNewTextColor}
                         onChangeAlign={setNewTextAlign}
                         onChangeWidth={setNewTextWidthPercent}
+                        imageScalePercent={100}
+                        onChangeImageScale={() => undefined}
                       />
                     </div>
                   )}
@@ -5390,6 +5387,7 @@ function App() {
                             : "right"
                         }
                         widthPercent={Number(block.text_width_percent ?? 72)}
+                        imageScalePercent={Number(block.text_image_scale_percent ?? 100)}
                         onChangePosition={(x, y) =>
                           void updateTextSceneProperty(block, {
                             text_position_x: x,
@@ -5414,6 +5412,11 @@ function App() {
                         onChangeWidth={(width) =>
                           void updateTextSceneProperty(block, {
                             text_width_percent: width,
+                          })
+                        }
+                        onChangeImageScale={(value) =>
+                          void updateTextSceneProperty(block, {
+                            text_image_scale_percent: value,
                           })
                         }
                       />
