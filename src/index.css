@@ -4694,9 +4694,16 @@ select:focus-visible {
     right: 5px;
   }
 
-  .chapter-text-reader-effect-audio {
+  .chapter-text-reader-audio-tools {
     top: 8px;
     right: 8px;
+    gap: 5px;
+  }
+
+  .chapter-text-sync-button {
+    min-height: 34px;
+    padding-inline: 8px;
+    font-size: 9px;
   }
 
   .chapter-effect-audio-button {
