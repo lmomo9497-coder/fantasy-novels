@@ -4681,29 +4681,102 @@ select:focus-visible {
   transform: scale(0.96);
 }
 
-.chapter-text-autoscroll-speed {
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 7px;
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 10px;
-  background: rgba(18,15,22,0.76);
-  color: #a99eaa;
-  font-size: 9px;
-  font-weight: 900;
-  white-space: nowrap;
+.chapter-text-autoscroll-menu {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.chapter-text-autoscroll-speed select {
-  min-height: 28px;
-  border: 0;
-  outline: 0;
-  background: transparent;
+.chapter-text-autoscroll-more {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 10px;
+  background: rgba(18,15,22,0.82);
   color: #eee6ef;
-  font: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
   cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease;
+}
+
+.chapter-text-autoscroll-more span {
+  transform: translateY(-2px);
+}
+
+.chapter-text-autoscroll-more:hover,
+.chapter-text-autoscroll-menu.is-open .chapter-text-autoscroll-more {
+  background: rgba(115,79,124,0.34);
+  border-color: rgba(199,166,201,0.34);
+}
+
+.chapter-text-autoscroll-more:active {
+  transform: scale(0.95);
+}
+
+.chapter-text-autoscroll-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 30;
+  width: min(190px, 72vw);
+  padding: 8px;
+  border: 1px solid rgba(199,166,201,0.16);
+  border-radius: 14px;
+  background: rgba(22,18,26,0.97);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.34);
+  backdrop-filter: blur(14px);
+}
+
+.chapter-text-autoscroll-menu-title {
+  padding: 7px 9px 6px;
+  color: #8f8391;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.chapter-text-autoscroll-option {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #ddd4df;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.chapter-text-autoscroll-option:hover {
+  background: rgba(255,255,255,0.055);
+}
+
+.chapter-text-autoscroll-option.is-selected {
+  background: rgba(199,166,201,0.10);
+  color: #f2eaf3;
+}
+
+.chapter-text-autoscroll-option-check {
+  width: 18px;
+  flex: 0 0 18px;
+  color: #d8bddd;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
 }
 
 .reader-font-button {
@@ -4798,14 +4871,13 @@ select:focus-visible {
     font-size: 9px;
   }
 
-  .chapter-text-autoscroll-speed {
-    min-height: 34px;
-    padding-inline: 6px;
+  .chapter-text-autoscroll-more {
+    width: 34px;
+    height: 34px;
   }
 
-  .chapter-text-autoscroll-speed select {
-    min-height: 26px;
-    max-width: 82px;
+  .chapter-text-autoscroll-menu-panel {
+    width: min(184px, 78vw);
   }
 
   .chapter-effect-audio-button {
