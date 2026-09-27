@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://fantasy-novels.lmomo9497.workers.dev/sitemap.xml
