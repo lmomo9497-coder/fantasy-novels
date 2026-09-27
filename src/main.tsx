@@ -1195,6 +1195,7 @@ function App() {
   const [newBlockMediaPreviewUrl, setNewBlockMediaPreviewUrl] = useState("");
   const [newBlockLocalPreviewUrl, setNewBlockLocalPreviewUrl] = useState("");
   const [newBlockMediaFile, setNewBlockMediaFile] = useState<File | null>(null);
+  const [newBlockEffectAudioFile, setNewBlockEffectAudioFile] = useState<File | null>(null);
   const [newBlockColumn, setNewBlockColumn] =
     useState<"left" | "right" | "full">("right");
   const [newBlockRow, setNewBlockRow] = useState("1");
@@ -2824,6 +2825,7 @@ function App() {
     setNewBlockMediaPreviewUrl("");
     setNewBlockLocalPreviewUrl("");
     setNewBlockMediaFile(null);
+    setNewBlockEffectAudioFile(null);
     setNewBlockColumn("right");
     setNewBlockRow("1");
     setNewBlockTextPosition("100");
@@ -3035,8 +3037,48 @@ function App() {
         return;
       }
 
+      let savedBlock = data as ChapterBlock;
+
+      if (newBlockType === "text" && newBlockEffectAudioFile) {
+        const effectExtension =
+          newBlockEffectAudioFile.name.split(".").pop()?.toLowerCase() || "mp3";
+        const effectPath =
+          "text-effects/" + savedBlock.id + "-" + makeStorageId() + "." + effectExtension;
+
+        const { error: effectUploadError } = await supabase.storage
+          .from("audio")
+          .upload(effectPath, newBlockEffectAudioFile, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: newBlockEffectAudioFile.type || undefined,
+          });
+
+        if (effectUploadError) {
+          setChapterMessage(
+            "تم حفظ النص، لكن تعذر رفع المؤثر الصوتي: " + effectUploadError.message
+          );
+        } else {
+          const { error: effectLinkError } = await supabase
+            .from("chapter_blocks")
+            .update({ effect_audio_path: effectPath })
+            .eq("id", savedBlock.id);
+
+          if (effectLinkError) {
+            await supabase.storage.from("audio").remove([effectPath]);
+            setChapterMessage(
+              "تم حفظ النص، لكن تعذر ربط المؤثر الصوتي: " + effectLinkError.message
+            );
+          } else {
+            savedBlock = {
+              ...savedBlock,
+              effect_audio_path: effectPath,
+            };
+          }
+        }
+      }
+
       setChapterBlocks((current) =>
-        [...current, data as ChapterBlock].sort(
+        [...current, savedBlock].sort(
           (a, b) => a.block_order - b.block_order
         )
       );
@@ -4883,6 +4925,7 @@ function App() {
                   setNewBlockMediaPreviewUrl("");
                   setNewBlockLocalPreviewUrl("");
                   setNewBlockMediaFile(null);
+                  setNewBlockEffectAudioFile(null);
                 }}
               >
                 <option value="text">نص</option>
@@ -4922,6 +4965,28 @@ function App() {
                   />
                 </div>
               )}
+
+            {newBlockType === "text" && (
+              <div className="form-group form-group-full text-effect-inline-form">
+                <label>مؤثر صوتي مرتبط بهذا النص</label>
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    if (file) {
+                      setNewBlockEffectAudioFile(file);
+                      setChapterMessage("تم اختيار المؤثر الصوتي — اضغطي حفظ لإضافته مع النص.");
+                    }
+                  }}
+                />
+                {newBlockEffectAudioFile && (
+                  <small className="form-hint">
+                    المؤثر الجاهز: {newBlockEffectAudioFile.name}
+                  </small>
+                )}
+              </div>
+            )}
 
             {["image", "gif", "audio", "text"].includes(
               newBlockType
