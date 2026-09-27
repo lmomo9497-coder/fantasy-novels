@@ -84,6 +84,7 @@ type ChapterBlock = {
   text_color?: string | null;
   text_align?: "left" | "center" | "right" | null;
   text_width_percent?: number | null;
+  text_height_percent?: number | null;
 };
 
 type AccountSection =
@@ -677,11 +678,13 @@ type TextSceneEditorProps = {
   color: string;
   textAlign: "left" | "center" | "right";
   widthPercent: number;
+  heightPercent: number;
   onChangePosition: (x: number, y: number) => void;
   onChangeFontSize: (size: number) => void;
   onChangeColor: (color: string) => void;
   onChangeAlign: (align: "left" | "center" | "right") => void;
   onChangeWidth: (width: number) => void;
+  onChangeHeight: (height: number) => void;
   effectAudioPath?: string | null;
   effectAudioPlaying?: boolean;
   onToggleEffectAudio?: () => void;
@@ -702,11 +705,13 @@ function TextSceneEditor({
   color,
   textAlign,
   widthPercent,
+  heightPercent,
   onChangePosition,
   onChangeFontSize,
   onChangeColor,
   onChangeAlign,
   onChangeWidth,
+  onChangeHeight,
   effectAudioPath,
   effectAudioPlaying = false,
   onToggleEffectAudio,
@@ -798,7 +803,8 @@ function TextSceneEditor({
     onChangePosition(x, y);
   }
 
-  const safeWidth = Math.min(96, Math.max(60, Number(widthPercent) || 88));
+  const safeWidth = Math.min(100, Math.max(60, Number(widthPercent) || 100));
+  const safeHeight = Math.min(100, Math.max(30, Number(heightPercent) || 100));
   const safeSize = clampTextFontSize(fontSize);
   const safeX = Math.min(100, Math.max(0, localPosition.x));
   const safeY = Math.min(100, Math.max(0, localPosition.y));
@@ -830,6 +836,7 @@ function TextSceneEditor({
             left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
             top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
             width: "min(" + safeWidth + "%, calc(100% - 20px))",
+            height: "min(" + safeHeight + "%, calc(100% - 20px))",
             transform,
             color,
             fontSize: safeSize + "px",
@@ -895,12 +902,27 @@ function TextSceneEditor({
               <input
                 type="range"
                 min="60"
-                max="96"
+                max="100"
                 step="1"
-                value={Math.min(96, safeWidth)}
+                value={safeWidth}
                 onChange={(event) => onChangeWidth(Number(event.target.value))}
               />
-              <output>{Math.min(96, safeWidth)}%</output>
+              <output>{safeWidth}%</output>
+            </div>
+          </label>
+
+          <label className="text-scene-setting">
+            <span>طول مساحة النص</span>
+            <div className="text-scene-range-row">
+              <input
+                type="range"
+                min="30"
+                max="100"
+                step="1"
+                value={safeHeight}
+                onChange={(event) => onChangeHeight(Number(event.target.value))}
+              />
+              <output>{safeHeight}%</output>
             </div>
           </label>
 
@@ -978,6 +1000,7 @@ type TextSceneReaderProps = {
   color: string;
   textAlign: "left" | "center" | "right";
   widthPercent: number;
+  heightPercent: number;
   effectAudioPath?: string | null;
   effectAudioPlaying?: boolean;
   onToggleEffectAudio?: () => void;
@@ -992,6 +1015,7 @@ function TextSceneReader({
   color,
   textAlign,
   widthPercent,
+  heightPercent,
   effectAudioPath,
   effectAudioPlaying = false,
   onToggleEffectAudio,
@@ -1048,7 +1072,7 @@ function TextSceneReader({
             left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
             top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
             width: "min(" + safeWidth + "%, calc(100% - 20px))",
-            height: "min(68%, 520px)",
+            height: "min(" + Math.min(100, Math.max(30, Number(heightPercent) || 100)) + "%, 100%)",
             transform,
           }}
         >
@@ -3047,7 +3071,8 @@ function App() {
           text_font_size: 18,
           text_color: "#ffffff",
           text_align: "right",
-          text_width_percent: 88,
+          text_width_percent: 100,
+          text_height_percent: 100,
           text_overlay_opacity:
             newBlockType === "text" ? 0.24 : 0.62,
         })
@@ -3721,6 +3746,7 @@ function App() {
       "text_color" |
       "text_align" |
       "text_width_percent" |
+      "text_height_percent" |
       "text_image_scale_percent"
     >>
   ) {
@@ -3738,7 +3764,10 @@ function App() {
       safePatch.text_font_size = Math.min(64, Math.max(12, Number(patch.text_font_size)));
     }
     if (patch.text_width_percent !== undefined) {
-      safePatch.text_width_percent = Math.min(96, Math.max(60, Number(patch.text_width_percent)));
+      safePatch.text_width_percent = Math.min(100, Math.max(60, Number(patch.text_width_percent)));
+    }
+    if (patch.text_height_percent !== undefined) {
+      safePatch.text_height_percent = Math.min(100, Math.max(30, Number(patch.text_height_percent)));
     }
     if (patch.text_image_scale_percent !== undefined) {
       safePatch.text_image_scale_percent = Math.min(
@@ -3990,7 +4019,8 @@ function App() {
     if (block.block_type === "text" && mediaUrl) {
       const textX = Math.min(100, Math.max(0, Number(block.text_position_x ?? 50)));
       const textY = Math.min(100, Math.max(0, Number(block.text_position_y ?? 50)));
-      const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 72)));
+      const textWidth = Math.min(100, Math.max(25, Number(block.text_width_percent ?? 100)));
+      const textHeight = Math.min(100, Math.max(30, Number(block.text_height_percent ?? 100)));
       const textColor = block.text_color || "#ffffff";
       const textAlign =
         block.text_align === "left" ||
@@ -4009,6 +4039,7 @@ function App() {
           color={textColor}
           textAlign={textAlign}
           widthPercent={textWidth}
+          heightPercent={textHeight}
           readerFontSize={readerFontSize}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
@@ -5696,7 +5727,8 @@ function App() {
                             ? block.text_align
                             : "right"
                         }
-                        widthPercent={Number(block.text_width_percent ?? 72)}
+                        widthPercent={Number(block.text_width_percent ?? 100)}
+                        heightPercent={Number(block.text_height_percent ?? 100)}
                         onChangePosition={(x, y) =>
                           void updateTextSceneProperty(block, {
                             text_position_x: x,
@@ -5721,6 +5753,11 @@ function App() {
                         onChangeWidth={(width) =>
                           void updateTextSceneProperty(block, {
                             text_width_percent: width,
+                          })
+                        }
+                        onChangeHeight={(height) =>
+                          void updateTextSceneProperty(block, {
+                            text_height_percent: height,
                           })
                         }
                         effectAudioPath={block.effect_audio_path}
