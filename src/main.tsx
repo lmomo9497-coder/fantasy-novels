@@ -1106,6 +1106,49 @@ function TextSceneReader({
           onLoad={() => window.requestAnimationFrame(handleScroll)}
         />
 
+        {effectAudioPath && onToggleEffectAudio && (
+          <div className="chapter-text-reader-audio-tools">
+            <button
+              type="button"
+              className={
+                "chapter-effect-audio-button" +
+                (effectAudioPlaying ? " is-playing" : "")
+              }
+              onClick={onToggleEffectAudio}
+              aria-label={
+                effectAudioPlaying
+                  ? "إيقاف المؤثر الصوتي"
+                  : "تشغيل المؤثر الصوتي"
+              }
+              title={
+                effectAudioPlaying
+                  ? "إيقاف المؤثر الصوتي"
+                  : "تشغيل المؤثر الصوتي"
+              }
+            >
+              🔊
+            </button>
+            {onToggleTextSync && (
+              <button
+                type="button"
+                className={
+                  "chapter-text-sync-button" +
+                  (textSyncEnabled ? " is-enabled" : "")
+                }
+                onClick={onToggleTextSync}
+                aria-pressed={textSyncEnabled}
+                title={
+                  textSyncEnabled
+                    ? "إيقاف تزامن النص مع الصوت"
+                    : "تشغيل تزامن النص مع الصوت"
+                }
+              >
+                {textSyncEnabled ? "تزامن النص: تشغيل" : "تزامن النص: إيقاف"}
+              </button>
+            )}
+          </div>
+        )}
+
 
         <div
           className="chapter-text-scene-reader-window"
