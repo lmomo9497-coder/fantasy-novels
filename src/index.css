@@ -1051,6 +1051,35 @@ img {
   font-weight: 500;
 }
 
+.chapter-reader-font-control {
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  direction: ltr;
+  box-sizing: border-box;
+}
+
+.chapter-reader-font-control > span {
+  color: #9b819f;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  direction: rtl;
+}
+
+.chapter-reader-font-control output {
+  min-width: 46px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 7px;
+  color: #eee6ef;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 /* =========================
    محتوى الفصل
 ========================= */
@@ -4478,6 +4507,12 @@ select:focus-visible {
   width: 100%;
   min-width: 0;
   margin: 18px 0 28px;
+}
+
+.chapter-text-scene-reader-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border-radius: 18px;
   background: #151218;
@@ -4494,8 +4529,8 @@ select:focus-visible {
   z-index: 2;
   box-sizing: border-box;
   min-height: 170px;
-  max-height: calc(100% - 28px);
-  padding: 16px 26px 46px;
+  max-height: calc(100% - 20px);
+  padding: 16px 26px 34px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -4504,25 +4539,11 @@ select:focus-visible {
   overflow: hidden;
 }
 
-.chapter-text-reader-toolbar {
-  position: relative;
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  min-height: 38px;
-  margin: 0 0 18px auto;
-  padding: 6px 9px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  background: rgba(10,8,13,0.58);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-  color: #e9e0eb;
-  font-size: 11px;
-  font-weight: 800;
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
+.chapter-text-reader-effect-audio {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  right: 10px;
 }
 
 .reader-font-button {
@@ -4549,8 +4570,8 @@ select:focus-visible {
 .chapter-text-scene-reader-scroll {
   position: relative;
   z-index: 3;
-  height: calc(100% - 45px);
-  padding: 4px 18px 32px 2px;
+  height: 100%;
+  padding: 14px 18px 18px 2px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -4575,9 +4596,9 @@ select:focus-visible {
 .chapter-text-reader-progress-rail {
   position: absolute;
   z-index: 7;
-  top: 54px;
+  top: 34px;
   right: 7px;
-  bottom: 32px;
+  bottom: 28px;
   width: 4px;
   border-radius: 999px;
   background: rgba(255,255,255,0.16);
@@ -4596,33 +4617,40 @@ select:focus-visible {
 }
 
 .chapter-text-reader-hint {
-  position: absolute;
-  z-index: 8;
-  inset-inline: 16px 22px;
-  bottom: 7px;
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: 12px auto 0;
   display: flex;
   justify-content: center;
-  padding: 7px 10px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: rgba(10,8,12,0.74);
   color: #f2eaf3;
   font-size: 11px;
   font-weight: 900;
+  line-height: 1.4;
   pointer-events: none;
 }
 
 @media (max-width: 700px) {
   .text-scene-editor-stage,
-  .chapter-text-scene-reader {
+  .chapter-text-scene-reader-stage {
     border-radius: 14px;
   }
 
   .chapter-text-scene-reader-window {
-    padding: 13px 14px 42px;
+    padding: 13px 14px 30px;
   }
 
   .chapter-text-reader-progress-rail {
     right: 5px;
+  }
+
+  .chapter-text-reader-effect-audio {
+    top: 8px;
+    right: 8px;
   }
 
   .chapter-effect-audio-button {
@@ -4634,6 +4662,11 @@ select:focus-visible {
   .reader-font-button {
     width: 34px;
     height: 34px;
+  }
+
+  .chapter-reader-font-control {
+    gap: 7px;
+    margin-top: 16px;
   }
 }
 
