@@ -1039,6 +1039,7 @@ function TextSceneReader({
   const autoScrollMenuRef = useRef<HTMLDivElement>(null);
 
   const autoScrollLevels = [
+    { value: 4, label: "بطيء جدًا جدًا" },
     { value: 8, label: "بطيء جدًا" },
     { value: 14, label: "بطيء" },
     { value: 18, label: "عادي" },
