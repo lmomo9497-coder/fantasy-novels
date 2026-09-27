@@ -1010,6 +1010,10 @@ type TextSceneReaderProps = {
   effectAudioPath?: string | null;
   effectAudioPlaying?: boolean;
   onToggleEffectAudio?: () => void;
+  effectAudioCurrentTime?: number;
+  effectAudioDuration?: number;
+  textSyncEnabled?: boolean;
+  onToggleTextSync?: () => void;
   readerFontSize: number;
 };
 
@@ -1025,6 +1029,10 @@ function TextSceneReader({
   effectAudioPath,
   effectAudioPlaying = false,
   onToggleEffectAudio,
+  effectAudioCurrentTime = 0,
+  effectAudioDuration = 0,
+  textSyncEnabled = true,
+  onToggleTextSync,
   readerFontSize,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1045,6 +1053,33 @@ function TextSceneReader({
     const frame = window.requestAnimationFrame(handleScroll);
     return () => window.cancelAnimationFrame(frame);
   }, [readerFontSize, content]);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || !textSyncEnabled) return;
+    if (!Number.isFinite(effectAudioDuration) || effectAudioDuration <= 0) return;
+    if (!Number.isFinite(effectAudioCurrentTime)) return;
+
+    const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
+    const ratio = Math.min(
+      1,
+      Math.max(0, effectAudioCurrentTime / effectAudioDuration)
+    );
+
+    element.scrollTo({
+      top: maxScroll * ratio,
+      behavior: "auto",
+    });
+
+    const frame = window.requestAnimationFrame(handleScroll);
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    effectAudioCurrentTime,
+    effectAudioDuration,
+    textSyncEnabled,
+    content,
+    readerFontSize,
+  ]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
@@ -1083,26 +1118,46 @@ function TextSceneReader({
           }}
         >
           {effectAudioPath && onToggleEffectAudio && (
-            <button
-              type="button"
-              className={
-                "chapter-effect-audio-button chapter-text-reader-effect-audio" +
-                (effectAudioPlaying ? " is-playing" : "")
-              }
-              onClick={onToggleEffectAudio}
-              aria-label={
-                effectAudioPlaying
-                  ? "إيقاف المؤثر الصوتي"
-                  : "تشغيل المؤثر الصوتي"
-              }
-              title={
-                effectAudioPlaying
-                  ? "إيقاف المؤثر الصوتي"
-                  : "تشغيل المؤثر الصوتي"
-              }
-            >
-              🔊
-            </button>
+            <div className="chapter-text-reader-audio-tools">
+              <button
+                type="button"
+                className={
+                  "chapter-effect-audio-button" +
+                  (effectAudioPlaying ? " is-playing" : "")
+                }
+                onClick={onToggleEffectAudio}
+                aria-label={
+                  effectAudioPlaying
+                    ? "إيقاف المؤثر الصوتي"
+                    : "تشغيل المؤثر الصوتي"
+                }
+                title={
+                  effectAudioPlaying
+                    ? "إيقاف المؤثر الصوتي"
+                    : "تشغيل المؤثر الصوتي"
+                }
+              >
+                🔊
+              </button>
+              {onToggleTextSync && (
+                <button
+                  type="button"
+                  className={
+                    "chapter-text-sync-button" +
+                    (textSyncEnabled ? " is-enabled" : "")
+                  }
+                  onClick={onToggleTextSync}
+                  aria-pressed={textSyncEnabled}
+                  title={
+                    textSyncEnabled
+                      ? "إيقاف تزامن النص مع الصوت"
+                      : "تشغيل تزامن النص مع الصوت"
+                  }
+                >
+                  {textSyncEnabled ? "تزامن النص: تشغيل" : "تزامن النص: إيقاف"}
+                </button>
+              )}
+            </div>
           )}
 
           <div
@@ -1221,6 +1276,9 @@ function App() {
   const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
   const activeEffectAudioRef = useRef<HTMLAudioElement | null>(null);
   const [activeEffectBlockId, setActiveEffectBlockId] = useState<string | null>(null);
+  const [effectAudioCurrentTime, setEffectAudioCurrentTime] = useState(0);
+  const [effectAudioDuration, setEffectAudioDuration] = useState(0);
+  const [textSyncEnabled, setTextSyncEnabled] = useState(true);
 
   const [newBlockType, setNewBlockType] =
     useState<ChapterBlockType>("text");
@@ -3708,6 +3766,8 @@ function App() {
       activeEffectAudioRef.current.pause();
       activeEffectAudioRef.current.currentTime = 0;
       activeEffectAudioRef.current = null;
+      setEffectAudioCurrentTime(0);
+      setEffectAudioDuration(0);
       setActiveEffectBlockId(null);
       return;
     }
@@ -3722,14 +3782,27 @@ function App() {
 
     const audio = new Audio(url);
     audio.preload = "auto";
+    audio.ontimeupdate = () => {
+      if (activeEffectAudioRef.current === audio) {
+        setEffectAudioCurrentTime(audio.currentTime);
+      }
+    };
+    audio.onloadedmetadata = () => {
+      if (activeEffectAudioRef.current === audio) {
+        setEffectAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      }
+    };
     audio.onended = () => {
       if (activeEffectAudioRef.current === audio) {
+        setEffectAudioCurrentTime(audio.duration || 0);
         activeEffectAudioRef.current = null;
         setActiveEffectBlockId(null);
       }
     };
 
     activeEffectAudioRef.current = audio;
+    setEffectAudioCurrentTime(0);
+    setEffectAudioDuration(0);
     setActiveEffectBlockId(block.id);
 
     try {
@@ -4050,6 +4123,10 @@ function App() {
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
+          effectAudioCurrentTime={activeEffectBlockId === block.id ? effectAudioCurrentTime : 0}
+          effectAudioDuration={activeEffectBlockId === block.id ? effectAudioDuration : 0}
+          textSyncEnabled={textSyncEnabled}
+          onToggleTextSync={() => setTextSyncEnabled((current) => !current)}
         />
       );
     }
