@@ -1327,6 +1327,7 @@ function App() {
   const navigationReadyRef = useRef(false);
   const suppressNavigationPushRef = useRef(false);
   const currentRouteKeyRef = useRef("");
+  const profileLoadedUserIdRef = useRef<string | null>(null);
 
   const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
   const [selectedNovelAdminView, setSelectedNovelAdminView] = useState(false);
@@ -1739,6 +1740,12 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
 
+      // Token refresh is handled internally by Supabase. It does not
+      // represent a profile/account change, so avoid reloading app data.
+      if (_event === "TOKEN_REFRESHED") {
+        return;
+      }
+
       setUser(session?.user ?? null);
 
       if (_event === "SIGNED_IN" && session?.user) {
@@ -1746,16 +1753,21 @@ function App() {
         window.setTimeout(() => setLoginToast(""), 3500);
       }
 
-      if (
-        session?.user &&
-        (_event === "INITIAL_SESSION" ||
-          _event === "SIGNED_IN" ||
-          _event === "USER_UPDATED")
-      ) {
-        void loadProfile(session.user.id);
-      }
+      if (session?.user) {
+        const shouldLoadProfile =
+          _event === "INITIAL_SESSION" ||
+          _event === "USER_UPDATED" ||
+          (_event === "SIGNED_IN" &&
+            profileLoadedUserIdRef.current !== session.user.id) ||
+          (_event === "PASSWORD_RECOVERY" &&
+            profileLoadedUserIdRef.current !== session.user.id);
 
-      if (!session?.user) {
+        if (shouldLoadProfile) {
+          profileLoadedUserIdRef.current = session.user.id;
+          void loadProfile(session.user.id);
+        }
+      } else {
+        profileLoadedUserIdRef.current = null;
         setProfile(null);
         setFavorites([]);
         setHistory([]);
