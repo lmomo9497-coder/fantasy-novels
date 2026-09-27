@@ -83,7 +83,6 @@ type ChapterBlock = {
   text_color?: string | null;
   text_align?: "left" | "center" | "right" | null;
   text_width_percent?: number | null;
-  text_image_scale_percent?: number | null;
 };
 
 type AccountSection =
@@ -574,6 +573,9 @@ type TextSceneEditorProps = {
   onChangeColor: (color: string) => void;
   onChangeAlign: (align: "left" | "center" | "right") => void;
   onChangeWidth: (width: number) => void;
+  effectAudioPath?: string | null;
+  effectAudioPlaying?: boolean;
+  onToggleEffectAudio?: () => void;
 };
 
 function TextSceneEditor({
@@ -592,6 +594,9 @@ function TextSceneEditor({
   onChangeAlign,
   onChangeWidth,
   onChangeImageScale,
+  effectAudioPath,
+  effectAudioPlaying = false,
+  onToggleEffectAudio,
   showControls = true,
 }: TextSceneEditorProps & {
   imageScalePercent: number;
@@ -759,8 +764,32 @@ function TextSceneEditor({
           }}
           onPointerDown={handlePointerDown}
         >
-          <div className="chapter-text-glow-content">
-            {renderProfessionalTextGlow(content)}
+          <div className="text-scene-text-row">
+            <div className="chapter-text-glow-content">
+              {renderProfessionalTextGlow(content)}
+            </div>
+
+            {effectAudioPath && onToggleEffectAudio && (
+              <button
+                type="button"
+                className={
+                  "chapter-effect-audio-button" +
+                  (effectAudioPlaying ? " is-playing" : "")
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleEffectAudio();
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label={
+                  effectAudioPlaying
+                    ? "إيقاف المؤثر الصوتي"
+                    : "تشغيل المؤثر الصوتي"
+                }
+              >
+                🔊
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -956,6 +985,7 @@ function App() {
   const [newTextAlign, setNewTextAlign] =
     useState<"left" | "center" | "right">("right");
   const [newTextWidthPercent, setNewTextWidthPercent] = useState(72);
+  const [newTextImageScalePercent, setNewTextImageScalePercent] = useState(100);
   const [newBlockWidth, setNewBlockWidth] = useState("");
   const [newBlockHeight, setNewBlockHeight] = useState("");
   const [uploadingBlockMedia, setUploadingBlockMedia] = useState(false);
@@ -2576,6 +2606,7 @@ function App() {
     setNewTextColor("#ffffff");
     setNewTextAlign("right");
     setNewTextWidthPercent(72);
+    setNewTextImageScalePercent(100);
     setNewBlockWidth("");
     setNewBlockHeight("");
   }
@@ -2768,7 +2799,7 @@ function App() {
           text_color: "#ffffff",
           text_align: "right",
           text_width_percent: 72,
-          text_image_scale_percent: 100,
+          text_image_scale_percent: newTextImageScalePercent,
           text_overlay_opacity:
             newBlockType === "text" ? 0.24 : 0.62,
         })
@@ -3685,40 +3716,6 @@ function App() {
           ? block.text_align
           : "right";
 
-      const textOverlayStyle: React.CSSProperties = {
-        width: "min(" + textWidth + "%, calc(100% - 24px))",
-        minHeight:
-          block.height && block.height > 0
-            ? block.height + "px"
-            : undefined,
-        maxWidth: "calc(100% - 24px)",
-        boxSizing: "border-box",
-        color: textColor,
-        fontSize:
-          "clamp(15px, " +
-          Math.max(2.9, Math.min(5.2, textFontSize / 4)) +
-          "vw, " +
-          textFontSize +
-          "px)",
-        textAlign,
-      };
-
-      const overlayPlacementStyle: React.CSSProperties = {
-        position: "absolute",
-        left: "clamp(12px, " + textX + "%, calc(100% - 12px))",
-        top: "clamp(12px, " + textY + "%, calc(100% - 12px))",
-        transform:
-          textX >= 85
-            ? "translate(-100%, -100%)"
-            : textX <= 15
-              ? "translate(0, 0)"
-              : textY >= 85
-                ? "translate(-50%, -100%)"
-                : textY <= 15
-                  ? "translate(-50%, 0)"
-                  : "translate(-50%, -50%)",
-      };
-
       return (
         <TextSceneEditor
           src={mediaUrl}
@@ -3736,11 +3733,13 @@ function App() {
           onChangeAlign={() => undefined}
           onChangeWidth={() => undefined}
           onChangeImageScale={() => undefined}
+          effectAudioPath={block.effect_audio_path}
+          effectAudioPlaying={activeEffectBlockId === block.id}
+          onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
           showControls={false}
         />
       );
     }
-
     return (
       <p
         key={block.id}
@@ -4871,6 +4870,7 @@ function App() {
                         color={newTextColor}
                         textAlign={newTextAlign}
                         widthPercent={newTextWidthPercent}
+                        imageScalePercent={newTextImageScalePercent}
                         onChangePosition={(x, y) => {
                           setNewBlockTextPosition(String(x));
                           setNewTextPositionY(y);
@@ -4879,8 +4879,7 @@ function App() {
                         onChangeColor={setNewTextColor}
                         onChangeAlign={setNewTextAlign}
                         onChangeWidth={setNewTextWidthPercent}
-                        imageScalePercent={100}
-                        onChangeImageScale={() => undefined}
+                        onChangeImageScale={setNewTextImageScalePercent}
                       />
                     </div>
                   )}
@@ -5419,6 +5418,9 @@ function App() {
                             text_image_scale_percent: value,
                           })
                         }
+                        effectAudioPath={block.effect_audio_path}
+                        effectAudioPlaying={activeEffectBlockId === block.id}
+                        onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
                       />
                     ) : (
                       renderChapterBlock(block, false)
