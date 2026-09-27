@@ -1109,16 +1109,6 @@ function TextSceneReader({
           onLoad={() => window.requestAnimationFrame(handleScroll)}
         />
 
-        <div
-          className="chapter-text-scene-reader-window"
-          style={{
-            left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
-            top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
-            width: "min(" + safeWidth + "%, calc(100% - 20px))",
-            height: "min(" + Math.min(100, Math.max(30, Number(heightPercent) || 100)) + "%, 100%)",
-            transform,
-          }}
-        >
           <div className="chapter-text-reader-font-tools" aria-label="حجم النص">
             <button
               type="button"
@@ -1201,6 +1191,16 @@ function TextSceneReader({
             {textVisible ? "إخفاء النص" : "إظهار النص"}
           </button>
 
+        <div
+          className="chapter-text-scene-reader-window"
+          style={{
+            left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
+            top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
+            width: "min(" + safeWidth + "%, calc(100% - 20px))",
+            height: "min(" + Math.min(100, Math.max(30, Number(heightPercent) || 100)) + "%, 100%)",
+            transform,
+          }}
+        >
           {textVisible && (
             <>
               <div
