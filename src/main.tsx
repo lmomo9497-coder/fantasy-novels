@@ -847,32 +847,33 @@ function TextSceneEditor({
           <div className="chapter-text-glow-content">
             {renderProfessionalTextGlow(content)}
           </div>
-          <div
-            className="chapter-text-editor-effect-audio"
-            aria-hidden={!effectAudioPath || !onToggleEffectAudio}
-          >
-            {effectAudioPath && onToggleEffectAudio && (
-              <button
-                type="button"
-                className={
-                  "chapter-effect-audio-button" +
-                  (effectAudioPlaying ? " is-playing" : "")
-                }
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleEffectAudio();
-                }}
-                onPointerDown={(event) => event.stopPropagation()}
-                aria-label={
-                  effectAudioPlaying
-                    ? "إيقاف المؤثر الصوتي"
-                    : "تشغيل المؤثر الصوتي"
-                }
-              >
-                🔊
-              </button>
-            )}
-          </div>
+        </div>
+
+        <div
+          className="chapter-text-editor-effect-audio"
+          aria-hidden={!effectAudioPath || !onToggleEffectAudio}
+        >
+          {effectAudioPath && onToggleEffectAudio && (
+            <button
+              type="button"
+              className={
+                "chapter-effect-audio-button" +
+                (effectAudioPlaying ? " is-playing" : "")
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleEffectAudio();
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+              aria-label={
+                effectAudioPlaying
+                  ? "إيقاف المؤثر الصوتي"
+                  : "تشغيل المؤثر الصوتي"
+              }
+            >
+              🔊
+            </button>
+          )}
         </div>
       </div>
 
