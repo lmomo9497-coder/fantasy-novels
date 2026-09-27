@@ -1036,8 +1036,10 @@ function TextSceneReader({
   readerFontSize,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollRatio, setScrollRatio] = useState(0);
   const [showHint, setShowHint] = useState(true);
+  const [readerTextSize, setReaderTextSize] = useState(() =>
+    clampTextFontSize(readerFontSize)
+  );
   const [textVisible, setTextVisible] = useState(true);
 
   function handleScroll() {
@@ -1045,15 +1047,17 @@ function TextSceneReader({
     if (!element) return;
 
     const maxScroll = Math.max(1, element.scrollHeight - element.clientHeight);
-    const nextRatio = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
-    setScrollRatio(nextRatio);
     setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
   }
 
   useEffect(() => {
+    setReaderTextSize(clampTextFontSize(readerFontSize));
+  }, [readerFontSize]);
+
+  useEffect(() => {
     const frame = window.requestAnimationFrame(handleScroll);
     return () => window.cancelAnimationFrame(frame);
-  }, [readerFontSize, content]);
+  }, [readerTextSize, content]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -1079,14 +1083,14 @@ function TextSceneReader({
     effectAudioDuration,
     textSyncEnabled,
     content,
-    readerFontSize,
+    readerTextSize,
     textVisible,
   ]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
   const safeY = Math.min(100, Math.max(0, Number(positionY) || 50));
-  const safeReaderSize = clampTextFontSize(readerFontSize);
+  const safeReaderSize = clampTextFontSize(readerTextSize);
   const transform =
     safeX >= 85
       ? "translate(-100%, -100%)"
@@ -1113,9 +1117,11 @@ function TextSceneReader({
             <button
               type="button"
               className="reader-font-button"
-              onClick={() =>
-                setReaderFontSize((current) => Math.max(12, current - 2))
-              }
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                setReaderTextSize((current) => Math.max(12, current - 2));
+              }}
               aria-label="تصغير الخط"
               title="تصغير الخط"
             >
@@ -1125,9 +1131,11 @@ function TextSceneReader({
             <button
               type="button"
               className="reader-font-button"
-              onClick={() =>
-                setReaderFontSize((current) => Math.min(64, current + 2))
-              }
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                setReaderTextSize((current) => Math.min(64, current + 2));
+              }}
               aria-label="تكبير الخط"
               title="تكبير الخط"
             >
@@ -1218,12 +1226,6 @@ function TextSceneReader({
                 </div>
               </div>
 
-              <div className="chapter-text-reader-progress-rail" aria-hidden="true">
-                <div
-                  className="chapter-text-reader-progress-thumb"
-                  style={{ top: "calc(" + scrollRatio * 100 + "% - 10px)" }}
-                />
-              </div>
             </>
           )}
         </div>
