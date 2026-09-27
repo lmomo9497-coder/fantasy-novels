@@ -1046,7 +1046,6 @@ function TextSceneReader({
     const element = scrollRef.current;
     if (!element) return;
 
-    const maxScroll = Math.max(1, element.scrollHeight - element.clientHeight);
     setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
   }
 
@@ -1127,7 +1126,7 @@ function TextSceneReader({
             >
               −
             </button>
-            <output>{clampTextFontSize(readerFontSize)}px</output>
+            <output>{clampTextFontSize(readerTextSize)}px</output>
             <button
               type="button"
               className="reader-font-button"
