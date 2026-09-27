@@ -4610,7 +4610,7 @@ select:focus-visible {
   position: static;
 }
 
-.chapter-text-sync-button {
+.chapter-text-autoscroll-button {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid rgba(255,255,255,0.18);
@@ -4624,14 +4624,39 @@ select:focus-visible {
   white-space: nowrap;
 }
 
-.chapter-text-sync-button.is-enabled {
+.chapter-text-autoscroll-button.is-enabled {
   border-color: rgba(199,166,201,0.42);
   background: rgba(115,79,124,0.45);
   color: #f7edf8;
 }
 
-.chapter-text-sync-button:active {
+.chapter-text-autoscroll-button:active {
   transform: scale(0.96);
+}
+
+.chapter-text-autoscroll-speed {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  background: rgba(18,15,22,0.76);
+  color: #a99eaa;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.chapter-text-autoscroll-speed select {
+  min-height: 28px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #eee6ef;
+  font: inherit;
+  cursor: pointer;
 }
 
 .reader-font-button {
@@ -4715,10 +4740,20 @@ select:focus-visible {
     gap: 5px;
   }
 
-  .chapter-text-sync-button {
+  .chapter-text-autoscroll-button {
     min-height: 34px;
     padding-inline: 8px;
     font-size: 9px;
+  }
+
+  .chapter-text-autoscroll-speed {
+    min-height: 34px;
+    padding-inline: 6px;
+  }
+
+  .chapter-text-autoscroll-speed select {
+    min-height: 26px;
+    max-width: 82px;
   }
 
   .chapter-effect-audio-button {
