@@ -4539,6 +4539,21 @@ select:focus-visible {
   overflow: hidden;
 }
 
+.chapter-text-editor-effect-audio {
+  position: absolute;
+  z-index: 6;
+  top: 10px;
+  inset-inline-end: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.chapter-text-editor-effect-audio .chapter-effect-audio-button {
+  pointer-events: auto;
+}
+
 .chapter-text-reader-effect-audio {
   position: absolute;
   z-index: 5;
