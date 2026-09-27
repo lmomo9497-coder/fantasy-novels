@@ -1119,6 +1119,32 @@ function TextSceneReader({
             transform,
           }}
         >
+          <div className="chapter-text-reader-font-tools" aria-label="حجم النص">
+            <button
+              type="button"
+              className="reader-font-button"
+              onClick={() =>
+                setReaderFontSize((current) => Math.max(12, current - 2))
+              }
+              aria-label="تصغير الخط"
+              title="تصغير الخط"
+            >
+              −
+            </button>
+            <output>{clampTextFontSize(readerFontSize)}px</output>
+            <button
+              type="button"
+              className="reader-font-button"
+              onClick={() =>
+                setReaderFontSize((current) => Math.min(64, current + 2))
+              }
+              aria-label="تكبير الخط"
+              title="تكبير الخط"
+            >
+              +
+            </button>
+          </div>
+
           {effectAudioPath && onToggleEffectAudio && (
             <div className="chapter-text-reader-audio-tools">
               <button
@@ -5936,38 +5962,6 @@ function App() {
               <h2>{selectedChapter.title}</h2>
             )}
 
-            {!selectedNovelAdminView && (
-              <div className="chapter-reader-font-control">
-                <span>حجم النص</span>
-                <button
-                  type="button"
-                  className="reader-font-button"
-                  onClick={() =>
-                    setReaderFontSize((current) =>
-                      Math.max(12, current - 2)
-                    )
-                  }
-                  aria-label="تصغير الخط"
-                  title="تصغير الخط"
-                >
-                  −
-                </button>
-                <output>{clampTextFontSize(readerFontSize)}px</output>
-                <button
-                  type="button"
-                  className="reader-font-button"
-                  onClick={() =>
-                    setReaderFontSize((current) =>
-                      Math.min(64, current + 2)
-                    )
-                  }
-                  aria-label="تكبير الخط"
-                  title="تكبير الخط"
-                >
-                  +
-                </button>
-              </div>
-            )}
           </div>
 
           {loadingChapterBlocks ? (
