@@ -1032,6 +1032,7 @@ function TextSceneReader({
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollFrameRef = useRef<number | null>(null);
   const autoScrollLastTimeRef = useRef<number | null>(null);
+  const autoScrollDistanceRef = useRef(0);
   const [showHint, setShowHint] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState(18);
@@ -1092,6 +1093,7 @@ function TextSceneReader({
     if (!autoScrollEnabled || !element) return;
 
     autoScrollLastTimeRef.current = null;
+    autoScrollDistanceRef.current = 0;
 
     const tick = (timestamp: number) => {
       const currentElement = scrollRef.current;
@@ -1102,9 +1104,15 @@ function TextSceneReader({
         currentElement.scrollHeight - currentElement.clientHeight
       );
 
+      if (maxScroll <= 0) {
+        autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+
       if (currentElement.scrollTop >= maxScroll - 1) {
         setAutoScrollEnabled(false);
         autoScrollLastTimeRef.current = null;
+        autoScrollDistanceRef.current = 0;
         autoScrollFrameRef.current = null;
         return;
       }
@@ -1113,10 +1121,17 @@ function TextSceneReader({
       const deltaMs = Math.min(50, Math.max(0, timestamp - previous));
       autoScrollLastTimeRef.current = timestamp;
 
-      currentElement.scrollTop = Math.min(
-        maxScroll,
-        currentElement.scrollTop + (autoScrollSpeed * deltaMs) / 1000
-      );
+      autoScrollDistanceRef.current += (autoScrollSpeed * deltaMs) / 1000;
+
+      if (autoScrollDistanceRef.current >= 0.25) {
+        const pixels = Math.floor(autoScrollDistanceRef.current * 100) / 100;
+        autoScrollDistanceRef.current -= pixels;
+
+        currentElement.scrollTop = Math.min(
+          maxScroll,
+          currentElement.scrollTop + pixels
+        );
+      }
 
       autoScrollFrameRef.current = window.requestAnimationFrame(tick);
     };
@@ -1129,6 +1144,7 @@ function TextSceneReader({
       }
       autoScrollFrameRef.current = null;
       autoScrollLastTimeRef.current = null;
+      autoScrollDistanceRef.current = 0;
     };
   }, [autoScrollEnabled, autoScrollSpeed, content, readerFontSize, textVisible]);
 
