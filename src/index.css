@@ -4564,6 +4564,36 @@ select:focus-visible {
   gap: 7px;
 }
 
+.chapter-text-visibility-button {
+  position: absolute;
+  z-index: 9;
+  top: 10px;
+  left: 10px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 10px;
+  background: rgba(18,15,22,0.72);
+  color: #f1eaf2;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.chapter-text-visibility-button.is-hidden {
+  border-color: rgba(199,166,201,0.42);
+  background: rgba(115,79,124,0.52);
+  color: #fff7ff;
+}
+
+.chapter-text-visibility-button:active {
+  transform: scale(0.96);
+}
+
 .chapter-text-reader-effect-audio {
   position: static;
 }
@@ -4698,6 +4728,14 @@ select:focus-visible {
     top: 8px;
     right: 8px;
     gap: 5px;
+  }
+
+  .chapter-text-visibility-button {
+    top: 8px;
+    left: 8px;
+    min-height: 34px;
+    padding-inline: 9px;
+    font-size: 9px;
   }
 
   .chapter-text-sync-button {
