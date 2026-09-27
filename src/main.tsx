@@ -1203,7 +1203,7 @@ function TextSceneReader({
         </div>
       </div>
 
-      {showHint && (
+      {textVisible && showHint && (
         <div className="chapter-text-reader-hint">
           مرر للأسفل لقراءة المزيد ↓
         </div>
