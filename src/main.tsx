@@ -25,6 +25,7 @@ type Novel = {
   slug: string;
   description: string | null;
   cover_path: string | null;
+  cover_position?: string | null;
   category_id: string | null;
   status: "ongoing" | "completed";
   language: string;
@@ -148,6 +149,114 @@ function renderProfessionalTextGlow(content: string | null | undefined) {
         </span>
       );
     });
+}
+
+type CoverCropEditorProps = {
+  src: string;
+  positionX: number;
+  positionY: number;
+  onChangePosition: (x: number, y: number) => void;
+};
+
+function CoverCropEditor({
+  src,
+  positionX,
+  positionY,
+  onChangePosition,
+}: CoverCropEditorProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef(false);
+  const [localPosition, setLocalPosition] = useState({
+    x: Math.min(100, Math.max(0, positionX)),
+    y: Math.min(100, Math.max(0, positionY)),
+  });
+
+  useEffect(() => {
+    setLocalPosition({
+      x: Math.min(100, Math.max(0, positionX)),
+      y: Math.min(100, Math.max(0, positionY)),
+    });
+  }, [positionX, positionY]);
+
+  function updatePosition(clientX: number, clientY: number) {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = Math.round(
+      Math.min(
+        100,
+        Math.max(0, ((clientX - rect.left) / Math.max(1, rect.width)) * 100)
+      )
+    );
+    const y = Math.round(
+      Math.min(
+        100,
+        Math.max(0, ((clientY - rect.top) / Math.max(1, rect.height)) * 100)
+      )
+    );
+
+    setLocalPosition({ x, y });
+    onChangePosition(x, y);
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    dragRef.current = true;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+    updatePosition(event.clientX, event.clientY);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) return;
+    event.preventDefault();
+    updatePosition(event.clientX, event.clientY);
+  }
+
+  function finishPointer() {
+    dragRef.current = false;
+  }
+
+  return (
+    <div className="cover-crop-editor">
+      <div className="editor-control-title">
+        اختاري الجزء الذي يظهر على الغلاف بالسحب داخل الإطار.
+      </div>
+
+      <div
+        ref={stageRef}
+        className="cover-crop-stage"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishPointer}
+        onPointerCancel={finishPointer}
+      >
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          className="cover-crop-image"
+          style={{
+            objectPosition:
+              localPosition.x + "% " + localPosition.y + "%",
+          }}
+        />
+        <div
+          className="cover-crop-focus"
+          style={{
+            left: localPosition.x + "%",
+            top: localPosition.y + "%",
+          }}
+        >
+          <span />
+        </div>
+      </div>
+
+      <small className="form-hint">
+        الموضع الحالي: {localPosition.x}% أفقيًا · {localPosition.y}% عموديًا
+      </small>
+    </div>
+  );
 }
 
 type ImageCropEditorProps = {
@@ -938,8 +1047,10 @@ function App() {
   const [novelDirection, setNovelDirection] =
     useState<"rtl" | "ltr">("rtl");
   const [novelCoverPath, setNovelCoverPath] = useState("");
+  const [novelCoverPosition, setNovelCoverPosition] = useState("50% 50%");
   const [uploadingCover, setUploadingCover] = useState(false);
   const [novelMessage, setNovelMessage] = useState("");
+  const [showFullCover, setShowFullCover] = useState(false);
 
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -1752,6 +1863,7 @@ function App() {
     setProfile(null);
     setSelectedNovel(null);
     setSelectedChapter(null);
+    setShowFullCover(false);
     setShowAccount(false);
     setShowAdmin(false);
     setShowNovels(true);
@@ -1900,6 +2012,7 @@ function App() {
       }
 
       setNovelCoverPath(path);
+      setNovelCoverPosition("50% 50%");
       setNovelMessage("تم رفع الغلاف بنجاح.");
     } catch (error: any) {
       setNovelMessage(error?.message || "تعذر رفع الغلاف.");
@@ -1917,6 +2030,7 @@ function App() {
     setNovelLanguage("العربية");
     setNovelDirection("rtl");
     setNovelCoverPath("");
+    setNovelCoverPosition("50% 50%");
     setNovelMessage("");
   }
 
@@ -1932,6 +2046,7 @@ function App() {
     setNovelLanguage(novel.language || "العربية");
     setNovelDirection(novel.direction || "rtl");
     setNovelCoverPath(novel.cover_path || "");
+    setNovelCoverPosition(novel.cover_position || "50% 50%");
     setNovelMessage("");
     setShowNovelForm(true);
     setShowAdmin(true);
@@ -1967,6 +2082,7 @@ function App() {
         slug,
         description: novelDescription.trim() || null,
         cover_path: novelCoverPath || null,
+        cover_position: novelCoverPosition || "50% 50%",
         category_id: novelCategories[0] || null,
         status: novelStatus,
         language: novelLanguage.trim() || "العربية",
@@ -1988,6 +2104,7 @@ function App() {
             slug: payload.slug,
             description: payload.description,
             cover_path: payload.cover_path,
+            cover_position: payload.cover_position,
             category_id: payload.category_id,
             status: payload.status,
             language: payload.language,
@@ -2216,6 +2333,7 @@ function App() {
   ) {
     setSelectedNovel(novel);
     setSelectedNovelAdminView(adminView);
+    setShowFullCover(false);
     setSelectedChapter(null);
     setChapterBlocks([]);
     setShowAccount(false);
@@ -4092,6 +4210,9 @@ function App() {
             <img
               src={image}
               alt={novel.title}
+              style={{
+                objectPosition: novel.cover_position || "50% 50%",
+              }}
             />
           ) : (
             <div className="cover-placeholder">
@@ -4491,6 +4612,17 @@ function App() {
               <div className="uploaded-file">
                 تم اختيار الغلاف.
               </div>
+            )}
+
+            {novelCoverPath && (
+              <CoverCropEditor
+                src={coverUrl({ cover_path: novelCoverPath } as Novel)}
+                positionX={parseObjectPosition(novelCoverPosition).x}
+                positionY={parseObjectPosition(novelCoverPosition).y}
+                onChangePosition={(x, y) =>
+                  setNovelCoverPosition(x + "% " + y + "%")
+                }
+              />
             )}
           </div>
         </div>
@@ -5579,10 +5711,24 @@ function App() {
         <div className="novel-hero card">
           <div className="novel-hero-cover">
             {image ? (
-              <img
-                src={image}
-                alt={selectedNovel.title}
-              />
+              <button
+                type="button"
+                className="novel-hero-cover-button"
+                onClick={() => setShowFullCover(true)}
+                aria-label="عرض غلاف الرواية كاملًا"
+                title="عرض الصورة كاملة"
+              >
+                <img
+                  src={image}
+                  alt={selectedNovel.title}
+                  style={{
+                    objectPosition: selectedNovel.cover_position || "50% 50%",
+                  }}
+                />
+                <span className="novel-cover-view-hint">
+                  عرض الصورة كاملة
+                </span>
+              </button>
             ) : (
               <div className="cover-placeholder large">
                 <span>✦</span>
@@ -5675,6 +5821,35 @@ function App() {
         {selectedNovelAdminView &&
           canManage &&
           renderChapterForm()}
+
+        {showFullCover && image && (
+          <div
+            className="novel-cover-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="غلاف الرواية كاملًا"
+            onClick={() => setShowFullCover(false)}
+          >
+            <button
+              type="button"
+              className="novel-cover-modal-close"
+              onClick={(event) => {
+                event.stopPropagation();
+                setShowFullCover(false);
+              }}
+              aria-label="إغلاق الصورة"
+            >
+              ×
+            </button>
+
+            <img
+              src={image}
+              alt={selectedNovel.title}
+              className="novel-cover-full-image"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        )}
 
         <div className="chapters-section">
           <div className="section-heading">
