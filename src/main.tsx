@@ -1010,10 +1010,6 @@ type TextSceneReaderProps = {
   effectAudioPath?: string | null;
   effectAudioPlaying?: boolean;
   onToggleEffectAudio?: () => void;
-  effectAudioCurrentTime?: number;
-  effectAudioDuration?: number;
-  textSyncEnabled?: boolean;
-  onToggleTextSync?: () => void;
   readerFontSize: number;
   textVisible: boolean;
 };
@@ -1030,15 +1026,15 @@ function TextSceneReader({
   effectAudioPath,
   effectAudioPlaying = false,
   onToggleEffectAudio,
-  effectAudioCurrentTime = 0,
-  effectAudioDuration = 0,
-  textSyncEnabled = true,
-  onToggleTextSync,
   readerFontSize,
   textVisible,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const autoScrollLastTimeRef = useRef<number | null>(null);
   const [showHint, setShowHint] = useState(true);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState(18);
 
   function handleScroll() {
     const element = scrollRef.current;
@@ -1054,31 +1050,49 @@ function TextSceneReader({
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (!element || !textSyncEnabled) return;
-    if (!Number.isFinite(effectAudioDuration) || effectAudioDuration <= 0) return;
-    if (!Number.isFinite(effectAudioCurrentTime)) return;
 
-    const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
-    const ratio = Math.min(
-      1,
-      Math.max(0, effectAudioCurrentTime / effectAudioDuration)
-    );
+    if (!autoScrollEnabled || !element) return;
 
-    element.scrollTo({
-      top: maxScroll * ratio,
-      behavior: "auto",
-    });
+    autoScrollLastTimeRef.current = null;
 
-    const frame = window.requestAnimationFrame(handleScroll);
-    return () => window.cancelAnimationFrame(frame);
-  }, [
-    effectAudioCurrentTime,
-    effectAudioDuration,
-    textSyncEnabled,
-    content,
-    readerFontSize,
-    textVisible,
-  ]);
+    const tick = (timestamp: number) => {
+      const currentElement = scrollRef.current;
+      if (!currentElement) return;
+
+      const maxScroll = Math.max(
+        0,
+        currentElement.scrollHeight - currentElement.clientHeight
+      );
+
+      if (currentElement.scrollTop >= maxScroll - 1) {
+        setAutoScrollEnabled(false);
+        autoScrollLastTimeRef.current = null;
+        autoScrollFrameRef.current = null;
+        return;
+      }
+
+      const previous = autoScrollLastTimeRef.current ?? timestamp;
+      const deltaMs = Math.min(50, Math.max(0, timestamp - previous));
+      autoScrollLastTimeRef.current = timestamp;
+
+      currentElement.scrollTop = Math.min(
+        maxScroll,
+        currentElement.scrollTop + (autoScrollSpeed * deltaMs) / 1000
+      );
+
+      autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+    };
+
+    autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (autoScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(autoScrollFrameRef.current);
+      }
+      autoScrollFrameRef.current = null;
+      autoScrollLastTimeRef.current = null;
+    };
+  }, [autoScrollEnabled, autoScrollSpeed, content, readerFontSize, textVisible]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
@@ -1106,8 +1120,8 @@ function TextSceneReader({
           onLoad={() => window.requestAnimationFrame(handleScroll)}
         />
 
-        {effectAudioPath && onToggleEffectAudio && (
-          <div className="chapter-text-reader-audio-tools">
+        <div className="chapter-text-reader-audio-tools">
+          {effectAudioPath && onToggleEffectAudio && (
             <button
               type="button"
               className={
@@ -1128,26 +1142,40 @@ function TextSceneReader({
             >
               🔊
             </button>
-            {onToggleTextSync && (
-              <button
-                type="button"
-                className={
-                  "chapter-text-sync-button" +
-                  (textSyncEnabled ? " is-enabled" : "")
-                }
-                onClick={onToggleTextSync}
-                aria-pressed={textSyncEnabled}
-                title={
-                  textSyncEnabled
-                    ? "إيقاف تزامن النص مع الصوت"
-                    : "تشغيل تزامن النص مع الصوت"
-                }
-              >
-                {textSyncEnabled ? "تزامن النص: تشغيل" : "تزامن النص: إيقاف"}
-              </button>
-            )}
-          </div>
-        )}
+          )}
+
+          <button
+            type="button"
+            className={
+              "chapter-text-autoscroll-button" +
+              (autoScrollEnabled ? " is-enabled" : "")
+            }
+            onClick={() => setAutoScrollEnabled((current) => !current)}
+            aria-pressed={autoScrollEnabled}
+            title={
+              autoScrollEnabled
+                ? "إيقاف التمرير التلقائي"
+                : "تشغيل التمرير التلقائي"
+            }
+          >
+            {autoScrollEnabled ? "⏸ إيقاف" : "▶ تمرير تلقائي"}
+          </button>
+
+          <label className="chapter-text-autoscroll-speed">
+            <span>السرعة</span>
+            <select
+              value={autoScrollSpeed}
+              onChange={(event) => setAutoScrollSpeed(Number(event.target.value))}
+              aria-label="سرعة التمرير التلقائي"
+            >
+              <option value={8}>بطيء جدًا</option>
+              <option value={14}>بطيء</option>
+              <option value={20}>عادي</option>
+              <option value={30}>سريع</option>
+              <option value={45}>سريع جدًا</option>
+            </select>
+          </label>
+        </div>
 
 
         <div
@@ -1166,6 +1194,8 @@ function TextSceneReader({
                 ref={scrollRef}
                 className="chapter-text-scene-reader-scroll"
                 onScroll={handleScroll}
+                onTouchStart={() => setAutoScrollEnabled(false)}
+                onWheel={() => setAutoScrollEnabled(false)}
                 style={{
                   color,
                   fontSize: safeReaderSize + "px",
@@ -1275,9 +1305,6 @@ function App() {
   const [savingChapterBlocks, setSavingChapterBlocks] = useState(false);
   const activeEffectAudioRef = useRef<HTMLAudioElement | null>(null);
   const [activeEffectBlockId, setActiveEffectBlockId] = useState<string | null>(null);
-  const [effectAudioCurrentTime, setEffectAudioCurrentTime] = useState(0);
-  const [effectAudioDuration, setEffectAudioDuration] = useState(0);
-  const [textSyncEnabled, setTextSyncEnabled] = useState(true);
 
   const [newBlockType, setNewBlockType] =
     useState<ChapterBlockType>("text");
@@ -3775,8 +3802,6 @@ function App() {
       activeEffectAudioRef.current.pause();
       activeEffectAudioRef.current.currentTime = 0;
       activeEffectAudioRef.current = null;
-      setEffectAudioCurrentTime(0);
-      setEffectAudioDuration(0);
       setActiveEffectBlockId(null);
       return;
     }
@@ -3803,7 +3828,6 @@ function App() {
     };
     audio.onended = () => {
       if (activeEffectAudioRef.current === audio) {
-        setEffectAudioCurrentTime(audio.duration || 0);
         activeEffectAudioRef.current = null;
         setActiveEffectBlockId(null);
       }
