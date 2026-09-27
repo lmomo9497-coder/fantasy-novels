@@ -929,13 +929,6 @@ function TextSceneEditor({
           <span className="editor-placement-hint">
             المؤثر هنا مرتبط بهذا النص، ويظهر للقارئ بجانب مساحة النص.
           </span>
-          {effectAudioPath && (
-            <audio
-              controls
-              preload="metadata"
-              src={getPublicMediaUrl("audio", effectAudioPath)}
-            />
-          )}
         </div>
       </div>
     </div>
