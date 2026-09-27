@@ -1809,7 +1809,7 @@ function App() {
 
     const timer = window.setInterval(() => {
       void loadNotificationsOnly();
-    }, 30_000);
+    }, 60_000);
 
     return () => window.clearInterval(timer);
   }, [user?.id]);
@@ -2988,7 +2988,20 @@ function App() {
       });
     }
 
-    loadAccountData();
+    // تحديث السجل المحلي بدل إعادة تحميل بيانات الحساب كاملة بعد كل حفظ.
+    setHistory((current) => {
+      const next = current.filter((item) => item.novel_id !== novelId);
+      return [
+        {
+          user_id: user.id,
+          novel_id: novelId,
+          chapter_id: chapterId,
+          progress_percent: progressPercent,
+          updated_at: new Date().toISOString(),
+        },
+        ...next,
+      ];
+    });
   }
 
   async function saveReaderScrollProgress() {
@@ -3022,7 +3035,7 @@ function App() {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         void saveReaderScrollProgress();
-      }, 500);
+      }, 3000);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
