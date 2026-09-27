@@ -4145,7 +4145,6 @@ function App() {
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
-          onToggleTextSync={() => setTextSyncEnabled((current) => !current)}
         />
       );
     }
