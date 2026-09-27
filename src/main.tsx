@@ -900,7 +900,7 @@ function TextSceneEditor({
                 value={Math.min(96, safeWidth)}
                 onChange={(event) => onChangeWidth(Number(event.target.value))}
               />
-              <output>{Math.min(85, safeWidth)}%</output>
+              <output>{Math.min(96, safeWidth)}%</output>
             </div>
           </label>
 
@@ -1055,7 +1055,7 @@ function TextSceneReader({
           left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
           top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
           width: "min(" + safeWidth + "%, calc(100% - 20px))",
-          height: "clamp(170px, 46vw, 430px)",
+          height: "clamp(230px, 60vw, 520px)",
           transform,
         }}
       >
