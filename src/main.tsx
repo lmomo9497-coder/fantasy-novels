@@ -3816,16 +3816,6 @@ function App() {
 
     const audio = new Audio(url);
     audio.preload = "auto";
-    audio.ontimeupdate = () => {
-      if (activeEffectAudioRef.current === audio) {
-        setEffectAudioCurrentTime(audio.currentTime);
-      }
-    };
-    audio.onloadedmetadata = () => {
-      if (activeEffectAudioRef.current === audio) {
-        setEffectAudioDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-      }
-    };
     audio.onended = () => {
       if (activeEffectAudioRef.current === audio) {
         activeEffectAudioRef.current = null;
@@ -3834,8 +3824,6 @@ function App() {
     };
 
     activeEffectAudioRef.current = audio;
-    setEffectAudioCurrentTime(0);
-    setEffectAudioDuration(0);
     setActiveEffectBlockId(block.id);
 
     try {
@@ -4157,9 +4145,6 @@ function App() {
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
-          effectAudioCurrentTime={activeEffectBlockId === block.id ? effectAudioCurrentTime : 0}
-          effectAudioDuration={activeEffectBlockId === block.id ? effectAudioDuration : 0}
-          textSyncEnabled={textSyncEnabled}
           onToggleTextSync={() => setTextSyncEnabled((current) => !current)}
         />
       );
