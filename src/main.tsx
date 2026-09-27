@@ -1038,6 +1038,7 @@ function TextSceneReader({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollRatio, setScrollRatio] = useState(0);
   const [showHint, setShowHint] = useState(true);
+  const [textVisible, setTextVisible] = useState(true);
 
   function handleScroll() {
     const element = scrollRef.current;
@@ -1079,6 +1080,7 @@ function TextSceneReader({
     textSyncEnabled,
     content,
     readerFontSize,
+    textVisible,
   ]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
@@ -1160,27 +1162,44 @@ function TextSceneReader({
             </div>
           )}
 
-          <div
-            ref={scrollRef}
-            className="chapter-text-scene-reader-scroll"
-            onScroll={handleScroll}
-            style={{
-              color,
-              fontSize: safeReaderSize + "px",
-              textAlign,
-            }}
+          <button
+            type="button"
+            className={
+              "chapter-text-visibility-button" +
+              (textVisible ? "" : " is-hidden")
+            }
+            onClick={() => setTextVisible((current) => !current)}
+            aria-pressed={!textVisible}
+            title={textVisible ? "إخفاء النص لرؤية الخلفية" : "إظهار النص"}
           >
-            <div className="chapter-text-glow-content">
-              {renderProfessionalTextGlow(content)}
-            </div>
-          </div>
+            {textVisible ? "إخفاء النص" : "إظهار النص"}
+          </button>
 
-          <div className="chapter-text-reader-progress-rail" aria-hidden="true">
-            <div
-              className="chapter-text-reader-progress-thumb"
-              style={{ top: "calc(" + scrollRatio * 100 + "% - 10px)" }}
-            />
-          </div>
+          {textVisible && (
+            <>
+              <div
+                ref={scrollRef}
+                className="chapter-text-scene-reader-scroll"
+                onScroll={handleScroll}
+                style={{
+                  color,
+                  fontSize: safeReaderSize + "px",
+                  textAlign,
+                }}
+              >
+                <div className="chapter-text-glow-content">
+                  {renderProfessionalTextGlow(content)}
+                </div>
+              </div>
+
+              <div className="chapter-text-reader-progress-rail" aria-hidden="true">
+                <div
+                  className="chapter-text-reader-progress-thumb"
+                  style={{ top: "calc(" + scrollRatio * 100 + "% - 10px)" }}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
