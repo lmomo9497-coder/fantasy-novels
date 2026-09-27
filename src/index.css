@@ -4593,7 +4593,7 @@ select:focus-visible {
 .chapter-text-visibility-button {
   position: absolute;
   z-index: 10;
-  top: 10px;
+  top: 54px;
   right: 10px;
   min-height: 36px;
   padding: 0 10px;
@@ -4762,7 +4762,7 @@ select:focus-visible {
   }
 
   .chapter-text-visibility-button {
-    top: 8px;
+    top: 52px;
     right: 8px;
     left: auto;
     min-height: 34px;
