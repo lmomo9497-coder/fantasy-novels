@@ -982,6 +982,7 @@ type TextSceneReaderProps = {
   effectAudioPath?: string | null;
   effectAudioPlaying?: boolean;
   onToggleEffectAudio?: () => void;
+  readerFontSize: number;
 };
 
 function TextSceneReader({
@@ -996,17 +997,11 @@ function TextSceneReader({
   effectAudioPath,
   effectAudioPlaying = false,
   onToggleEffectAudio,
+  readerFontSize,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollRatio, setScrollRatio] = useState(0);
   const [showHint, setShowHint] = useState(true);
-  const [readerFontSize, setReaderFontSize] = useState(() =>
-    clampTextFontSize(fontSize)
-  );
-
-  useEffect(() => {
-    setReaderFontSize(clampTextFontSize(fontSize));
-  }, [fontSize]);
 
   function handleScroll() {
     const element = scrollRef.current;
@@ -1016,12 +1011,6 @@ function TextSceneReader({
     const nextRatio = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
     setScrollRatio(nextRatio);
     setShowHint(element.scrollHeight > element.clientHeight + 4 && element.scrollTop < 8);
-  }
-
-  function changeReaderFontSize(delta: number) {
-    setReaderFontSize((current) =>
-      Math.min(64, Math.max(12, current + delta))
-    );
   }
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
@@ -1041,51 +1030,30 @@ function TextSceneReader({
 
   return (
     <div className="chapter-text-scene-reader">
-      <img
-        src={src}
-        alt=""
-        className="chapter-text-scene-reader-image"
-        draggable={false}
-        onLoad={() => window.requestAnimationFrame(handleScroll)}
-      />
+      <div className="chapter-text-scene-reader-stage">
+        <img
+          src={src}
+          alt=""
+          className="chapter-text-scene-reader-image"
+          draggable={false}
+          onLoad={() => window.requestAnimationFrame(handleScroll)}
+        />
 
-      <div
-        className="chapter-text-scene-reader-window"
-        style={{
-          left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
-          top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
-          width: "min(" + safeWidth + "%, calc(100% - 20px))",
-          height: "clamp(230px, 60vw, 520px)",
-          transform,
-        }}
-      >
-        <div className="chapter-text-reader-toolbar">
-          <span>حجم الخط</span>
-          <button
-            type="button"
-            className="reader-font-button"
-            onClick={() => changeReaderFontSize(-2)}
-            aria-label="تصغير الخط"
-            title="تصغير الخط"
-          >
-            −
-          </button>
-          <strong>{safeReaderSize}px</strong>
-          <button
-            type="button"
-            className="reader-font-button"
-            onClick={() => changeReaderFontSize(2)}
-            aria-label="تكبير الخط"
-            title="تكبير الخط"
-          >
-            +
-          </button>
-
+        <div
+          className="chapter-text-scene-reader-window"
+          style={{
+            left: "clamp(10px, " + safeX + "%, calc(100% - 10px))",
+            top: "clamp(10px, " + safeY + "%, calc(100% - 10px))",
+            width: "min(" + safeWidth + "%, calc(100% - 20px))",
+            height: "min(68%, 520px)",
+            transform,
+          }}
+        >
           {effectAudioPath && onToggleEffectAudio && (
             <button
               type="button"
               className={
-                "chapter-effect-audio-button reader-effect-audio-button" +
+                "chapter-effect-audio-button chapter-text-reader-effect-audio" +
                 (effectAudioPlaying ? " is-playing" : "")
               }
               onClick={onToggleEffectAudio}
@@ -1103,40 +1071,39 @@ function TextSceneReader({
               🔊
             </button>
           )}
-        </div>
 
-        <div
-          ref={scrollRef}
-          className="chapter-text-scene-reader-scroll"
-          onScroll={handleScroll}
-          style={{
-            color,
-            fontSize: safeReaderSize + "px",
-            textAlign,
-          }}
-        >
-          <div className="chapter-text-glow-content">
-            {renderProfessionalTextGlow(content)}
-          </div>
-        </div>
-
-        <div className="chapter-text-reader-progress-rail" aria-hidden="true">
           <div
-            className="chapter-text-reader-progress-thumb"
-            style={{ top: "calc(" + scrollRatio * 100 + "% - 10px)" }}
-          />
-        </div>
-
-        {showHint && (
-          <div className="chapter-text-reader-hint">
-            مرر للأسفل لقراءة المزيد ↓
+            ref={scrollRef}
+            className="chapter-text-scene-reader-scroll"
+            onScroll={handleScroll}
+            style={{
+              color,
+              fontSize: safeReaderSize + "px",
+              textAlign,
+            }}
+          >
+            <div className="chapter-text-glow-content">
+              {renderProfessionalTextGlow(content)}
+            </div>
           </div>
-        )}
+
+          <div className="chapter-text-reader-progress-rail" aria-hidden="true">
+            <div
+              className="chapter-text-reader-progress-thumb"
+              style={{ top: "calc(" + scrollRatio * 100 + "% - 10px)" }}
+            />
+          </div>
+        </div>
       </div>
+
+      {showHint && (
+        <div className="chapter-text-reader-hint">
+          مرر للأسفل لقراءة المزيد ↓
+        </div>
+      )}
     </div>
   );
 }
-
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -1177,6 +1144,7 @@ function App() {
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
   const [readerProgress, setReaderProgress] = useState(0);
+  const [readerFontSize, setReaderFontSize] = useState(18);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -1394,6 +1362,21 @@ function App() {
     () => [...chapterBlocks].sort((a, b) => a.block_order - b.block_order),
     [chapterBlocks]
   );
+
+  useEffect(() => {
+    if (!selectedChapter) {
+      setReaderFontSize(18);
+      return;
+    }
+
+    const firstTextBlock = readerBlocks.find(
+      (block) => block.block_type === "text"
+    );
+
+    setReaderFontSize(
+      clampTextFontSize(Number(firstTextBlock?.text_font_size ?? 18))
+    );
+  }, [selectedChapter?.id, readerBlocks]);
 
   useEffect(() => {
     if (!navigationReadyRef.current) {
@@ -4024,6 +4007,7 @@ function App() {
           color={textColor}
           textAlign={textAlign}
           widthPercent={textWidth}
+          readerFontSize={readerFontSize}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -5809,6 +5793,39 @@ function App() {
 
             {selectedChapter.title && (
               <h2>{selectedChapter.title}</h2>
+            )}
+
+            {!selectedNovelAdminView && (
+              <div className="chapter-reader-font-control">
+                <span>حجم النص</span>
+                <button
+                  type="button"
+                  className="reader-font-button"
+                  onClick={() =>
+                    setReaderFontSize((current) =>
+                      Math.max(12, current - 2)
+                    )
+                  }
+                  aria-label="تصغير الخط"
+                  title="تصغير الخط"
+                >
+                  −
+                </button>
+                <output>{clampTextFontSize(readerFontSize)}px</output>
+                <button
+                  type="button"
+                  className="reader-font-button"
+                  onClick={() =>
+                    setReaderFontSize((current) =>
+                      Math.min(64, current + 2)
+                    )
+                  }
+                  aria-label="تكبير الخط"
+                  title="تكبير الخط"
+                >
+                  +
+                </button>
+              </div>
             )}
           </div>
 
