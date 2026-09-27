@@ -4596,14 +4596,27 @@ select:focus-visible {
   pointer-events: auto;
 }
 
+.chapter-text-reader-toolbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 0 2px;
+  box-sizing: border-box;
+  direction: rtl;
+}
+
 .chapter-text-reader-audio-tools {
-  position: absolute;
-  z-index: 8;
-  top: 10px;
-  right: 10px;
+  position: static;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 7px;
+  max-width: 100%;
 }
 
 .chapter-text-reader-effect-audio {
@@ -4734,10 +4747,15 @@ select:focus-visible {
     padding: 13px 14px 30px;
   }
 
+  .chapter-text-reader-toolbar {
+    margin-bottom: 8px;
+    padding-inline: 0;
+  }
+
   .chapter-text-reader-audio-tools {
-    top: 8px;
-    right: 8px;
     gap: 5px;
+    max-width: 100%;
+    flex-wrap: wrap;
   }
 
   .chapter-text-autoscroll-button {
