@@ -4557,7 +4557,7 @@ select:focus-visible {
 .chapter-text-reader-audio-tools {
   position: absolute;
   z-index: 8;
-  top: 54px;
+  top: 10px;
   right: 10px;
   display: inline-flex;
   align-items: center;
@@ -4756,7 +4756,7 @@ select:focus-visible {
   }
 
   .chapter-text-reader-audio-tools {
-    top: 52px;
+    top: 8px;
     right: 8px;
     gap: 5px;
   }
