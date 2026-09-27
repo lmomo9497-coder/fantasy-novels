@@ -1015,6 +1015,7 @@ type TextSceneReaderProps = {
   textSyncEnabled?: boolean;
   onToggleTextSync?: () => void;
   readerFontSize: number;
+  textVisible: boolean;
 };
 
 function TextSceneReader({
@@ -1034,13 +1035,10 @@ function TextSceneReader({
   textSyncEnabled = true,
   onToggleTextSync,
   readerFontSize,
+  textVisible,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(true);
-  const [readerTextSize, setReaderTextSize] = useState(() =>
-    clampTextFontSize(readerFontSize)
-  );
-  const [textVisible, setTextVisible] = useState(true);
 
   function handleScroll() {
     const element = scrollRef.current;
@@ -1050,13 +1048,9 @@ function TextSceneReader({
   }
 
   useEffect(() => {
-    setReaderTextSize(clampTextFontSize(readerFontSize));
-  }, [readerFontSize]);
-
-  useEffect(() => {
     const frame = window.requestAnimationFrame(handleScroll);
     return () => window.cancelAnimationFrame(frame);
-  }, [readerTextSize, content]);
+  }, [readerFontSize, content]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -1082,14 +1076,14 @@ function TextSceneReader({
     effectAudioDuration,
     textSyncEnabled,
     content,
-    readerTextSize,
+    readerFontSize,
     textVisible,
   ]);
 
   const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
   const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
   const safeY = Math.min(100, Math.max(0, Number(positionY) || 50));
-  const safeReaderSize = clampTextFontSize(readerTextSize);
+  const safeReaderSize = clampTextFontSize(readerFontSize);
   const transform =
     safeX >= 85
       ? "translate(-100%, -100%)"
@@ -1112,91 +1106,6 @@ function TextSceneReader({
           onLoad={() => window.requestAnimationFrame(handleScroll)}
         />
 
-          <div className="chapter-text-reader-font-tools" aria-label="حجم النص">
-            <button
-              type="button"
-              className="reader-font-button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                setReaderTextSize((current) => Math.max(12, current - 2));
-              }}
-              aria-label="تصغير الخط"
-              title="تصغير الخط"
-            >
-              −
-            </button>
-            <output>{clampTextFontSize(readerTextSize)}px</output>
-            <button
-              type="button"
-              className="reader-font-button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                setReaderTextSize((current) => Math.min(64, current + 2));
-              }}
-              aria-label="تكبير الخط"
-              title="تكبير الخط"
-            >
-              +
-            </button>
-          </div>
-
-          {effectAudioPath && onToggleEffectAudio && (
-            <div className="chapter-text-reader-audio-tools">
-              <button
-                type="button"
-                className={
-                  "chapter-effect-audio-button" +
-                  (effectAudioPlaying ? " is-playing" : "")
-                }
-                onClick={onToggleEffectAudio}
-                aria-label={
-                  effectAudioPlaying
-                    ? "إيقاف المؤثر الصوتي"
-                    : "تشغيل المؤثر الصوتي"
-                }
-                title={
-                  effectAudioPlaying
-                    ? "إيقاف المؤثر الصوتي"
-                    : "تشغيل المؤثر الصوتي"
-                }
-              >
-                🔊
-              </button>
-              {onToggleTextSync && (
-                <button
-                  type="button"
-                  className={
-                    "chapter-text-sync-button" +
-                    (textSyncEnabled ? " is-enabled" : "")
-                  }
-                  onClick={onToggleTextSync}
-                  aria-pressed={textSyncEnabled}
-                  title={
-                    textSyncEnabled
-                      ? "إيقاف تزامن النص مع الصوت"
-                      : "تشغيل تزامن النص مع الصوت"
-                  }
-                >
-                  {textSyncEnabled ? "تزامن النص: تشغيل" : "تزامن النص: إيقاف"}
-                </button>
-              )}
-            </div>
-          )}
-
-          <button
-            type="button"
-            className={
-              "chapter-text-visibility-button" +
-              (textVisible ? "" : " is-hidden")
-            }
-            onClick={() => setTextVisible((current) => !current)}
-            aria-pressed={!textVisible}
-            title={textVisible ? "إخفاء النص لرؤية الخلفية" : "إظهار النص"}
-          >
-            {textVisible ? "إخفاء النص" : "إظهار النص"}
-          </button>
 
         <div
           className="chapter-text-scene-reader-window"
@@ -1280,6 +1189,7 @@ function App() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
   const [readerProgress, setReaderProgress] = useState(0);
   const [readerFontSize, setReaderFontSize] = useState(18);
+  const [chapterTextVisible, setChapterTextVisible] = useState(true);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -2816,6 +2726,8 @@ function App() {
 
     setSelectedChapter(chapter);
     setReaderProgress(0);
+    setReaderFontSize(18);
+    setChapterTextVisible(true);
     setLoadingChapterBlocks(true);
     setChapterMessage("");
     setShowChapterForm(false);
@@ -2832,7 +2744,15 @@ function App() {
         return;
       }
 
-      setChapterBlocks((data ?? []) as ChapterBlock[]);
+      const loadedBlocks = (data ?? []) as ChapterBlock[];
+      setChapterBlocks(loadedBlocks);
+
+      const firstTextBlock = loadedBlocks.find(
+        (item) => item.block_type === "text"
+      );
+      if (firstTextBlock?.text_font_size) {
+        setReaderFontSize(clampTextFontSize(firstTextBlock.text_font_size));
+      }
 
       let savedProgress = 0;
       if (!isAdminView && user) {
@@ -4166,6 +4086,7 @@ function App() {
           widthPercent={textWidth}
           heightPercent={textHeight}
           readerFontSize={readerFontSize}
+          textVisible={chapterTextVisible}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -5962,6 +5883,58 @@ function App() {
             {selectedChapter.title && (
               <h2>{selectedChapter.title}</h2>
             )}
+
+            <div className="chapter-reader-text-tools" aria-label="أدوات النص">
+              <div className="chapter-reader-font-control">
+                <span>حجم النص</span>
+                <button
+                  type="button"
+                  className="reader-font-button"
+                  onClick={() =>
+                    setReaderFontSize((current) =>
+                      Math.max(12, current - 2)
+                    )
+                  }
+                  aria-label="تصغير الخط"
+                  title="تصغير الخط"
+                >
+                  −
+                </button>
+                <output>{clampTextFontSize(readerFontSize)}px</output>
+                <button
+                  type="button"
+                  className="reader-font-button"
+                  onClick={() =>
+                    setReaderFontSize((current) =>
+                      Math.min(64, current + 2)
+                    )
+                  }
+                  aria-label="تكبير الخط"
+                  title="تكبير الخط"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className={
+                  "chapter-reader-visibility-button" +
+                  (chapterTextVisible ? "" : " is-hidden")
+                }
+                onClick={() =>
+                  setChapterTextVisible((current) => !current)
+                }
+                aria-pressed={!chapterTextVisible}
+                title={
+                  chapterTextVisible
+                    ? "إخفاء النص لرؤية الخلفية"
+                    : "إظهار النص"
+                }
+              >
+                {chapterTextVisible ? "إخفاء النص" : "إظهار النص"}
+              </button>
+            </div>
 
           </div>
 
