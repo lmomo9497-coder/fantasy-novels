@@ -1079,6 +1079,7 @@ type TextSceneReaderProps = {
   onToggleEffectAudio?: () => void;
   readerFontSize: number;
   textVisible: boolean;
+  imageVisible: boolean;
 };
 
 function TextSceneReader({
@@ -1095,6 +1096,7 @@ function TextSceneReader({
   onToggleEffectAudio,
   readerFontSize,
   textVisible,
+  imageVisible,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -1329,8 +1331,12 @@ function TextSceneReader({
         <img
           src={src}
           alt=""
-          className="chapter-text-scene-reader-image"
+          className={
+            "chapter-text-scene-reader-image" +
+            (imageVisible ? "" : " is-hidden")
+          }
           draggable={false}
+          aria-hidden={!imageVisible}
           onLoad={() => window.requestAnimationFrame(handleScroll)}
         />
 
@@ -1420,6 +1426,7 @@ function App() {
   const [readerProgress, setReaderProgress] = useState(0);
   const [readerFontSize, setReaderFontSize] = useState(18);
   const [chapterTextVisible, setChapterTextVisible] = useState(true);
+  const [chapterImagesVisible, setChapterImagesVisible] = useState(true);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -4347,6 +4354,10 @@ function App() {
       block.block_type === "image" ||
       block.block_type === "gif"
     ) {
+      if (reader && !chapterImagesVisible) {
+        return null;
+      }
+
       return (
         <figure
           key={block.id}
@@ -4425,6 +4436,7 @@ function App() {
           heightPercent={textHeight}
           readerFontSize={readerFontSize}
           textVisible={chapterTextVisible}
+          imageVisible={chapterImagesVisible}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -6267,6 +6279,25 @@ function App() {
                 }
               >
                 {chapterTextVisible ? "إخفاء النص" : "إظهار النص"}
+              </button>
+
+              <button
+                type="button"
+                className={
+                  "chapter-reader-visibility-button" +
+                  (chapterImagesVisible ? "" : " is-hidden")
+                }
+                onClick={() =>
+                  setChapterImagesVisible((current) => !current)
+                }
+                aria-pressed={!chapterImagesVisible}
+                title={
+                  chapterImagesVisible
+                    ? "إخفاء الصور"
+                    : "إظهار الصور"
+                }
+              >
+                {chapterImagesVisible ? "إخفاء الصور" : "إظهار الصور"}
               </button>
             </div>
 
