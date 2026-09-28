@@ -28,24 +28,28 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [message,setMessage]=useState("");
   const [reactionName,setReactionName]=useState("");
   const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
 
   async function loadAds() {
     const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
     setAds(data||[]);
   }
-  async function loadComments() {
+  async function loadComments(userId?:string|null) {
     const [{data:cs},{data:rs}] = await Promise.all([
       supabase.from("chapter_comments").select("id,content,author_name,created_at").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
       supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order")
     ]);
-    setComments(cs||[]); setReactions(rs||[]);
+    const {data:fs}=userId
+      ? await supabase.from("reaction_favorites").select("reaction_type_id").eq("user_id",userId)
+      : {data:[]};
+    setComments(cs||[]); setReactions(rs||[]); setFavoriteReactionIds((fs||[]).map((item:any)=>item.reaction_type_id));
   }
   async function openComments() {
     if(open){setOpen(false);return}
     setOpen(true);
     const {data:{user:current}}=await supabase.auth.getUser();
     setUser(current);
-    await loadComments();
+    await loadComments(current?.id ?? null);
   }
   useEffect(()=>{void loadAds()},[chapterId]);
 
@@ -93,6 +97,16 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     else await supabase.from("comment_reactions").insert({comment_id:commentId,reaction_type_id:reactionId,user_id:user.id});
   }
 
+  async function toggleFavoriteReaction(reactionId:string){
+    if(!user){setMessage("سجلي الدخول لحفظ الرياكشنات المفضلة.");return}
+    const isFavorite=favoriteReactionIds.includes(reactionId);
+    const {error}=isFavorite
+      ? await supabase.from("reaction_favorites").delete().match({user_id:user.id,reaction_type_id:reactionId})
+      : await supabase.from("reaction_favorites").insert({user_id:user.id,reaction_type_id:reactionId});
+    if(error){setMessage(error.message);return}
+    setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
+  }
+
   async function addReactionType(){
     if(!isOwner||!reactionName.trim())return;
     let icon_path:string|null=null;
@@ -103,7 +117,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       if(error){setMessage(error.message);return}
     }
     const {error}=await supabase.from("reaction_types").insert({name:reactionName.trim(),icon_path,sort_order:reactions.length});
-    if(error)setMessage(error.message); else {setReactionName("");setReactionFile(null);await loadComments()}
+    if(error)setMessage(error.message); else {setReactionName("");setReactionFile(null);await loadComments(user?.id ?? null)}
   }
 
   return <div className="chapter-extras">
@@ -130,10 +144,13 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.map(c=><article className="comment-card" key={c.id}>
         <div className="comment-head"><strong>{c.author_name}</strong><time>{new Date(c.created_at).toLocaleDateString("ar-SA")}</time></div>
         <p>{c.content}</p>
-        <div className="comment-reactions">{reactions.filter(r=>r.enabled).map(r=><button key={r.id} onClick={()=>void toggleReaction(c.id,r.id)}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" />:r.name}</button>)}</div>
+        <div className="comment-reaction-groups">
+          {favoriteReactionIds.length>0&&<div className="reaction-group"><span className="reaction-group-title">مفضلاتك</span><div className="comment-reactions">{reactions.filter(r=>r.enabled&&favoriteReactionIds.includes(r.id)).map(r=><div className="reaction-chip" key={"fav-"+r.id}><button className="reaction-use-button" onClick={()=>void toggleReaction(c.id,r.id)} title={"استخدام "+r.name}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:r.name}</button><button className="reaction-favorite-button active" onClick={()=>void toggleFavoriteReaction(r.id)} title="إزالة من المفضلة" aria-label="إزالة من المفضلة">♥</button></div>)}</div></div>}
+          <div className="reaction-group"><span className="reaction-group-title">كل الرياكشنات</span><div className="comment-reactions">{reactions.filter(r=>r.enabled).map(r=><div className="reaction-chip" key={r.id}><button className="reaction-use-button" onClick={()=>void toggleReaction(c.id,r.id)} title={"استخدام "+r.name}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:r.name}</button><button className={"reaction-favorite-button"+(favoriteReactionIds.includes(r.id)?" active":"")} onClick={()=>void toggleFavoriteReaction(r.id)} title={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"} aria-label={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}>{favoriteReactionIds.includes(r.id)?"♥":"♡"}</button></div>)}</div></div>
+        </div>
       </article>)}
       {isOwner&&<div className="reaction-admin">
-        <strong>إدارة التفاعلات</strong>
+        <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي صور رياكشناتك من الواتساب بصيغ الصور المدعومة، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
         <div className="reaction-admin-row"><input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" /><input type="file" accept="image/*" onChange={e=>setReactionFile(e.target.files?.[0]||null)} /><button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button></div>
         <div className="reaction-admin-list">{reactions.map((r,i)=><div className="ad-row" key={r.id}><span>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" style={{width:24,height:24,objectFit:"contain",verticalAlign:"middle"}}/>:""} {r.name}</span><span>
           <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await loadComments()}}>{r.enabled?"تعطيل":"تفعيل"}</button>
