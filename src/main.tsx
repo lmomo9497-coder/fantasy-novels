@@ -6773,8 +6773,6 @@ function App() {
           )}
         </div>
 
-        </div>
-
         {isOwner && (
           <AdsAdmin isOwner={isOwner} />
         )}
