@@ -1080,7 +1080,8 @@ type TextSceneReaderProps = {
   readerFontSize: number;
   textVisible: boolean;
   imageVisible: boolean;
-  imageDimmed: boolean;
+  imageDimLevel: number;
+  textDimLevel: number;
 };
 
 function TextSceneReader({
@@ -1098,7 +1099,8 @@ function TextSceneReader({
   readerFontSize,
   textVisible,
   imageVisible,
-  imageDimmed,
+  imageDimLevel,
+  textDimLevel,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -1340,7 +1342,7 @@ function TextSceneReader({
           className={
             "chapter-text-scene-reader-image" +
             (imageVisible ? "" : " is-hidden") +
-            (imageDimmed ? " is-dimmed" : "")
+            (imageDimLevel > 0 ? " is-dimmed-level-" + imageDimLevel : "")
           }
           draggable={false}
           aria-hidden={!imageVisible}
@@ -1361,7 +1363,12 @@ function TextSceneReader({
             <>
               <div
                 ref={scrollRef}
-                className="chapter-text-scene-reader-scroll"
+                className={
+                  "chapter-text-scene-reader-scroll" +
+                  (textDimLevel > 0
+                    ? " is-dimmed-level-" + textDimLevel
+                    : "")
+                }
                 onScroll={handleScroll}
                 onTouchStart={() => setAutoScrollEnabled(false)}
                 onWheel={() => setAutoScrollEnabled(false)}
@@ -1434,7 +1441,8 @@ function App() {
   const [readerFontSize, setReaderFontSize] = useState(18);
   const [chapterTextVisible, setChapterTextVisible] = useState(true);
   const [chapterImagesVisible, setChapterImagesVisible] = useState(true);
-  const [chapterImageDimmed, setChapterImageDimmed] = useState(false);
+  const [chapterImageDimLevel, setChapterImageDimLevel] = useState(0);
+  const [chapterTextDimLevel, setChapterTextDimLevel] = useState(0);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -1859,6 +1867,8 @@ function App() {
         if (route.type === "chapter" && route.chapter) {
           setChapterTextVisible(true);
           setChapterImagesVisible(true);
+          setChapterImageDimLevel(0);
+          setChapterTextDimLevel(0);
           setSelectedChapter(route.chapter as Chapter);
           setChapterMessage("");
           setLoadingChapterBlocks(true);
@@ -3075,6 +3085,8 @@ function App() {
     setReaderFontSize(18);
     setChapterTextVisible(true);
     setChapterImagesVisible(true);
+    setChapterImageDimLevel(0);
+    setChapterTextDimLevel(0);
     setLoadingChapterBlocks(true);
     setChapterMessage("");
     setShowChapterForm(false);
@@ -3656,6 +3668,8 @@ function App() {
     setChapterBlocks([]);
     setChapterMessage("");
     setChapterImagesVisible(true);
+    setChapterImageDimLevel(0);
+    setChapterTextDimLevel(0);
   }
 
   function goHome() {
@@ -4463,7 +4477,8 @@ function App() {
           readerFontSize={readerFontSize}
           textVisible={chapterTextVisible}
           imageVisible={chapterImagesVisible}
-          imageDimmed={chapterImageDimmed}
+          imageDimLevel={chapterImageDimLevel}
+          textDimLevel={chapterTextDimLevel}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -6327,24 +6342,41 @@ function App() {
                 {chapterImagesVisible ? "إخفاء الصور" : "إظهار الصور"}
               </button>
 
-              <button
-                type="button"
-                className={
-                  "chapter-reader-visibility-button" +
-                  (chapterImageDimmed ? " is-hidden" : "")
-                }
-                onClick={() =>
-                  setChapterImageDimmed((current) => !current)
-                }
-                aria-pressed={chapterImageDimmed}
-                title={
-                  chapterImageDimmed
-                    ? "إلغاء تعتيم الصورة"
-                    : "تعتيم الصورة قليلًا"
-                }
-              >
-                {chapterImageDimmed ? "إلغاء التعتيم" : "تعتيم الصورة"}
-              </button>
+              <div className="chapter-reader-dim-controls" aria-label="خيارات التعتيم">
+                <label className="chapter-reader-dim-control">
+                  <span>تعتيم الصورة</span>
+                  <select
+                    value={chapterImageDimLevel}
+                    onChange={(event) =>
+                      setChapterImageDimLevel(Number(event.target.value))
+                    }
+                    aria-label="درجة تعتيم الصورة"
+                  >
+                    <option value={0}>بدون</option>
+                    <option value={1}>خفيف</option>
+                    <option value={2}>متوسط</option>
+                    <option value={3}>قوي</option>
+                    <option value={4}>شديد</option>
+                  </select>
+                </label>
+
+                <label className="chapter-reader-dim-control">
+                  <span>تعتيم النص</span>
+                  <select
+                    value={chapterTextDimLevel}
+                    onChange={(event) =>
+                      setChapterTextDimLevel(Number(event.target.value))
+                    }
+                    aria-label="درجة تعتيم النص"
+                  >
+                    <option value={0}>بدون</option>
+                    <option value={1}>خفيف</option>
+                    <option value={2}>متوسط</option>
+                    <option value={3}>قوي</option>
+                    <option value={4}>شديد</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
           </div>
