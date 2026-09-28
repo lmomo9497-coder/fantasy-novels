@@ -1170,8 +1170,16 @@ function TextSceneReader({
 
     if (!autoScrollEnabled || !element) return;
 
+    let layoutRetryCount = 0;
     autoScrollLastTimeRef.current = null;
     autoScrollDistanceRef.current = 0;
+
+    const stopAutoScroll = () => {
+      setAutoScrollEnabled(false);
+      autoScrollLastTimeRef.current = null;
+      autoScrollDistanceRef.current = 0;
+      autoScrollFrameRef.current = null;
+    };
 
     const tick = (timestamp: number) => {
       const currentElement = scrollRef.current;
@@ -1182,19 +1190,23 @@ function TextSceneReader({
         currentElement.scrollHeight - currentElement.clientHeight
       );
 
+      // Safari/iOS can report the final layout one or two frames after the
+      // reader opens. Give it a few frames before deciding there is nothing
+      // to scroll.
       if (maxScroll <= 0) {
-        setAutoScrollEnabled(false);
-        autoScrollLastTimeRef.current = null;
-        autoScrollDistanceRef.current = 0;
-        autoScrollFrameRef.current = null;
+        if (layoutRetryCount < 12) {
+          layoutRetryCount += 1;
+          autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+          return;
+        }
+        stopAutoScroll();
         return;
       }
 
+      layoutRetryCount = 0;
+
       if (currentElement.scrollTop >= maxScroll - 1) {
-        setAutoScrollEnabled(false);
-        autoScrollLastTimeRef.current = null;
-        autoScrollDistanceRef.current = 0;
-        autoScrollFrameRef.current = null;
+        stopAutoScroll();
         return;
       }
 
@@ -1205,19 +1217,24 @@ function TextSceneReader({
       autoScrollDistanceRef.current += (autoScrollSpeed * deltaMs) / 1000;
 
       if (autoScrollDistanceRef.current >= 0.25) {
-        const pixels = Math.floor(autoScrollDistanceRef.current * 100) / 100;
+        const pixels = Math.min(
+          autoScrollDistanceRef.current,
+          maxScroll - currentElement.scrollTop
+        );
         autoScrollDistanceRef.current -= pixels;
 
-        currentElement.scrollTop = Math.min(
-          maxScroll,
-          currentElement.scrollTop + pixels
-        );
+        currentElement.scrollTo({
+          top: currentElement.scrollTop + pixels,
+          behavior: "auto",
+        });
       }
 
       autoScrollFrameRef.current = window.requestAnimationFrame(tick);
     };
 
-    autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+    autoScrollFrameRef.current = window.requestAnimationFrame(() => {
+      autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+    });
 
     return () => {
       if (autoScrollFrameRef.current !== null) {
@@ -1372,6 +1389,11 @@ function TextSceneReader({
                 onScroll={handleScroll}
                 onTouchStart={() => setAutoScrollEnabled(false)}
                 onWheel={() => setAutoScrollEnabled(false)}
+                onPointerDown={(event) => {
+                  if (event.pointerType === "mouse") {
+                    setAutoScrollEnabled(false);
+                  }
+                }}
                 style={{
                   color,
                   fontSize: safeReaderSize + "px",
