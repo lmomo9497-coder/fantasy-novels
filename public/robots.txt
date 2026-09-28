@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
 
 Sitemap: https://fantasy-novels.lmomo9497.workers.dev/sitemap.xml
