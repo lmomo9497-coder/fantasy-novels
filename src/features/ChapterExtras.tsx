@@ -31,6 +31,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
   const [selectedReactionIds,setSelectedReactionIds]=useState<string[]>([]);
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
+  const [replyTo,setReplyTo]=useState<string|null>(null);
 
   async function loadAds() {
     const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
@@ -38,7 +39,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   }
   async function loadComments(userId?:string|null) {
     const [{data:cs},{data:rs},{data:crs}] = await Promise.all([
-      supabase.from("chapter_comments").select("id,content,author_name,created_at").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
+      supabase.from("chapter_comments").select("id,content,author_name,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
       supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order"),
       supabase.from("comment_reactions").select("comment_id,reaction_type_id,reaction_types(id,name,icon_path)").in("comment_id",
         (await supabase.from("chapter_comments").select("id").eq("chapter_id",chapterId)).data?.map((item:any)=>item.id)||[]
@@ -93,7 +94,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setBusy(true); setMessage("");
     const {data:{user:current}}=await supabase.auth.getUser();
     const name=(current?.user_metadata?.display_name||current?.email?.split("@")[0]||"قارئ").slice(0,80);
-    const {data:created,error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text}).select("id").single();
+    const {data:created,error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text,parent_comment_id:replyTo}).select("id").single();
     if(error||!created){
       setBusy(false);
       setMessage(error?.message||"تعذر نشر التعليق.");
@@ -110,6 +111,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setBusy(false);
     setDraft("");
     setSelectedReactionIds([]);
+    setReplyTo(null);
     await loadComments(current!.id);
   }
 
@@ -175,6 +177,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
 
     {open && <section className="comments-panel">
       <div className="comment-form">
+        {replyTo&&<div className="replying-to">الرد على تعليق <button type="button" onClick={()=>setReplyTo(null)}>إلغاء</button></div>}
         <textarea value={draft} maxLength={1000} onChange={e=>setDraft(e.target.value)} placeholder={user?"اكتبي تعليقك...":"سجلي الدخول للمشاركة"} />
         {user && (
           <div className="comment-reaction-picker">
@@ -201,7 +204,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         <button className="primary-button" disabled={busy||!draft.trim()} onClick={()=>void addComment()}>نشر التعليق</button>
       </div>
       {message&&<div className="message-box">{message}</div>}
-      {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.map(c=><article className="comment-card" key={c.id}>
+      {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.map(c=><article className={"comment-card"+(c.parent_comment_id?" comment-reply":"")} key={c.id}>
         <div className="comment-head"><strong>{c.author_name}</strong><time>{new Date(c.created_at).toLocaleDateString("ar-SA")}</time></div>
         <p>{c.content}</p>
         {commentReactionMap[c.id]?.length>0&&(
@@ -215,6 +218,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
             })}
           </div>
         )}
+        {!c.parent_comment_id&&<button type="button" className="comment-reply-button" onClick={()=>{setReplyTo(c.id);setMessage("");}}>↩ رد</button>}
       </article>)}
       {isOwner&&<div className="reaction-admin">
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
