@@ -7282,7 +7282,7 @@ function App() {
                   ? renderHome()
                   : renderHome()}
       </main>
-      {!user && showAccount && (
+      {!user && showAccount && (selectedChapter || selectedNovel) && (
         <div className="chapter-auth-modal" role="dialog" aria-modal="true" aria-label="تسجيل الدخول أو إنشاء حساب">
           <button
             type="button"
