@@ -5521,8 +5521,8 @@ function App() {
                       newBlockType === "audio"
                         ? "audio/*"
                         : newBlockType === "gif"
-                          ? "image/gif,.gif"
-                          : "image/*"
+                          ? "image/gif,image/webp,.gif,.webp"
+                          : "image/*,.webp,.gif,.png,.jpg,.jpeg"
                     }
                     onChange={(event) => {
                       const file =
