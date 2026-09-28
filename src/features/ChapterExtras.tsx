@@ -204,22 +204,39 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         <button className="primary-button" disabled={busy||!draft.trim()} onClick={()=>void addComment()}>نشر التعليق</button>
       </div>
       {message&&<div className="message-box">{message}</div>}
-      {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.map(c=><article className={"comment-card"+(c.parent_comment_id?" comment-reply":"")} key={c.id}>
-        <div className="comment-head"><strong>{c.author_name}</strong><time>{new Date(c.created_at).toLocaleDateString("ar-SA")}</time></div>
-        <p>{c.content}</p>
-        {commentReactionMap[c.id]?.length>0&&(
-          <div className="comment-attached-reactions" aria-label="الرياكشنات على التعليق">
-            {commentReactionMap[c.id].map(reactionId=>{
-              const r=reactions.find(item=>item.id===reactionId);
-              if(!r)return null;
-              return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(c.id,reactionId)} title={r.name}>
-                {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
-              </button>;
-            })}
-          </div>
-        )}
-        {!c.parent_comment_id&&<button type="button" className="comment-reply-button" onClick={()=>{setReplyTo(c.id);setMessage("");}}>↩ رد</button>}
-      </article>)}
+      {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.filter(c=>!c.parent_comment_id).map(c=><React.Fragment key={c.id}>
+        <article className="comment-card">
+          <div className="comment-head"><strong>{c.author_name}</strong><time>{new Date(c.created_at).toLocaleDateString("ar-SA")}</time></div>
+          <p>{c.content}</p>
+          {commentReactionMap[c.id]?.length>0&&(
+            <div className="comment-attached-reactions" aria-label="الرياكشنات على التعليق">
+              {commentReactionMap[c.id].map(reactionId=>{
+                const r=reactions.find(item=>item.id===reactionId);
+                if(!r)return null;
+                return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(c.id,reactionId)} title={r.name}>
+                  {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
+                </button>;
+              })}
+            </div>
+          )}
+          <button type="button" className="comment-reply-button" onClick={()=>{setReplyTo(c.id);setMessage("");}}>↩ رد</button>
+        </article>
+        {comments.filter(reply=>reply.parent_comment_id===c.id).map(reply=><article className="comment-card comment-reply" key={reply.id}>
+          <div className="comment-head"><strong>{reply.author_name}</strong><time>{new Date(reply.created_at).toLocaleDateString("ar-SA")}</time></div>
+          <p>{reply.content}</p>
+          {commentReactionMap[reply.id]?.length>0&&(
+            <div className="comment-attached-reactions" aria-label="الرياكشنات على الرد">
+              {commentReactionMap[reply.id].map(reactionId=>{
+                const r=reactions.find(item=>item.id===reactionId);
+                if(!r)return null;
+                return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(reply.id,reactionId)} title={r.name}>
+                  {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
+                </button>;
+              })}
+            </div>
+          )}
+        </article>)}
+      </React.Fragment>)}
       {isOwner&&<div className="reaction-admin">
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
         <div className="reaction-admin-row"><input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" /><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={e=>setReactionFile(e.target.files?.[0]||null)} /><button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button></div>
