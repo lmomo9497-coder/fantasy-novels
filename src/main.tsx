@@ -670,6 +670,60 @@ function TextResizeEditor({
   );
 }
 
+
+
+type StorageUploadBucket = "avatars" | "covers" | "chapter-media" | "audio";
+
+const STORAGE_UPLOAD_RULES: Record<
+  StorageUploadBucket,
+  { maxBytes: number; mimeTypes: string[]; label: string }
+> = {
+  avatars: {
+    maxBytes: 5 * 1024 * 1024,
+    mimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    label: "صورة الحساب",
+  },
+  covers: {
+    maxBytes: 10 * 1024 * 1024,
+    mimeTypes: ["image/jpeg", "image/png", "image/webp"],
+    label: "غلاف الرواية",
+  },
+  "chapter-media": {
+    maxBytes: 20 * 1024 * 1024,
+    mimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    label: "صورة الفصل",
+  },
+  audio: {
+    maxBytes: 50 * 1024 * 1024,
+    mimeTypes: [
+      "audio/mpeg",
+      "audio/mp4",
+      "audio/ogg",
+      "audio/wav",
+      "audio/webm",
+      "audio/aac",
+    ],
+    label: "ملف صوتي",
+  },
+};
+
+function validateStorageUpload(
+  file: File,
+  bucket: StorageUploadBucket
+): string | null {
+  const rule = STORAGE_UPLOAD_RULES[bucket];
+
+  if (!rule.mimeTypes.includes(file.type)) {
+    return `${rule.label}: نوع الملف غير مسموح.`;
+  }
+
+  if (file.size > rule.maxBytes) {
+    return `${rule.label}: حجم الملف يتجاوز الحد المسموح.`;
+  }
+
+  return null;
+}
+
 function makeStorageId() {
   if (
     typeof crypto !== "undefined" &&
@@ -2238,14 +2292,9 @@ function App() {
   async function uploadProfileAvatar(file: File) {
     if (!user) return;
 
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowed.includes(file.type)) {
-      setSiteMessage("اختاري صورة JPG أو PNG أو WEBP أو GIF.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setSiteMessage("حجم الصورة يجب ألا يتجاوز 5 ميجابايت.");
+    const validationError = validateStorageUpload(file, "avatars");
+    if (validationError) {
+      setSiteMessage(validationError);
       return;
     }
 
@@ -2352,6 +2401,11 @@ function App() {
           setShowNovels(true);
         }
       } else {
+        if (authPassword.length < 12) {
+          setAuthMessage("كلمة المرور يجب أن تكون 12 حرفًا أو أكثر.");
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password: authPassword,
@@ -2421,6 +2475,12 @@ function App() {
   }
 
   async function uploadNovelCover(file: File) {
+    const validationError = validateStorageUpload(file, "covers");
+    if (validationError) {
+      setNovelMessage(validationError);
+      return;
+    }
+
     setUploadingCover(true);
     setNovelMessage("");
 
@@ -3183,11 +3243,16 @@ function App() {
     setChapterMessage("");
 
     try {
-      const extension =
-        file.name.split(".").pop()?.toLowerCase() || "bin";
-
       const bucket =
         newBlockType === "audio" ? "audio" : "chapter-media";
+      const validationError = validateStorageUpload(file, bucket);
+      if (validationError) {
+        setChapterMessage(validationError);
+        return "";
+      }
+
+      const extension =
+        file.name.split(".").pop()?.toLowerCase() || "bin";
       const path = `${newBlockType === "text" ? "text-background" : newBlockType}/${makeStorageId()}.${extension}`;
       const contentType =
         newBlockType === "gif"
@@ -4108,6 +4173,12 @@ function App() {
     setChapterMessage("");
 
     try {
+      const validationError = validateStorageUpload(file, "audio");
+      if (validationError) {
+        setChapterMessage(validationError);
+        return;
+      }
+
       const extension =
         file.name.split(".").pop()?.toLowerCase() || "mp3";
       const path = "text-effects/" + block.id + "-" + makeStorageId() + "." + extension;
