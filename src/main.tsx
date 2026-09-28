@@ -1485,8 +1485,9 @@ function App() {
   const [showFullCover, setShowFullCover] = useState(false);
 
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [availableStaffUsers, setAvailableStaffUsers] = useState<any[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
-  const [staffEmail, setStaffEmail] = useState("");
+  const [selectedStaffUserId, setSelectedStaffUserId] = useState("");
   const [staffMessage, setStaffMessage] = useState("");
   const [managingStaff, setManagingStaff] = useState(false);
 
@@ -2000,6 +2001,7 @@ function App() {
     if (canManage) {
       loadAdminData();
       loadStaffMembers();
+      if (isOwner) loadAvailableStaffUsers();
     }
   }, [canManage]);
 
@@ -3728,13 +3730,39 @@ function App() {
     setSelectedNovelAdminView(false);
   }
 
+  async function loadAvailableStaffUsers() {
+    if (!isOwner) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "manage-staff",
+        {
+          body: { action: "list_users" },
+        }
+      );
+
+      if (error) {
+        setStaffMessage(error.message || "تعذر تحميل المستخدمين.");
+        return;
+      }
+
+      setAvailableStaffUsers(data?.users ?? []);
+    } catch (error: any) {
+      setStaffMessage(
+        error?.message || "حدث خطأ أثناء تحميل المستخدمين."
+      );
+    }
+  }
+
   async function addStaff() {
     if (!isOwner) return;
 
-    const email = staffEmail.trim().toLowerCase();
+    const selectedUser = availableStaffUsers.find(
+      (item) => item.id === selectedStaffUserId
+    );
 
-    if (!email) {
-      setStaffMessage("اكتبي البريد الإلكتروني للمشرف.");
+    if (!selectedUser) {
+      setStaffMessage("اختاري مستخدمًا أولًا.");
       return;
     }
 
@@ -3747,7 +3775,7 @@ function App() {
         {
           body: {
             action: "set_role",
-            email,
+            user_id: selectedUser.id,
             role: "staff",
           },
         }
@@ -3760,12 +3788,15 @@ function App() {
         return;
       }
 
-      setStaffEmail("");
+      setSelectedStaffUserId("");
       setStaffMessage(
         data?.message || "تمت إضافة المشرف بنجاح."
       );
 
-      await loadStaffMembers();
+      await Promise.all([
+        loadStaffMembers(),
+        loadAvailableStaffUsers(),
+      ]);
     } catch (error: any) {
       setStaffMessage(
         error?.message || "حدث خطأ أثناء إضافة المشرف."
@@ -6923,30 +6954,41 @@ function App() {
             <div className="staff-form">
               <div className="form-group">
                 <label>
-                  البريد الإلكتروني
+                  اختاري المستخدم الذي تريدين جعله مشرفًا
                 </label>
 
-                <input
-                  type="email"
-                  value={staffEmail}
+                <select
+                  value={selectedStaffUserId}
                   onChange={(event) =>
-                    setStaffEmail(
-                      event.target.value
-                    )
+                    setSelectedStaffUserId(event.target.value)
                   }
-                  placeholder="staff@email.com"
-                  dir="ltr"
-                />
+                  disabled={managingStaff}
+                >
+                  <option value="">اختاري مستخدمًا...</option>
+                  {availableStaffUsers.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {(item.display_name || "بدون اسم") +
+                        (item.email ? " — " + item.email : "")}
+                      {item.role === "staff" ? " — مشرف حاليًا" : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {availableStaffUsers.length === 0 && (
+                  <small className="form-hint">
+                    لا يوجد مستخدمون متاحون للاختيار حاليًا.
+                  </small>
+                )}
               </div>
 
               <button
                 className="primary-button"
                 onClick={addStaff}
-                disabled={managingStaff}
+                disabled={managingStaff || !selectedStaffUserId}
               >
                 {managingStaff
                   ? "جارٍ التنفيذ..."
-                  : "إضافة كمشرف"}
+                  : "تعيين كمشرف"}
               </button>
             </div>
 
