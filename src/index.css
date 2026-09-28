@@ -5531,6 +5531,12 @@ select:focus-visible {
 .reaction-chip.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(199,166,201,.12)}
 .reaction-picker-empty{display:block;color:var(--muted);font-size:12px;padding:3px 2px}
 .comment-attached-reactions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.comment-reply{margin-inline-start:34px;border-inline-start:3px solid var(--line)}
+.comment-reply-button{margin-top:7px;border:0;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;padding:3px 0}
+.comment-reply-button:hover{color:var(--text)}
+.replying-to{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;padding:7px 9px;border-radius:9px;background:var(--surface-2);color:var(--muted);font-size:12px}
+.replying-to button{border:0;background:transparent;color:var(--accent);cursor:pointer}
+
 .attached-reaction{display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;padding:4px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer}
 .attached-reaction:hover{background:var(--surface)}
 .attached-reaction img{display:block;width:34px;height:34px;object-fit:contain}
