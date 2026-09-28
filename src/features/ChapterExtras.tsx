@@ -27,7 +27,8 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   const [reactionName,setReactionName]=useState("");
-  const [reactionFile,setReactionFile]=useState<File|null>(null);\n  const [editingAd,setEditingAd]=useState<string|null>(null);
+  const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const [editingAd,setEditingAd]=useState<string|null>(null);
 
   async function loadAds() {
     const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
