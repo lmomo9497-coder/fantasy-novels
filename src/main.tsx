@@ -1660,6 +1660,17 @@ function App() {
   );
 
   useEffect(() => {
+    activeEffectAudioRef.current?.pause();
+    activeEffectAudioRef.current = null;
+    setActiveEffectBlockId(null);
+
+    return () => {
+      activeEffectAudioRef.current?.pause();
+      activeEffectAudioRef.current = null;
+    };
+  }, [selectedChapter?.id]);
+
+  useEffect(() => {
     if (!selectedChapter) {
       setReaderFontSize(18);
       return;
