@@ -29,17 +29,25 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [reactionName,setReactionName]=useState("");
   const [reactionFile,setReactionFile]=useState<File|null>(null);\n  const [editingAd,setEditingAd]=useState<string|null>(null);
 
-  async function load() {
-    const {data:{user}}=await supabase.auth.getUser();
-    setUser(user);
-    const [{data:cs},{data:rs},{data:as}] = await Promise.all([
-      supabase.from("chapter_comments").select("id,content,author_name,created_at").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
-      supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order"),
-      supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20)
-    ]);
-    setComments(cs||[]); setReactions(rs||[]); setAds(as||[]);
+  async function loadAds() {
+    const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
+    setAds(data||[]);
   }
-  useEffect(()=>{void load()},[chapterId]);
+  async function loadComments() {
+    const [{data:cs},{data:rs}] = await Promise.all([
+      supabase.from("chapter_comments").select("id,content,author_name,created_at").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
+      supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order")
+    ]);
+    setComments(cs||[]); setReactions(rs||[]);
+  }
+  async function openComments() {
+    if(open){setOpen(false);return}
+    setOpen(true);
+    const {data:{user:current}}=await supabase.auth.getUser();
+    setUser(current);
+    await loadComments();
+  }
+  useEffect(()=>{void loadAds()},[chapterId]);
 
   const ad = useMemo(()=>{
     const mobile=window.matchMedia?.("(max-width: 700px)").matches ?? false;
@@ -74,7 +82,8 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     const {error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text});
     setBusy(false);
     if(error){setMessage(error.message);return}
-    setDraft(""); await load();
+    setDraft("");
+    setComments(prev=>[{id:crypto.randomUUID(),content:text,author_name:name,created_at:new Date().toISOString()},...prev]);
   }
 
   async function toggleReaction(commentId:string,reactionId:string){
@@ -82,7 +91,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     const {data:existing}=await supabase.from("comment_reactions").select("comment_id").eq("comment_id",commentId).eq("reaction_type_id",reactionId).eq("user_id",user.id).maybeSingle();
     if(existing) await supabase.from("comment_reactions").delete().match({comment_id:commentId,reaction_type_id:reactionId,user_id:user.id});
     else await supabase.from("comment_reactions").insert({comment_id:commentId,reaction_type_id:reactionId,user_id:user.id});
-    await load();
   }
 
   async function addReactionType(){
@@ -95,7 +103,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       if(error){setMessage(error.message);return}
     }
     const {error}=await supabase.from("reaction_types").insert({name:reactionName.trim(),icon_path,sort_order:reactions.length});
-    if(error)setMessage(error.message); else {setReactionName("");setReactionFile(null);await load()}
+    if(error)setMessage(error.message); else {setReactionName("");setReactionFile(null);await loadComments()}
   }
 
   return <div className="chapter-extras">
@@ -109,7 +117,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       </a>
     </div>}
 
-    <button className="comments-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>
+    <button className="comments-toggle" onClick={()=>void openComments()} aria-expanded={open}>
       <span>التعليقات ({comments.length})</span><span>{open?"▲":"▼"}</span>
     </button>
 
@@ -128,10 +136,10 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         <strong>إدارة التفاعلات</strong>
         <div className="reaction-admin-row"><input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" /><input type="file" accept="image/*" onChange={e=>setReactionFile(e.target.files?.[0]||null)} /><button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button></div>
         <div className="reaction-admin-list">{reactions.map((r,i)=><div className="ad-row" key={r.id}><span>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" style={{width:24,height:24,objectFit:"contain",verticalAlign:"middle"}}/>:""} {r.name}</span><span>
-          <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await load()}}>{r.enabled?"تعطيل":"تفعيل"}</button>
-          <button className="secondary-button" disabled={i===0} onClick={async()=>{if(i===0)return;const prev=reactions[i-1];await Promise.all([supabase.from("reaction_types").update({sort_order:prev.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",prev.id)]);await load()}}>↑</button>
-          <button className="secondary-button" disabled={i===reactions.length-1} onClick={async()=>{if(i===reactions.length-1)return;const next=reactions[i+1];await Promise.all([supabase.from("reaction_types").update({sort_order:next.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",next.id)]);await load()}}>↓</button>
-          <button className="danger-button" onClick={async()=>{await supabase.from("reaction_types").delete().eq("id",r.id);await load()}}>حذف</button>
+          <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await loadComments()}}>{r.enabled?"تعطيل":"تفعيل"}</button>
+          <button className="secondary-button" disabled={i===0} onClick={async()=>{if(i===0)return;const prev=reactions[i-1];await Promise.all([supabase.from("reaction_types").update({sort_order:prev.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",prev.id)]);await loadComments()}}>↑</button>
+          <button className="secondary-button" disabled={i===reactions.length-1} onClick={async()=>{if(i===reactions.length-1)return;const next=reactions[i+1];await Promise.all([supabase.from("reaction_types").update({sort_order:next.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",next.id)]);await loadComments()}}>↓</button>
+          <button className="danger-button" onClick={async()=>{await supabase.from("reaction_types").delete().eq("id",r.id);await loadComments()}}>حذف</button>
         </span></div>)}</div>
       </div>}
     </section>}
