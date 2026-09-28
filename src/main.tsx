@@ -1080,6 +1080,7 @@ type TextSceneReaderProps = {
   readerFontSize: number;
   textVisible: boolean;
   imageVisible: boolean;
+  imageDimmed: boolean;
 };
 
 function TextSceneReader({
@@ -1097,6 +1098,7 @@ function TextSceneReader({
   readerFontSize,
   textVisible,
   imageVisible,
+  imageDimmed,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -1337,7 +1339,8 @@ function TextSceneReader({
           alt=""
           className={
             "chapter-text-scene-reader-image" +
-            (imageVisible ? "" : " is-hidden")
+            (imageVisible ? "" : " is-hidden") +
+            (imageDimmed ? " is-dimmed" : "")
           }
           draggable={false}
           aria-hidden={!imageVisible}
@@ -1431,6 +1434,7 @@ function App() {
   const [readerFontSize, setReaderFontSize] = useState(18);
   const [chapterTextVisible, setChapterTextVisible] = useState(true);
   const [chapterImagesVisible, setChapterImagesVisible] = useState(true);
+  const [chapterImageDimmed, setChapterImageDimmed] = useState(false);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -4459,6 +4463,7 @@ function App() {
           readerFontSize={readerFontSize}
           textVisible={chapterTextVisible}
           imageVisible={chapterImagesVisible}
+          imageDimmed={chapterImageDimmed}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -6320,6 +6325,25 @@ function App() {
                 }
               >
                 {chapterImagesVisible ? "إخفاء الصور" : "إظهار الصور"}
+              </button>
+
+              <button
+                type="button"
+                className={
+                  "chapter-reader-visibility-button" +
+                  (chapterImageDimmed ? " is-hidden" : "")
+                }
+                onClick={() =>
+                  setChapterImageDimmed((current) => !current)
+                }
+                aria-pressed={chapterImageDimmed}
+                title={
+                  chapterImageDimmed
+                    ? "إلغاء تعتيم الصورة"
+                    : "تعتيم الصورة قليلًا"
+                }
+              >
+                {chapterImageDimmed ? "إلغاء التعتيم" : "تعتيم الصورة"}
               </button>
             </div>
 
