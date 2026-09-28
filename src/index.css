@@ -4557,6 +4557,28 @@ select:focus-visible {
   box-shadow: none;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+  text-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.98),
+    0 4px 7px rgba(0, 0, 0, 0.92),
+    0 0 5px rgba(0, 0, 0, 0.96),
+    0 0 11px rgba(199, 166, 201, 0.38),
+    0 0 22px rgba(199, 166, 201, 0.22);
+  transition: text-shadow 0.2s ease;
+}
+
+.chapter-text-glow-content {
+  isolation: isolate;
+}
+
+.chapter-text-glow-token::selection {
+  text-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.98),
+    0 4px 8px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(238, 213, 243, 0.55);
+}
+
+.chapter-text-scene-reader-window {
+  text-shadow: none;
 }
 
 .chapter-effect-audio-button {
