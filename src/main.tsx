@@ -6698,8 +6698,6 @@ function App() {
           </button>
         </div>
 
-        {isOwner && <AdsAdmin isOwner={isOwner} />}
-
         {renderNovelForm()}
 
         <div className="admin-card">
@@ -6774,6 +6772,14 @@ function App() {
             </div>
           )}
         </div>
+
+        {isOwner && (
+            )}
+        </div>
+
+        {isOwner && (
+          <AdsAdmin isOwner={isOwner} />
+        )}
 
         {isOwner && (
           <div className="admin-card">
