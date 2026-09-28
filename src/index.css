@@ -4689,6 +4689,7 @@ select:focus-visible {
   border-radius: 18px;
   background: #151218;
   isolation: isolate;
+  -webkit-transform: translateZ(0);
 }
 
 .chapter-text-scene-reader-image {
@@ -4735,6 +4736,8 @@ select:focus-visible {
 .chapter-text-scene-reader-window {
   position: absolute;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   min-height: 170px;
   max-height: calc(100% - 20px);
@@ -4745,6 +4748,7 @@ select:focus-visible {
   box-shadow: none;
   backdrop-filter: none;
   overflow: hidden;
+  min-width: 0;
 }
 
 .chapter-text-editor-effect-audio {
@@ -4935,13 +4939,19 @@ select:focus-visible {
 .chapter-text-scene-reader-scroll {
   position: relative;
   z-index: 3;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: auto;
   padding: 18px 18px 18px 2px;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
   overscroll-behavior: contain;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: text;
+  user-select: text;
   scrollbar-width: none;
   box-sizing: border-box;
   line-height: 2.05;
