@@ -4648,6 +4648,10 @@ select:focus-visible {
   visibility: hidden;
 }
 
+.chapter-text-scene-reader-image.is-dimmed {
+  filter: brightness(0.78);
+}
+
 .chapter-text-scene-reader-window {
   position: absolute;
   z-index: 2;
