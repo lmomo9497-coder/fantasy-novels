@@ -6742,26 +6742,6 @@ function App() {
               )}
           </div>
 
-          {user && !selectedNovelAdminView && history.some((item) => item.novel_id === selectedNovel.id) && (
-            <div className="continue-reading-banner">
-              <div>
-                <span className="eyebrow">متابعة القراءة</span>
-                <strong>
-                  {(() => {
-                    const item = history.find((entry) => entry.novel_id === selectedNovel.id);
-                    const chapter = chapters.find((entry) => entry.id === item?.chapter_id);
-                    return chapter
-                      ? `الفصل ${chapter.chapter_number}${chapter.title ? ` — ${chapter.title}` : ""}`
-                      : "آخر فصل قرأته";
-                  })()}
-                </strong>
-              </div>
-              <button className="primary-button" onClick={() => continueReading(selectedNovel)}>
-                متابعة
-              </button>
-            </div>
-          )}
-
           {loadingChapters ? (
             <div className="loading-state">
               جارٍ تحميل الفصول...
