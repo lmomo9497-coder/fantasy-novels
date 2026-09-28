@@ -5557,7 +5557,7 @@ function App() {
                       newBlockType === "audio"
                         ? "audio/*"
                         : newBlockType === "gif"
-                          ? "image/gif,image/webp,.gif,.webp"
+                          ? undefined
                           : "image/*,.webp,.gif,.png,.jpg,.jpeg"
                     }
                     onChange={(event) => {
