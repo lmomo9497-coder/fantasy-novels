@@ -27,7 +27,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   const [reactionName,setReactionName]=useState("");
-  const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const [reactionFile,setReactionFile]=useState<File|null>(null);\n  const [editingAd,setEditingAd]=useState<string|null>(null);
 
   async function load() {
     const {data:{user}}=await supabase.auth.getUser();
@@ -153,11 +153,18 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
       if(error){setMessage(error.message);setBusy(false);return}
       if(file===image)image_path=path; else mobile_image_path=path;
     }
-    const {error}=await supabase.from("ads").insert({...form,priority:Number(form.priority)||0,frequency_cap:Number(form.frequency_cap)||0,start_at:form.start_at||null,end_at:form.end_at||null,image_path,mobile_image_path,created_by:(await supabase.auth.getUser()).data.user?.id});
-    setBusy(false); if(error)setMessage(error.message); else {setForm({...form,internal_name:"",destination_url:"",alt_text:"",title:"",cta_text:"",start_at:"",end_at:""});setImage(null);setMobile(null);setMessage("تم حفظ الإعلان.");await load()}
+    const payload={...form,priority:Number(form.priority)||0,frequency_cap:Number(form.frequency_cap)||0,start_at:form.start_at||null,end_at:form.end_at||null};
+    const {error}=editingAd
+      ? await supabase.from("ads").update({...payload,...(image_path?{image_path}:{ }),...(mobile_image_path?{mobile_image_path}:{ })}).eq("id",editingAd)
+      : await supabase.from("ads").insert({...payload,image_path,mobile_image_path,created_by:(await supabase.auth.getUser()).data.user?.id});
+    setBusy(false); if(error)setMessage(error.message); else {setForm({...form,internal_name:"",destination_url:"",alt_text:"",title:"",cta_text:"",start_at:"",end_at:""});setImage(null);setMobile(null);setEditingAd(null);setMessage("تم حفظ الإعلان.");await load()}
   }
   async function toggle(a:Ad){await supabase.from("ads").update({enabled:!a.enabled,status:a.enabled?"paused":"active"}).eq("id",a.id);await load()}
   async function remove(a:Ad){await supabase.from("ads").delete().eq("id",a.id);await load()}
+  function edit(a:Ad){
+    setEditingAd(a.id);
+    setForm({internal_name:a.internal_name,ad_type:a.ad_type,status:a.status,destination_url:a.destination_url||"",alt_text:a.alt_text||"",title:a.title||"",cta_text:a.cta_text||"",device_target:a.device_target,priority:a.priority,frequency_cap:a.frequency_cap,start_at:a.start_at?new Date(a.start_at).toISOString().slice(0,16):"",end_at:a.end_at?new Date(a.end_at).toISOString().slice(0,16):""});
+  }
   return <section className="admin-card ads-admin">
     <div className="section-heading"><div><span className="eyebrow">الإعلانات</span><h2>إدارة الإعلانات</h2><p>إعلان واحد كحد أقصى في موضع الفصل، بدون نوافذ منبثقة أو تدوير سريع.</p></div></div>
     {message&&<div className="message-box">{message}</div>}
@@ -177,7 +184,7 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
       <label>بداية <input type="datetime-local" value={form.start_at} onChange={e=>setForm({...form,start_at:e.target.value})}/></label>
       <label>نهاية <input type="datetime-local" value={form.end_at} onChange={e=>setForm({...form,end_at:e.target.value})}/></label>
     </div>
-    <button className="primary-button" disabled={busy} onClick={()=>void save()}>{busy?"جارٍ الحفظ...":"حفظ الإعلان"}</button>
-    <div className="ad-list">{ads.map(a=><div className="ad-row" key={a.id}><div><strong>{a.internal_name}</strong><small>{a.status} · {a.device_target} · أولوية {a.priority}</small></div><div><button className="secondary-button" onClick={()=>void toggle(a)}>{a.enabled?"إيقاف":"تشغيل"}</button><button className="danger-button" onClick={()=>void remove(a)}>حذف</button></div></div>)}</div>
+    <button className="primary-button" disabled={busy} onClick={()=>void save()}>{busy?"جارٍ الحفظ...":editingAd?"حفظ التعديلات":"حفظ الإعلان"}</button>
+    <div className="ad-list">{ads.map(a=><div className="ad-row" key={a.id}><div><strong>{a.internal_name}</strong><small>{a.status} · {a.device_target} · أولوية {a.priority}</small></div><div><button className="secondary-button" onClick={()=>edit(a)}>تعديل</button><button className="secondary-button" onClick={()=>void toggle(a)}>{a.enabled?"إيقاف":"تشغيل"}</button><button className="danger-button" onClick={()=>void remove(a)}>حذف</button></div></div>)}</div>
   </section>
 }
