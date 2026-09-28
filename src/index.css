@@ -5524,6 +5524,17 @@ select:focus-visible {
 .reaction-group{display:grid;gap:5px}
 .reaction-group-title{font-size:11px;color:var(--muted);font-weight:700}
 .comment-reactions{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end}
+.comment-reaction-picker{margin-top:9px;padding:9px 10px;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2)}
+.comment-reaction-picker-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:var(--muted);font-size:12px}
+.clear-reaction-selection{border:0;background:transparent;color:var(--accent);cursor:pointer;font-size:12px}
+.reaction-picker-list{gap:6px}
+.reaction-chip.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(199,166,201,.12)}
+.reaction-picker-empty{display:block;color:var(--muted);font-size:12px;padding:3px 2px}
+.comment-attached-reactions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.attached-reaction{display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;padding:4px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer}
+.attached-reaction:hover{background:var(--surface)}
+.attached-reaction img{display:block;width:34px;height:34px;object-fit:contain}
+
 .reaction-chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);overflow:hidden}
 .reaction-use-button,.reaction-favorite-button{border:0;background:transparent;color:var(--text);min-height:56px}
 .reaction-use-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-width:64px}
