@@ -1612,11 +1612,17 @@ function App() {
     const publicPath = getPublicPathForRoute(currentRoute);
 
     if (!navigationReadyRef.current) {
-      window.history.replaceState(
-        { fantasyNovelsRoute: currentRoute },
-        "",
-        publicPath
-      );
+      const initialPath = window.location.pathname;
+      const isNovelDeepLink = initialPath.startsWith("/novel/");
+
+      if (!isNovelDeepLink) {
+        window.history.replaceState(
+          { fantasyNovelsRoute: currentRoute },
+          "",
+          publicPath
+        );
+      }
+
       navigationReadyRef.current = true;
       currentRouteKeyRef.current = currentRouteKey;
       return;
