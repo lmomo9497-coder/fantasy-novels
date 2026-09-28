@@ -28,7 +28,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [message,setMessage]=useState("");
   const [reactionName,setReactionName]=useState("");
   const [reactionFile,setReactionFile]=useState<File|null>(null);
-  const [editingAd,setEditingAd]=useState<string|null>(null);
 
   async function loadAds() {
     const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
@@ -154,6 +153,7 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [mobile,setMobile]=useState<File|null>(null);
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
+  const [editingAd,setEditingAd]=useState<string|null>(null);
   async function load(){const {data}=await supabase.from("ads").select("*").order("priority",{ascending:false}).order("created_at",{ascending:false});setAds(data||[])}
   useEffect(()=>{if(isOwner)void load()},[isOwner]);
   if(!isOwner)return null;
