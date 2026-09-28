@@ -5523,15 +5523,23 @@ select:focus-visible {
 .comment-reaction-groups{display:grid;gap:9px;margin-top:8px}
 .reaction-group{display:grid;gap:5px}
 .reaction-group-title{font-size:11px;color:var(--muted);font-weight:700}
-.comment-reactions{display:flex;flex-wrap:wrap;gap:6px}
-.reaction-chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);overflow:hidden}
-.reaction-use-button,.reaction-favorite-button{border:0;background:transparent;color:var(--text);min-height:32px}
-.reaction-use-button{display:inline-flex;align-items:center;gap:5px;padding:5px 8px}
+.comment-reactions{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end}
+.reaction-chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);overflow:hidden}
+.reaction-use-button,.reaction-favorite-button{border:0;background:transparent;color:var(--text);min-height:56px}
+.reaction-use-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-width:64px}
 .reaction-use-button:hover{background:var(--surface)}
-.reaction-favorite-button{padding:4px 7px;color:var(--muted);border-inline-start:1px solid var(--line)}
+.reaction-favorite-button{padding:5px 8px;color:var(--muted);border-inline-start:1px solid var(--line)}
 .reaction-favorite-button:hover{color:var(--text);background:var(--surface)}
 .reaction-favorite-button.active{color:#e11d48}
-.comment-reactions img{width:26px;height:26px;object-fit:contain}
+.comment-reactions img{display:block;width:52px;height:52px;object-fit:contain}
+.chapter-auth-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px}
+.chapter-auth-backdrop{position:absolute;inset:0;border:0;background:rgba(0,0,0,.72);cursor:pointer}
+.chapter-auth-dialog{position:relative;z-index:1;width:min(510px,100%);max-height:min(92vh,760px);overflow:auto}
+.chapter-auth-dialog .auth-page{width:100%;margin:0;padding:0}
+.chapter-auth-dialog .auth-card{position:relative}
+.chapter-auth-close{position:absolute;top:12px;inset-inline-end:12px;z-index:2;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:var(--surface-2);color:var(--text);font-size:26px;line-height:1;cursor:pointer}
+.chapter-auth-close:hover{background:var(--surface)}
+
 .reaction-admin .form-hint{display:block;margin-top:5px}
 .reaction-admin-row input[type="file"]{cursor:pointer}
 .reaction-admin{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
@@ -5545,6 +5553,11 @@ select:focus-visible {
 .ad-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line-soft);border-radius:12px}
 .ad-row small{display:block;color:var(--muted);margin-top:3px}
 @media (max-width:700px){
+ .chapter-auth-modal{padding:12px}
+ .chapter-auth-dialog{max-height:94vh}
+ .comment-reactions img{width:48px;height:48px}
+ .reaction-use-button{min-width:58px;min-height:52px}
+ .reaction-use-button,.reaction-favorite-button{min-height:52px}
  .chapter-extras{width:100%;margin-top:16px}
  .chapter-ad-slot{border-radius:12px}
  .chapter-ad-slot img{max-height:280px}
