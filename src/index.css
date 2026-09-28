@@ -5537,9 +5537,10 @@ select:focus-visible {
 .replying-to{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;padding:7px 9px;border-radius:9px;background:var(--surface-2);color:var(--muted);font-size:12px}
 .replying-to button{border:0;background:transparent;color:var(--accent);cursor:pointer}
 
-.attached-reaction{display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;padding:4px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer}
-.attached-reaction:hover{background:var(--surface)}
-.attached-reaction img{display:block;width:34px;height:34px;object-fit:contain}
+.attached-reaction{display:inline-flex;align-items:center;justify-content:center;width:74px;height:74px;padding:7px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);cursor:pointer;transition:transform .16s ease,background .16s ease,border-color .16s ease}
+.attached-reaction:hover{background:var(--surface);border-color:rgba(199,166,201,.34);transform:translateY(-1px)}
+.attached-reaction:active{transform:scale(.96)}
+.attached-reaction img{display:block;width:60px;height:60px;object-fit:contain}
 
 .reaction-chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);overflow:hidden}
 .reaction-use-button,.reaction-favorite-button{border:0;background:transparent;color:var(--text);min-height:56px}
@@ -5573,6 +5574,8 @@ select:focus-visible {
  .chapter-auth-modal{padding:12px}
  .chapter-auth-dialog{max-height:94vh}
  .comment-reactions img{width:48px;height:48px}
+ .attached-reaction{width:62px;height:62px;padding:6px}
+ .attached-reaction img{width:50px;height:50px}
  .reaction-use-button{min-width:58px;min-height:52px}
  .reaction-use-button,.reaction-favorite-button{min-height:52px}
  .chapter-extras{width:100%;margin-top:16px}
