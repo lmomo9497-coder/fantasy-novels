@@ -3849,6 +3849,11 @@ function App() {
         data?.message || "تمت إزالة صلاحية المشرف."
       );
 
+      await Promise.all([
+        loadStaffMembers(),
+        loadAvailableStaffUsers(),
+      ]);
+
       await loadStaffMembers();
     } catch (error: any) {
       setStaffMessage(
@@ -6965,13 +6970,14 @@ function App() {
                   disabled={managingStaff}
                 >
                   <option value="">اختاري مستخدمًا...</option>
-                  {availableStaffUsers.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {(item.display_name || "بدون اسم") +
-                        (item.email ? " — " + item.email : "")}
-                      {item.role === "staff" ? " — مشرف حاليًا" : ""}
-                    </option>
-                  ))}
+                  {availableStaffUsers
+                    .filter((item) => item.role !== "staff")
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {(item.display_name || "بدون اسم") +
+                          (item.email ? " — " + item.email : "")}
+                      </option>
+                    ))}
                 </select>
 
                 {availableStaffUsers.length === 0 && (
