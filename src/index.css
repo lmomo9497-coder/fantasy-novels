@@ -4717,20 +4717,30 @@ select:focus-visible {
   filter: brightness(0.46);
 }
 
-.chapter-text-scene-reader-scroll.is-dimmed-level-1 {
-  opacity: 0.88;
+.chapter-text-scene-reader-scroll.is-shadow-level-1 .chapter-text-glow-token {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 2px 4px rgba(0, 0, 0, 0.38);
 }
 
-.chapter-text-scene-reader-scroll.is-dimmed-level-2 {
-  opacity: 0.74;
+.chapter-text-scene-reader-scroll.is-shadow-level-2 .chapter-text-glow-token {
+  text-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.78),
+    0 4px 8px rgba(0, 0, 0, 0.58);
 }
 
-.chapter-text-scene-reader-scroll.is-dimmed-level-3 {
-  opacity: 0.60;
+.chapter-text-scene-reader-scroll.is-shadow-level-3 .chapter-text-glow-token {
+  text-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.92),
+    0 5px 10px rgba(0, 0, 0, 0.78),
+    0 0 6px rgba(0, 0, 0, 0.42);
 }
 
-.chapter-text-scene-reader-scroll.is-dimmed-level-4 {
-  opacity: 0.45;
+.chapter-text-scene-reader-scroll.is-shadow-level-4 .chapter-text-glow-token {
+  text-shadow:
+    0 3px 4px rgba(0, 0, 0, 0.98),
+    0 6px 14px rgba(0, 0, 0, 0.90),
+    0 0 9px rgba(0, 0, 0, 0.62);
 }
 
 .chapter-text-scene-reader-window {
