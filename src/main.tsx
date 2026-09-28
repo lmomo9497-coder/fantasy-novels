@@ -7282,6 +7282,28 @@ function App() {
                   ? renderHome()
                   : renderHome()}
       </main>
+      {!user && showAccount && (
+        <div className="chapter-auth-modal" role="dialog" aria-modal="true" aria-label="تسجيل الدخول أو إنشاء حساب">
+          <button
+            type="button"
+            className="chapter-auth-backdrop"
+            aria-label="إغلاق التسجيل"
+            onClick={() => setShowAccount(false)}
+          />
+          <div className="chapter-auth-dialog">
+            <button
+              type="button"
+              className="chapter-auth-close"
+              onClick={() => setShowAccount(false)}
+              aria-label="إغلاق"
+              title="إغلاق"
+            >
+              ×
+            </button>
+            {renderAuthPanel()}
+          </div>
+        </div>
+      )}
 
       {confirmDialog && (
         <div className="confirm-dialog-backdrop" role="presentation">
