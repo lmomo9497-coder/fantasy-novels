@@ -103,6 +103,18 @@ function makeSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function getPublicPathForRoute(route: any) {
+  if (route?.type === "novel" && route.novelSlug) {
+    return `/novel/${encodeURIComponent(route.novelSlug)}`;
+  }
+  if (route?.type === "chapter" && route.novelSlug && route.chapterId) {
+    return `/novel/${encodeURIComponent(route.novelSlug)}/chapter/${encodeURIComponent(route.chapterId)}`;
+  }
+  if (route?.type === "account") return "/account";
+  if (route?.type === "admin") return "/admin";
+  return "/";
+}
+
 function normalizeSearchText(value: string) {
   return value
     .toLocaleLowerCase("ar")
@@ -1454,6 +1466,8 @@ function App() {
       return {
         type: "chapter",
         novelId: selectedNovel.id,
+        novelSlug: selectedNovel.slug || makeSlug(selectedNovel.title),
+        chapterId: selectedChapter.id,
         adminView: selectedNovelAdminView,
         chapter: selectedChapter,
       };
@@ -1463,6 +1477,7 @@ function App() {
       return {
         type: "novel",
         novelId: selectedNovel.id,
+        novelSlug: selectedNovel.slug || makeSlug(selectedNovel.title),
         adminView: selectedNovelAdminView,
       };
     }
@@ -1594,11 +1609,13 @@ function App() {
   }, [selectedChapter?.id, readerBlocks]);
 
   useEffect(() => {
+    const publicPath = getPublicPathForRoute(currentRoute);
+
     if (!navigationReadyRef.current) {
       window.history.replaceState(
         { fantasyNovelsRoute: currentRoute },
         "",
-        window.location.href
+        publicPath
       );
       navigationReadyRef.current = true;
       currentRouteKeyRef.current = currentRouteKey;
@@ -1616,10 +1633,75 @@ function App() {
     window.history.pushState(
       { fantasyNovelsRoute: currentRoute },
       "",
-      window.location.href
+      publicPath
     );
     currentRouteKeyRef.current = currentRouteKey;
   }, [currentRouteKey]);
+
+  const deepLinkHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (deepLinkHandledRef.current || publishedNovels.length === 0) return;
+
+    const parts = window.location.pathname
+      .split("/")
+      .filter(Boolean)
+      .map((part) => decodeURIComponent(part));
+
+    if (parts[0] !== "novel" || !parts[1]) {
+      deepLinkHandledRef.current = true;
+      return;
+    }
+
+    const novel = publishedNovels.find(
+      (item) => (item.slug || makeSlug(item.title)) === parts[1]
+    );
+
+    if (!novel) {
+      deepLinkHandledRef.current = true;
+      window.history.replaceState({ fantasyNovelsRoute: { type: "home" } }, "", "/");
+      return;
+    }
+
+    deepLinkHandledRef.current = true;
+    setSelectedNovel(novel);
+    setSelectedNovelAdminView(false);
+    setShowAccount(false);
+    setShowAdmin(false);
+    setShowNovels(false);
+
+    if (parts[2] === "chapter" && parts[3]) {
+      void (async () => {
+        const { data: chapter } = await supabase
+          .from("chapters")
+          .select("*")
+          .eq("id", parts[3])
+          .eq("novel_id", novel.id)
+          .eq("published", true)
+          .maybeSingle();
+
+        if (!chapter) {
+          window.history.replaceState(
+            { fantasyNovelsRoute: { type: "novel", novelId: novel.id, novelSlug: novel.slug || makeSlug(novel.title) } },
+            "",
+            `/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`
+          );
+          setSelectedChapter(null);
+          return;
+        }
+
+        setSelectedChapter(chapter as Chapter);
+        setLoadingChapterBlocks(true);
+        const { data: blocks } = await supabase
+          .from("chapter_blocks")
+          .select("*")
+          .eq("chapter_id", chapter.id)
+          .order("block_order", { ascending: true });
+        setChapterBlocks((blocks ?? []) as ChapterBlock[]);
+        setLoadingChapterBlocks(false);
+      })();
+    }
+  }, [publishedNovels]);
 
   useEffect(() => {
     const restoreRoute = async (route: any) => {
