@@ -29,20 +29,30 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [reactionName,setReactionName]=useState("");
   const [reactionFile,setReactionFile]=useState<File|null>(null);
   const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
+  const [selectedReactionIds,setSelectedReactionIds]=useState<string[]>([]);
+  const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
 
   async function loadAds() {
     const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
     setAds(data||[]);
   }
   async function loadComments(userId?:string|null) {
-    const [{data:cs},{data:rs}] = await Promise.all([
+    const [{data:cs},{data:rs},{data:crs}] = await Promise.all([
       supabase.from("chapter_comments").select("id,content,author_name,created_at").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
-      supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order")
+      supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order"),
+      supabase.from("comment_reactions").select("comment_id,reaction_type_id,reaction_types(id,name,icon_path)").in("comment_id",
+        (await supabase.from("chapter_comments").select("id").eq("chapter_id",chapterId)).data?.map((item:any)=>item.id)||[]
+      )
     ]);
     const {data:fs}=userId
       ? await supabase.from("reaction_favorites").select("reaction_type_id").eq("user_id",userId)
       : {data:[]};
-    setComments(cs||[]); setReactions(rs||[]); setFavoriteReactionIds((fs||[]).map((item:any)=>item.reaction_type_id));
+    const grouped:Record<string,string[]>={};
+    (crs||[]).forEach((item:any)=>{
+      if(!grouped[item.comment_id]) grouped[item.comment_id]=[];
+      if(!grouped[item.comment_id].includes(item.reaction_type_id)) grouped[item.comment_id].push(item.reaction_type_id);
+    });
+    setComments(cs||[]); setReactions(rs||[]); setFavoriteReactionIds((fs||[]).map((item:any)=>item.reaction_type_id)); setCommentReactionMap(grouped);
   }
   async function openComments() {
     if(open){setOpen(false);return}
@@ -83,18 +93,36 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setBusy(true); setMessage("");
     const {data:{user:current}}=await supabase.auth.getUser();
     const name=(current?.user_metadata?.display_name||current?.email?.split("@")[0]||"قارئ").slice(0,80);
-    const {error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text});
+    const {data:created,error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text}).select("id").single();
+    if(error||!created){
+      setBusy(false);
+      setMessage(error?.message||"تعذر نشر التعليق.");
+      return;
+    }
+    if(selectedReactionIds.length){
+      const {error:reactionError}=await supabase.from("comment_reactions").insert(
+        selectedReactionIds.map(reactionId=>({comment_id:created.id,user_id:current!.id,reaction_type_id:reactionId}))
+      );
+      if(reactionError){
+        setMessage("تم نشر التعليق، لكن تعذر إرفاق بعض الرياكشنات.");
+      }
+    }
     setBusy(false);
-    if(error){setMessage(error.message);return}
     setDraft("");
-    setComments(prev=>[{id:crypto.randomUUID(),content:text,author_name:name,created_at:new Date().toISOString()},...prev]);
+    setSelectedReactionIds([]);
+    await loadComments(current!.id);
+  }
+
+  function toggleDraftReaction(reactionId:string){
+    setSelectedReactionIds(prev=>prev.includes(reactionId)?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
   async function toggleReaction(commentId:string,reactionId:string){
     if(!user){setMessage("سجلي الدخول للتفاعل.");return}
     const {data:existing}=await supabase.from("comment_reactions").select("comment_id").eq("comment_id",commentId).eq("reaction_type_id",reactionId).eq("user_id",user.id).maybeSingle();
     if(existing) await supabase.from("comment_reactions").delete().match({comment_id:commentId,reaction_type_id:reactionId,user_id:user.id});
-    else await supabase.from("comment_reactions").insert({comment_id:commentId,reaction_type_id:reactionId,user_id:user.id});
+    else await supabase.from("comment_reactions").insert({comment_id:commentId,user_id:user.id,reaction_type_id:reactionId});
+    await loadComments(user.id);
   }
 
   async function toggleFavoriteReaction(reactionId:string){
@@ -148,16 +176,45 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     {open && <section className="comments-panel">
       <div className="comment-form">
         <textarea value={draft} maxLength={1000} onChange={e=>setDraft(e.target.value)} placeholder={user?"اكتبي تعليقك...":"سجلي الدخول للمشاركة"} />
+        {user && (
+          <div className="comment-reaction-picker">
+            <div className="comment-reaction-picker-head">
+              <span>رياكشن مع التعليق</span>
+              {selectedReactionIds.length>0 && <button type="button" className="clear-reaction-selection" onClick={()=>setSelectedReactionIds([])}>إلغاء الاختيار</button>}
+            </div>
+            {favoriteReactionIds.length>0 ? (
+              <div className="comment-reactions reaction-picker-list">
+                {reactions.filter(r=>r.enabled&&favoriteReactionIds.includes(r.id)).map(r=>(
+                  <div className={"reaction-chip"+(selectedReactionIds.includes(r.id)?" selected":"")} key={"composer-fav-"+r.id}>
+                    <button type="button" className="reaction-use-button" onClick={()=>toggleDraftReaction(r.id)} title={"إضافة "+r.name}>
+                      {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:r.name}
+                    </button>
+                    <button type="button" className="reaction-favorite-button active" onClick={()=>void toggleFavoriteReaction(r.id)} title="إزالة من المفضلة" aria-label="إزالة من المفضلة">♥</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="reaction-picker-empty">احفظي رياكشناتك بالضغط على ♡ لتظهر هنا.</span>
+            )}
+          </div>
+        )}
         <button className="primary-button" disabled={busy||!draft.trim()} onClick={()=>void addComment()}>نشر التعليق</button>
       </div>
       {message&&<div className="message-box">{message}</div>}
       {comments.length===0?<div className="empty-state">لا توجد تعليقات بعد. كوني أول من يعلّق.</div>:comments.map(c=><article className="comment-card" key={c.id}>
         <div className="comment-head"><strong>{c.author_name}</strong><time>{new Date(c.created_at).toLocaleDateString("ar-SA")}</time></div>
         <p>{c.content}</p>
-        <div className="comment-reaction-groups">
-          {favoriteReactionIds.length>0&&<div className="reaction-group"><span className="reaction-group-title">مفضلاتك</span><div className="comment-reactions">{reactions.filter(r=>r.enabled&&favoriteReactionIds.includes(r.id)).map(r=><div className="reaction-chip" key={"fav-"+r.id}><button className="reaction-use-button" onClick={()=>void toggleReaction(c.id,r.id)} title={"استخدام "+r.name}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:r.name}</button><button className="reaction-favorite-button active" onClick={()=>void toggleFavoriteReaction(r.id)} title="إزالة من المفضلة" aria-label="إزالة من المفضلة">♥</button></div>)}</div></div>}
-          <div className="reaction-group"><span className="reaction-group-title">كل الرياكشنات</span><div className="comment-reactions">{reactions.filter(r=>r.enabled).map(r=><div className="reaction-chip" key={r.id}><button className="reaction-use-button" onClick={()=>void toggleReaction(c.id,r.id)} title={"استخدام "+r.name}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:r.name}</button><button className={"reaction-favorite-button"+(favoriteReactionIds.includes(r.id)?" active":"")} onClick={()=>void toggleFavoriteReaction(r.id)} title={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"} aria-label={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}>{favoriteReactionIds.includes(r.id)?"♥":"♡"}</button></div>)}</div></div>
-        </div>
+        {commentReactionMap[c.id]?.length>0&&(
+          <div className="comment-attached-reactions" aria-label="الرياكشنات على التعليق">
+            {commentReactionMap[c.id].map(reactionId=>{
+              const r=reactions.find(item=>item.id===reactionId);
+              if(!r)return null;
+              return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(c.id,reactionId)} title={r.name}>
+                {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
+              </button>;
+            })}
+          </div>
+        )}
       </article>)}
       {isOwner&&<div className="reaction-admin">
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
