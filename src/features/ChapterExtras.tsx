@@ -38,16 +38,13 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setAds(data||[]);
   }
   async function loadComments(userId?:string|null) {
-    const [{data:cs},{data:rs},{data:crs}] = await Promise.all([
-      supabase.from("chapter_comments").select("id,content,author_name,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false}),
+    const {data:cs}=await supabase.from("chapter_comments").select("id,content,author_name,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false});
+    const commentIds=(cs||[]).map((item:any)=>item.id);
+    const [{data:rs},{data:crs},{data:fs}] = await Promise.all([
       supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order"),
-      supabase.from("comment_reactions").select("comment_id,reaction_type_id,reaction_types(id,name,icon_path)").in("comment_id",
-        (await supabase.from("chapter_comments").select("id").eq("chapter_id",chapterId)).data?.map((item:any)=>item.id)||[]
-      )
+      commentIds.length ? supabase.from("comment_reactions").select("comment_id,reaction_type_id,reaction_types(id,name,icon_path)").in("comment_id",commentIds) : Promise.resolve({data:[]}),
+      userId ? supabase.from("reaction_favorites").select("reaction_type_id").eq("user_id",userId) : Promise.resolve({data:[]})
     ]);
-    const {data:fs}=userId
-      ? await supabase.from("reaction_favorites").select("reaction_type_id").eq("user_id",userId)
-      : {data:[]};
     const grouped:Record<string,string[]>={};
     (crs||[]).forEach((item:any)=>{
       if(!grouped[item.comment_id]) grouped[item.comment_id]=[];
