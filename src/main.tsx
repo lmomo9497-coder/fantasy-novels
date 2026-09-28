@@ -1154,9 +1154,14 @@ function TextSceneReader({
   useEffect(() => {
     const frame = window.requestAnimationFrame(handleScroll);
     return () => window.cancelAnimationFrame(frame);
-  }, [readerFontSize, content]);
+  }, [readerFontSize, content, textVisible, imageVisible]);
 
   useEffect(() => {
+    if (!textVisible && autoScrollEnabled) {
+      setAutoScrollEnabled(false);
+      return;
+    }
+
     const element = scrollRef.current;
 
     if (!autoScrollEnabled || !element) return;
@@ -1174,7 +1179,10 @@ function TextSceneReader({
       );
 
       if (maxScroll <= 0) {
-        autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+        setAutoScrollEnabled(false);
+        autoScrollLastTimeRef.current = null;
+        autoScrollDistanceRef.current = 0;
+        autoScrollFrameRef.current = null;
         return;
       }
 
@@ -1217,20 +1225,16 @@ function TextSceneReader({
     };
   }, [autoScrollEnabled, autoScrollSpeed, content, readerFontSize, textVisible]);
 
-  const safeWidth = Math.min(96, Math.max(78, Number(widthPercent) || 88));
-  const safeX = Math.min(100, Math.max(0, Number(positionX) || 50));
-  const safeY = Math.min(100, Math.max(0, Number(positionY) || 50));
+  const numericWidth = Number(widthPercent);
+  const numericX = Number(positionX);
+  const numericY = Number(positionY);
+  const safeWidth = Math.min(96, Math.max(78, Number.isFinite(numericWidth) ? numericWidth : 88));
+  const safeX = Math.min(100, Math.max(0, Number.isFinite(numericX) ? numericX : 50));
+  const safeY = Math.min(100, Math.max(0, Number.isFinite(numericY) ? numericY : 50));
   const safeReaderSize = clampTextFontSize(readerFontSize);
-  const transform =
-    safeX >= 85
-      ? "translate(-100%, -100%)"
-      : safeX <= 15
-        ? "translate(0, 0)"
-        : safeY >= 85
-          ? "translate(-50%, -100%)"
-          : safeY <= 15
-            ? "translate(-50%, 0)"
-            : "translate(-50%, -50%)";
+  const translateX = safeX >= 85 ? "-100%" : safeX <= 15 ? "0" : "-50%";
+  const translateY = safeY >= 85 ? "-100%" : safeY <= 15 ? "0" : "-50%";
+  const transform = "translate(" + translateX + ", " + translateY + ")";
 
   return (
     <div className="chapter-text-scene-reader">
@@ -1838,6 +1842,8 @@ function App() {
         setShowNovels(false);
 
         if (route.type === "chapter" && route.chapter) {
+          setChapterTextVisible(true);
+          setChapterImagesVisible(true);
           setSelectedChapter(route.chapter as Chapter);
           setChapterMessage("");
           setLoadingChapterBlocks(true);
@@ -3053,6 +3059,7 @@ function App() {
     setReaderProgress(0);
     setReaderFontSize(18);
     setChapterTextVisible(true);
+    setChapterImagesVisible(true);
     setLoadingChapterBlocks(true);
     setChapterMessage("");
     setShowChapterForm(false);
@@ -3627,9 +3634,13 @@ function App() {
       return;
     }
 
+    activeEffectAudioRef.current?.pause();
+    activeEffectAudioRef.current = null;
+    setActiveEffectBlockId(null);
     setSelectedChapter(null);
     setChapterBlocks([]);
     setChapterMessage("");
+    setChapterImagesVisible(true);
   }
 
   function goHome() {
