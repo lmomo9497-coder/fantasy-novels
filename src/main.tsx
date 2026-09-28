@@ -1081,7 +1081,7 @@ type TextSceneReaderProps = {
   textVisible: boolean;
   imageVisible: boolean;
   imageDimLevel: number;
-  textDimLevel: number;
+  textShadowLevel: number;
 };
 
 function TextSceneReader({
@@ -1100,7 +1100,7 @@ function TextSceneReader({
   textVisible,
   imageVisible,
   imageDimLevel,
-  textDimLevel,
+  textShadowLevel,
 }: TextSceneReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -1382,8 +1382,8 @@ function TextSceneReader({
                 ref={scrollRef}
                 className={
                   "chapter-text-scene-reader-scroll" +
-                  (textDimLevel > 0
-                    ? " is-dimmed-level-" + textDimLevel
+                  (textShadowLevel > 0
+                    ? " is-shadow-level-" + textShadowLevel
                     : "")
                 }
                 onScroll={handleScroll}
@@ -1464,7 +1464,7 @@ function App() {
   const [chapterTextVisible, setChapterTextVisible] = useState(true);
   const [chapterImagesVisible, setChapterImagesVisible] = useState(true);
   const [chapterImageDimLevel, setChapterImageDimLevel] = useState(0);
-  const [chapterTextDimLevel, setChapterTextDimLevel] = useState(0);
+  const [chapterTextShadowLevel, setChapterTextShadowLevel] = useState(0);
 
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
@@ -1890,7 +1890,7 @@ function App() {
           setChapterTextVisible(true);
           setChapterImagesVisible(true);
           setChapterImageDimLevel(0);
-          setChapterTextDimLevel(0);
+          setChapterTextShadowLevel(0);
           setSelectedChapter(route.chapter as Chapter);
           setChapterMessage("");
           setLoadingChapterBlocks(true);
@@ -3108,7 +3108,7 @@ function App() {
     setChapterTextVisible(true);
     setChapterImagesVisible(true);
     setChapterImageDimLevel(0);
-    setChapterTextDimLevel(0);
+    setChapterTextShadowLevel(0);
     setLoadingChapterBlocks(true);
     setChapterMessage("");
     setShowChapterForm(false);
@@ -3691,7 +3691,7 @@ function App() {
     setChapterMessage("");
     setChapterImagesVisible(true);
     setChapterImageDimLevel(0);
-    setChapterTextDimLevel(0);
+    setChapterTextShadowLevel(0);
   }
 
   function goHome() {
@@ -4500,7 +4500,7 @@ function App() {
           textVisible={chapterTextVisible}
           imageVisible={chapterImagesVisible}
           imageDimLevel={chapterImageDimLevel}
-          textDimLevel={chapterTextDimLevel}
+          textShadowLevel={chapterTextShadowLevel}
           effectAudioPath={block.effect_audio_path}
           effectAudioPlaying={activeEffectBlockId === block.id}
           onToggleEffectAudio={() => void toggleChapterEffectAudio(block)}
@@ -6383,13 +6383,13 @@ function App() {
                 </label>
 
                 <label className="chapter-reader-dim-control">
-                  <span>تعتيم النص</span>
+                  <span>ظل النص</span>
                   <select
-                    value={chapterTextDimLevel}
+                    value={chapterTextShadowLevel}
                     onChange={(event) =>
-                      setChapterTextDimLevel(Number(event.target.value))
+                      setChapterTextShadowLevel(Number(event.target.value))
                     }
-                    aria-label="درجة تعتيم النص"
+                    aria-label="درجة ظل النص"
                   >
                     <option value={0}>بدون</option>
                     <option value={1}>خفيف</option>
