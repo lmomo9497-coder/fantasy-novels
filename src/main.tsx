@@ -1423,6 +1423,7 @@ function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
+  const [staffProfiles, setStaffProfiles] = useState<Profile[]>([]);
 
   const [showAccount, setShowAccount] = useState(false);
   const [showSideMenu, setShowSideMenu] = useState(false);
@@ -1994,6 +1995,9 @@ function App() {
   useEffect(() => {
     if (user) {
       loadOwnerProfile();
+      loadTeamProfiles();
+    } else {
+      setStaffProfiles([]);
     }
   }, [user?.id]);
 
@@ -2043,6 +2047,21 @@ function App() {
     }
 
     setOwnerProfile(data as Profile | null);
+  }
+
+  async function loadTeamProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "staff")
+      .order("display_name", { ascending: true });
+
+    if (error) {
+      console.error("Staff profiles error:", error);
+      return;
+    }
+
+    setStaffProfiles((data ?? []) as Profile[]);
   }
 
   async function loadProfile(userId: string) {
@@ -4839,18 +4858,39 @@ function App() {
                 )}
 
                 {user && (
-                  <div className="side-owner-card" aria-label="المالك">
-                    {ownerProfile?.avatar_url ? (
-                      <img
-                        src={ownerProfile.avatar_url}
-                        alt="المالك"
-                        className="side-owner-avatar"
-                      />
-                    ) : (
-                      <span className="side-owner-avatar side-profile-placeholder">👤</span>
-                    )}
-                    <span>المالك</span>
-                  </div>
+                  <>
+                    <div className="side-owner-card" aria-label="المالك">
+                      {ownerProfile?.avatar_url ? (
+                        <img
+                          src={ownerProfile.avatar_url}
+                          alt="المالك"
+                          className="side-owner-avatar"
+                        />
+                      ) : (
+                        <span className="side-owner-avatar side-profile-placeholder">👤</span>
+                      )}
+                      <span>المالك</span>
+                    </div>
+
+                    {staffProfiles.map((staff) => (
+                      <div
+                        className="side-owner-card"
+                        aria-label="المشرف"
+                        key={staff.id}
+                      >
+                        {staff.avatar_url ? (
+                          <img
+                            src={staff.avatar_url}
+                            alt={staff.display_name || "المشرف"}
+                            className="side-owner-avatar"
+                          />
+                        ) : (
+                          <span className="side-owner-avatar side-profile-placeholder">👤</span>
+                        )}
+                        <span>{staff.display_name || "المشرف"}</span>
+                      </div>
+                    ))}
+                  </>
                 )}
 
                 {user && (
