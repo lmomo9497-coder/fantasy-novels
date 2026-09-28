@@ -127,6 +127,12 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       {isOwner&&<div className="reaction-admin">
         <strong>إدارة التفاعلات</strong>
         <div className="reaction-admin-row"><input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" /><input type="file" accept="image/*" onChange={e=>setReactionFile(e.target.files?.[0]||null)} /><button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button></div>
+        <div className="reaction-admin-list">{reactions.map((r,i)=><div className="ad-row" key={r.id}><span>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" style={{width:24,height:24,objectFit:"contain",verticalAlign:"middle"}}/>:""} {r.name}</span><span>
+          <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await load()}}>{r.enabled?"تعطيل":"تفعيل"}</button>
+          <button className="secondary-button" disabled={i===0} onClick={async()=>{if(i===0)return;const prev=reactions[i-1];await Promise.all([supabase.from("reaction_types").update({sort_order:prev.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",prev.id)]);await load()}}>↑</button>
+          <button className="secondary-button" disabled={i===reactions.length-1} onClick={async()=>{if(i===reactions.length-1)return;const next=reactions[i+1];await Promise.all([supabase.from("reaction_types").update({sort_order:next.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",next.id)]);await load()}}>↓</button>
+          <button className="danger-button" onClick={async()=>{await supabase.from("reaction_types").delete().eq("id",r.id);await load()}}>حذف</button>
+        </span></div>)}</div>
       </div>}
     </section>}
   </div>
