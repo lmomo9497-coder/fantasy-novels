@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
+import { AdsAdmin, ChapterExtras } from "./features/ChapterExtras";
 
 type Role = "owner" | "staff" | "reader";
 
@@ -6310,6 +6311,10 @@ function App() {
           )}
         </article>
 
+        {!selectedNovelAdminView && selectedChapter && (
+          <ChapterExtras chapterId={selectedChapter.id} canManage={canManage} isOwner={isOwner} />
+        )}
+
         {!selectedNovelAdminView && (
           <div className="chapter-navigation">
             <button
@@ -6692,6 +6697,8 @@ function App() {
             + إضافة رواية
           </button>
         </div>
+
+        {isOwner && <AdsAdmin isOwner={isOwner} />}
 
         {renderNovelForm()}
 
