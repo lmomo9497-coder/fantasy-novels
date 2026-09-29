@@ -212,7 +212,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
               {commentReactionMap[c.id].map(reactionId=>{
                 const r=reactions.find(item=>item.id===reactionId);
                 if(!r)return null;
-                return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(c.id,reactionId)} title={r.name}>
+                return <button type="button" className="attached-reaction" key={reactionId} title={r.name} onClick={()=>setPreviewReaction(r)}>
                   {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
                 </button>;
               })}
@@ -228,7 +228,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
               {commentReactionMap[reply.id].map(reactionId=>{
                 const r=reactions.find(item=>item.id===reactionId);
                 if(!r)return null;
-                return <button type="button" className="attached-reaction" key={reactionId} onClick={()=>void toggleReaction(reply.id,reactionId)} title={r.name}>
+                return <button type="button" className="attached-reaction" key={reactionId} title={r.name} onClick={()=>setPreviewReaction(r)}>
                   {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:<span>{r.name}</span>}
                 </button>;
               })}
