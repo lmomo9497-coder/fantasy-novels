@@ -1,1 +1,77 @@
-__SVG__
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 760" role="img" aria-labelledby="title desc">
+<title id="title">روايات خيالية</title>
+<desc id="desc">قطة جالسة من الخلف فوق كتاب مفتوح، بأسلوب بنفسجي وردي، مع ذيل طويل منحني واسم روايات خيالية أسفلها.</desc>
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#7936d1"/>
+    <stop offset=".5" stop-color="#bd4fdb"/>
+    <stop offset="1" stop-color="#fa82bd"/>
+  </linearGradient>
+</defs>
+
+<!-- الذيل الطويل خلف القطة -->
+<path d="M405 425
+ C475 394 548 359 614 382
+ C684 407 708 474 682 532
+ C661 578 612 600 573 581"
+ fill="none" stroke="url(#g)" stroke-width="18" stroke-linecap="round"/>
+
+<!-- القطة الجالسة من الخلف -->
+<path d="M322 350
+ C294 329 282 295 288 257
+ C292 225 309 199 333 185
+ L322 143 L360 174
+ C385 165 411 165 436 174
+ L475 142 L463 187
+ C489 204 503 232 505 266
+ C507 302 493 331 467 350
+ C445 366 420 375 393 375
+ C365 375 341 366 322 350Z"
+ fill="url(#g)"/>
+
+<!-- جسم القطة -->
+<path d="M320 337
+ C288 362 273 407 284 449
+ C295 488 322 509 360 509
+ C384 509 405 497 419 477
+ C433 497 455 509 481 509
+ C519 509 547 488 558 449
+ C569 407 554 362 522 337
+ C497 317 466 310 420 312
+ C375 310 345 317 320 337Z"
+ fill="url(#g)"/>
+
+<!-- لمسات الظهر -->
+<path d="M337 344 C360 362 388 371 420 371 C450 371 479 362 502 344"
+ fill="none" stroke="#f5b5df" stroke-opacity=".35" stroke-width="6" stroke-linecap="round"/>
+
+<!-- الكتاب -->
+<path d="M419 472
+ C355 445 291 444 222 467
+ L186 568
+ C266 546 343 552 419 589Z"
+ fill="#100d18" stroke="url(#g)" stroke-width="9" stroke-linejoin="round"/>
+<path d="M419 589
+ C495 552 572 546 652 568
+ L616 467
+ C547 444 483 445 419 472Z"
+ fill="#100d18" stroke="url(#g)" stroke-width="9" stroke-linejoin="round"/>
+<path d="M419 472V589" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/>
+
+<!-- صفحات الكتاب -->
+<path d="M215 494 C278 476 340 481 391 500
+ M205 522 C272 504 333 510 389 529
+ M447 500 C498 481 560 476 623 494
+ M449 529 C505 510 566 504 633 522"
+ fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/>
+
+<!-- الاسم -->
+<text x="419" y="666" text-anchor="middle"
+ direction="rtl" unicode-bidi="plaintext"
+ font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
+ font-size="67" font-weight="850" fill="url(#g)">روايات خيالية</text>
+
+<!-- الخط تحت الاسم -->
+<path d="M238 700 C330 681 396 689 456 699 C517 709 566 706 605 691"
+ fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round"/>
+</svg>
