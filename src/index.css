@@ -118,43 +118,32 @@ img {
 .brand-button {
   display: inline-flex;
   align-items: center;
-
-  gap: 10px;
-
   border: 0;
-
   background: transparent;
-  color: var(--text);
-
-  padding: 8px 0;
-
-  font-size: 20px;
-  font-weight: 800;
-
+  padding: 4px 0;
   white-space: nowrap;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 34px;
+.brand-logo {
+  display: block;
+  width: 248px;
+  height: auto;
+  max-height: 62px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.28));
+  transition: transform .18s ease, filter .18s ease;
+}
 
-  display: grid;
-  place-items: center;
+.brand-button:hover .brand-logo {
+  transform: translateY(-1px);
+  filter: drop-shadow(0 10px 22px rgba(205,162,76,.18));
+}
 
-  border: 1px solid rgba(199, 166, 201, 0.35);
-  border-radius: 11px;
-
-  background:
-    linear-gradient(
-      145deg,
-      #2c2230,
-      #171319
-    );
-
-  color: var(--accent-strong);
-
-  box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.25);
+@media (max-width:700px){
+  .brand-logo {
+    width: 190px;
+    max-height: 54px;
+  }
 }
 
 .header-nav {
