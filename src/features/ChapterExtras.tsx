@@ -294,20 +294,21 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
         if(error)throw error;
         icon_path=uploadedPath;
       }
-      const payload=editingId
+      const wasEditing=Boolean(editingId);
+      const payload=wasEditing
         ? {name,icon_path}
         : {name,icon_path,sort_order:reactions.length};
-      const result=editingId
+      const result=wasEditing
         ? await supabase.from("reaction_types").update(payload).eq("id",editingId)
         : await supabase.from("reaction_types").insert(payload);
       if(result.error)throw result.error;
 
-      if(editingId && reactionFile && current?.icon_path && current.icon_path!==icon_path) {
+      if(wasEditing && reactionFile && current?.icon_path && current.icon_path!==icon_path) {
         await supabase.storage.from("ad-media").remove([current.icon_path]);
       }
       resetForm();
       await load();
-      setMessage(editingId?"تم تحديث الركشان.":"تمت إضافة الركشان.");
+      setMessage(wasEditing?"تم تحديث الركشان.":"تمت إضافة الركشان.");
     } catch(error:any) {
       if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]);
       setMessage(error?.message||"تعذر حفظ الركشان.");
