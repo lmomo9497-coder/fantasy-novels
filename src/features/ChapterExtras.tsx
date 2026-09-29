@@ -28,6 +28,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [message,setMessage]=useState("");
   const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
   const [selectedReactionIds,setSelectedReactionIds]=useState<string[]>([]);
+  const [reactionPickerOpen,setReactionPickerOpen]=useState(false);
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
   const [replyTo,setReplyTo]=useState<string|null>(null);
 
@@ -106,6 +107,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setBusy(false);
     setDraft("");
     setSelectedReactionIds([]);
+    setReactionPickerOpen(false);
     setReplyTo(null);
     await loadComments(current!.id);
   }
@@ -152,32 +154,49 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         {replyTo&&<div className="replying-to">الرد على تعليق <button type="button" onClick={()=>setReplyTo(null)}>إلغاء</button></div>}
         <textarea value={draft} maxLength={1000} onChange={e=>setDraft(e.target.value)} placeholder={user?"اكتبي تعليقك...":"سجلي الدخول للمشاركة"} />
         {user && (
-          <div className="comment-reaction-picker">
-            <div className="comment-reaction-picker-head">
-              <span>رياكشن مع التعليق</span>
-              {selectedReactionIds.length>0 && <button type="button" className="clear-reaction-selection" onClick={()=>setSelectedReactionIds([])}>إلغاء الاختيار</button>}
-            </div>
-            {reactions.some(r=>r.enabled) ? (
-              <div className="comment-reactions reaction-picker-list">
-                {reactions.filter(r=>r.enabled).map(r=>(
-                  <div className={"reaction-chip"+(selectedReactionIds.includes(r.id)?" selected":"")} key={"composer-"+r.id}>
-                    <button type="button" className="reaction-use-button" onClick={()=>toggleDraftReaction(r.id)} title={"إضافة "+r.name} aria-pressed={selectedReactionIds.includes(r.id)}>
-                      {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:r.name}
-                    </button>
-                    <button
-                      type="button"
-                      className={"reaction-favorite-button"+(favoriteReactionIds.includes(r.id)?" active":"")}
-                      onClick={()=>void toggleFavoriteReaction(r.id)}
-                      title={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
-                      aria-label={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
-                    >
-                      {favoriteReactionIds.includes(r.id)?"♥":"♡"}
-                    </button>
+          <div className={"comment-reaction-picker"+(reactionPickerOpen?" is-open":"")}>
+            <button
+              type="button"
+              className="comment-reaction-picker-toggle"
+              onClick={()=>setReactionPickerOpen(prev=>!prev)}
+              aria-expanded={reactionPickerOpen}
+              aria-controls="comment-reaction-picker-options"
+            >
+              <span className="comment-reaction-picker-toggle-label">
+                <span>ركشان مع التعليق</span>
+                {selectedReactionIds.length>0 && <span className="selected-reaction-count">{selectedReactionIds.length}</span>}
+              </span>
+              <span className="comment-reaction-picker-arrow" aria-hidden="true">⌄</span>
+            </button>
+            {reactionPickerOpen && (
+              <div id="comment-reaction-picker-options" className="comment-reaction-picker-options">
+                <div className="comment-reaction-picker-head">
+                  <span>اختاري الركشان ثم أرسلي التعليق</span>
+                  {selectedReactionIds.length>0 && <button type="button" className="clear-reaction-selection" onClick={()=>setSelectedReactionIds([])}>إلغاء الاختيار</button>}
+                </div>
+                {reactions.some(r=>r.enabled) ? (
+                  <div className="comment-reactions reaction-picker-list">
+                    {reactions.filter(r=>r.enabled).map(r=>(
+                      <div className={"reaction-chip"+(selectedReactionIds.includes(r.id)?" selected":"")} key={"composer-"+r.id}>
+                        <button type="button" className="reaction-use-button" onClick={()=>toggleDraftReaction(r.id)} title={"إضافة "+r.name} aria-pressed={selectedReactionIds.includes(r.id)}>
+                          {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:r.name}
+                        </button>
+                        <button
+                          type="button"
+                          className={"reaction-favorite-button"+(favoriteReactionIds.includes(r.id)?" active":"")}
+                          onClick={()=>void toggleFavoriteReaction(r.id)}
+                          title={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
+                          aria-label={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
+                        >
+                          {favoriteReactionIds.includes(r.id)?"♥":"♡"}
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <span className="reaction-picker-empty">لا توجد رياكشنات مفعلة حاليًا.</span>
+                )}
               </div>
-            ) : (
-              <span className="reaction-picker-empty">لا توجد رياكشنات مفعلة حاليًا.</span>
             )}
           </div>
         )}
