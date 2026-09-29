@@ -4689,19 +4689,6 @@ function App() {
       <>
         <header className="site-header">
           <div className="header-inner">
-            <button
-              className="brand-button"
-              onClick={goHome}
-              aria-label="روايات خيالية - الرئيسية"
-            >
-              <img
-                src="/logo.svg"
-                alt="روايات خيالية"
-                className="brand-logo"
-                draggable={false}
-              />
-            </button>
-
             <div className="header-actions">
               {user && (
                 <button
