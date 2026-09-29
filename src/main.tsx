@@ -4692,9 +4692,14 @@ function App() {
             <button
               className="brand-button"
               onClick={goHome}
+              aria-label="روايات خيالية - الرئيسية"
             >
-              <span className="brand-mark">✦</span>
-              <span>روايات خيالية</span>
+              <img
+                src="/logo.svg"
+                alt="روايات خيالية"
+                className="brand-logo"
+                draggable={false}
+              />
             </button>
 
             <div className="header-actions">
