@@ -147,18 +147,12 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         }).showOpenFilePicker;
 
         if (picker) {
+          // لا نحدد نوع MIME هنا عمدًا؛ على أندرويد تحديد image/* قد يحوّل
+          // الاختيار إلى معرض الصور بدل مدير الملفات. نسمح بكل الملفات ثم
+          // نتحقق من الامتداد/النوع قبل الرفع.
           const handles = await picker({
             multiple: false,
-            excludeAcceptAllOption: false,
-            types: [{
-              description: "ركشانات وصور",
-              accept: {
-                "image/png": [".png"],
-                "image/jpeg": [".jpg", ".jpeg"],
-                "image/webp": [".webp"],
-                "image/gif": [".gif"]
-              }
-            }]
+            excludeAcceptAllOption: false
           });
           const file = await handles[0].getFile();
           setReactionFile(file);
@@ -178,7 +172,14 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     const file=event.target.files?.[0]||null;
     setReactionFile(file);
     event.target.value="";
-    if(file)setMessage("");
+    if(!file)return;
+
+    const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
+    const allowedExtensions=["png","jpg","jpeg","webp","gif"];
+    const normalizedType=String(file.type||"").toLowerCase();
+    const ext=(file.name.split(".").pop()||"").toLowerCase();
+    const typeAllowed=allowedTypes.includes(normalizedType)||allowedExtensions.includes(ext);
+    setMessage(typeAllowed ? "" : "هذا ليس ملف رياكشن مدعوم. اختاري PNG أو JPG أو WebP أو GIF من مدير الملفات.");
   }
 
   async function addReactionType(){
@@ -296,7 +297,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
           <input
             ref={reactionFileInputRef}
             type="file"
-            accept=".png,.jpg,.jpeg,.webp,.gif"
+            accept="*/*"
             hidden
             onChange={handleReactionFileChange}
           />
