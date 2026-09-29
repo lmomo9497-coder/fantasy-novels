@@ -1,12 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="روايات خيالية">
-<defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dcb6eb"/><stop offset=".58" stop-color="#a86ad1"/><stop offset="1" stop-color="#f08bbd"/></linearGradient></defs>
+<defs>
+  <linearGradient id="a" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#e4c8f0"/>
+    <stop offset=".55" stop-color="#a86ad1"/>
+    <stop offset="1" stop-color="#f08bbd"/>
+  </linearGradient>
+</defs>
 <rect x="7" y="7" width="114" height="114" rx="30" fill="#12101b"/>
-<path d="M20 83V54c14-7 28-7 44 4v32C49 80 35 79 20 83Z" fill="#17131b" stroke="#f4eafa" stroke-width="5" stroke-linejoin="round"/>
-<path d="M108 83V54c-16-11-30-11-44-2v38c14-11 28-12 44-7Z" fill="#17131b" stroke="#d9c5e1" stroke-width="5" stroke-linejoin="round"/>
-<path d="M64 57v35" stroke="url(#a)" stroke-width="4" stroke-linecap="round"/>
-<path d="M39 48V31l10 8c4-3 9-4 15-4s11 1 15 4l10-8v17c0 13-9 21-25 21S39 61 39 48Z" fill="#20202a" stroke="url(#a)" stroke-width="3"/>
-<path d="M48 31l-4-10 12 7M80 28l12-7-4 10" fill="#20202a" stroke="url(#a)" stroke-width="3" stroke-linejoin="round"/>
-<circle cx="57" cy="46" r="2" fill="#f1cae7"/><circle cx="71" cy="46" r="2" fill="#f1cae7"/>
-<path d="M64 53v4" stroke="#d9bddf" stroke-width="1.8" stroke-linecap="round"/>
+<path d="M19 86V55c15-8 29-7 45 4v36c-17-11-31-12-45-9Z" fill="#17131b" stroke="#f4eafa" stroke-width="5" stroke-linejoin="round"/>
+<path d="M109 86V55c-16-11-30-11-45-2v42c15-12 30-13 45-9Z" fill="#17131b" stroke="#d9c5e1" stroke-width="5" stroke-linejoin="round"/>
+<path d="M64 58v38" stroke="url(#a)" stroke-width="4" stroke-linecap="round"/>
+<path d="M40 49V31l10 8c4-3 9-4 14-4s10 1 14 4l10-8v18c0 13-9 21-24 21S40 62 40 49Z" fill="#20202a" stroke="url(#a)" stroke-width="3"/>
+<path d="M49 31l-4-11 12 8M79 29l12-8-4 11" fill="#20202a" stroke="url(#a)" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="57" cy="47" r="2" fill="#f1cae7"/><circle cx="71" cy="47" r="2" fill="#f1cae7"/>
+<path d="M64 54v5" stroke="#d9bddf" stroke-width="1.8" stroke-linecap="round"/>
 <path d="M96 17l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#a)"/>
 </svg>
