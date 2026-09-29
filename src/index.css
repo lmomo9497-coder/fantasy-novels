@@ -139,6 +139,14 @@ img {
   filter: drop-shadow(0 10px 22px rgba(205,162,76,.18));
 }
 
+@media (pointer: coarse){
+  .site-header{
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    background:rgba(11,10,13,.97);
+  }
+}
+
 @media (max-width:700px){
   .brand-logo {
     width: 190px;
@@ -4690,7 +4698,6 @@ select:focus-visible {
   border-radius: 18px;
   background: #151218;
   isolation: isolate;
-  -webkit-transform: translateZ(0);
 }
 
 .chapter-text-scene-reader-image {
