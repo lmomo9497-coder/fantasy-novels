@@ -6997,16 +6997,17 @@ function App() {
             </summary>
             <div className="admin-collapse-content">
               <div className="admin-card">
-              <div>
-                <span className="eyebrow">
-                  الصلاحيات
-                </span>
+                <div className="section-heading">
+                  <div>
+                    <span className="eyebrow">
+                      الصلاحيات
+                    </span>
 
-                <h2>إدارة المشرفين</h2>
-              </div>
-            </div>
+                    <h2>إدارة المشرفين</h2>
+                  </div>
+                </div>
 
-            <div className="staff-form">
+                <div className="staff-form">
               <div className="form-group">
                 <label>
                   اختاري المستخدم الذي تريدين جعله مشرفًا
