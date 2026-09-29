@@ -2010,37 +2010,30 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const existingLinks = Array.from(
-      document.querySelectorAll<HTMLLinkElement>(
-        'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'
-      )
-    );
-    existingLinks.forEach((link) => link.remove());
+    // Keep a favicon element in the document at all times. Do not remove it
+    // while the logo setting is still loading, otherwise the browser tab can
+    // temporarily lose its icon.
+    const rels = ["icon", "shortcut icon", "apple-touch-icon"];
 
-    if (!siteLogoUrl) return;
+    rels.forEach((rel) => {
+      let link = document.querySelector<HTMLLinkElement>(
+        'link[rel="' + rel + '"]'
+      );
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = rel;
+        document.head.appendChild(link);
+      }
 
-    // Use the exact logo uploaded in the admin panel for the browser favicon
-    // and mobile home-screen icon. The version query prevents stale favicon cache.
-    const faviconUrl =
-      siteLogoUrl +
-      (siteLogoUrl.includes("?") ? "&" : "?") +
-      "favicon=" +
-      Date.now();
-
-    const icon = document.createElement("link");
-    icon.rel = "icon";
-    icon.href = faviconUrl;
-    document.head.appendChild(icon);
-
-    const shortcutIcon = document.createElement("link");
-    shortcutIcon.rel = "shortcut icon";
-    shortcutIcon.href = faviconUrl;
-    document.head.appendChild(shortcutIcon);
-
-    const appleIcon = document.createElement("link");
-    appleIcon.rel = "apple-touch-icon";
-    appleIcon.href = faviconUrl;
-    document.head.appendChild(appleIcon);
+      if (siteLogoUrl) {
+        const faviconUrl =
+          siteLogoUrl +
+          (siteLogoUrl.includes("?") ? "&" : "?") +
+          "favicon=" +
+          Date.now();
+        link.href = faviconUrl;
+      }
+    });
   }, [siteLogoUrl]);
 
   useEffect(() => {
