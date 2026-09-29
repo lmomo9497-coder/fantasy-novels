@@ -395,7 +395,20 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
       let added=0;
       const failed:string[]=[];
 
+      const existingNames=new Set(
+        reactions
+          .map(reaction=>reaction.name.trim().toLocaleLowerCase("ar"))
+          .filter(Boolean)
+      );
+      const batchNames=new Set<string>();
+
       for(const item of pending) {
+        const normalizedName=(item.name||"ركشان").trim().toLocaleLowerCase("ar");
+        if(existingNames.has(normalizedName) || batchNames.has(normalizedName)) {
+          failed.push((item.name||"ركشان")+": الركشان موجود بالفعل");
+          continue;
+        }
+        batchNames.add(normalizedName);
         let uploadedPath:string|null=null;
         try {
           let icon_path:string|null=null;
@@ -434,9 +447,11 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
       if(failed.length===0) {
         setMessage("تمت إضافة "+added+" "+(added===1?"ركشان":"ركشانات")+" دفعة واحدة.");
       } else if(added>0) {
-        setMessage("تمت إضافة "+added+"، وتعذر إضافة "+failed.length+". "+failed.slice(0,2).join(" — "));
+        setMessage("تمت إضافة "+added+"، وتم تجاهل "+failed.length+" لأن "+failed.slice(0,2).join(" — "));
       } else {
-        setMessage("تعذر إضافة الركشانات. "+failed.slice(0,2).join(" — "));
+        setMessage(failed.every(item=>item.includes("الركشان موجود بالفعل"))
+          ? "الركشان موجود بالفعل."
+          : "تعذر إضافة الركشانات. "+failed.slice(0,2).join(" — "));
       }
     } catch(error:any) {
       setMessage(error?.message||"تعذر حفظ الركشان.");
