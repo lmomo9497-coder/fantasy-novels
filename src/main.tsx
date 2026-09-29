@@ -6970,15 +6970,33 @@ function App() {
           )}
         </div>
 
-        <ReactionAdmin canManage={canManage} />
+        <details className="admin-collapse">
+          <summary className="admin-collapse-summary">
+            <span>ركشانات التعليقات</span>
+          </summary>
+          <div className="admin-collapse-content">
+            <ReactionAdmin canManage={canManage} />
+          </div>
+        </details>
 
         {isOwner && (
-          <AdsAdmin isOwner={isOwner} />
+          <details className="admin-collapse">
+            <summary className="admin-collapse-summary">
+              <span>الإعلانات</span>
+            </summary>
+            <div className="admin-collapse-content">
+              <AdsAdmin isOwner={isOwner} />
+            </div>
+          </details>
         )}
 
         {isOwner && (
-          <div className="admin-card">
-            <div className="section-heading">
+          <details className="admin-collapse">
+            <summary className="admin-collapse-summary">
+              <span>إدارة المشرفين</span>
+            </summary>
+            <div className="admin-collapse-content">
+              <div className="admin-card">
               <div>
                 <span className="eyebrow">
                   الصلاحيات
@@ -7086,7 +7104,10 @@ function App() {
                 )}
               </div>
             )}
+              </div>
+            </div>
           </div>
+          </details>
         )}
       </section>
     );
