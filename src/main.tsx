@@ -714,7 +714,15 @@ function validateStorageUpload(
 ): string | null {
   const rule = STORAGE_UPLOAD_RULES[bucket];
 
-  if (!rule.mimeTypes.includes(file.type)) {
+  const normalizedType = String(file.type || "").toLowerCase();
+  const extension =
+    file.name.split(".").pop()?.toLowerCase() || "";
+
+  const extensionAllowed =
+    bucket === "chapter-media" &&
+    ["jpg", "jpeg", "png", "webp", "gif"].includes(extension);
+
+  if (!rule.mimeTypes.includes(normalizedType) && !extensionAllowed) {
     return `${rule.label}: نوع الملف غير مسموح.`;
   }
 
@@ -5597,7 +5605,7 @@ function App() {
                       newBlockType === "audio"
                         ? "audio/*"
                         : newBlockType === "gif"
-                          ? undefined
+                          ? "*/*"
                           : "image/*,.webp,.gif,.png,.jpg,.jpeg"
                     }
                     onChange={(event) => {
