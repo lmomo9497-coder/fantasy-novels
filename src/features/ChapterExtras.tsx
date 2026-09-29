@@ -491,7 +491,7 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
         </div>
         {reactionFiles.map(item=>(
           <div className="reaction-admin-file-item" key={item.key}>
-            <img src={URL.createObjectURL(item.file)} alt="" className="reaction-admin-file-preview" />
+            <span className="reaction-admin-file-kind">{item.file.type==="image/gif"?"GIF":"صورة"}</span>
             <input value={item.name} onChange={e=>updatePendingName(item.key,e.target.value)} aria-label={"اسم "+item.file.name} />
             <span className="reaction-admin-file-name" title={item.file.name}>{item.file.name}</span>
             <button type="button" className="danger-button small-button" disabled={busy} onClick={()=>removePending(item.key)}>إزالة</button>
