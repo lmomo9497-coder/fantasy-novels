@@ -278,8 +278,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
           <input
             ref={reactionFileInputRef}
             type="file"
-            // إضافة text/plain مع الصور تساعد Chrome على أندرويد على فتح
-            // منتقي الملفات العام بدل منتقي الصور، ثم نتحقق من النوع بعد الاختيار.
+            // نترك المنتقي عامًا حتى يظهر منتقي الملفات في أندرويد، ثم نتحقق من الصيغة بعد الاختيار.
             accept="*/*"
             hidden
             onChange={handleReactionFileChange}
