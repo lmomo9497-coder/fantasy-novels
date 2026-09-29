@@ -455,6 +455,8 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
     setBusy(false);
   }
 
+  const [previewReaction,setPreviewReaction]=useState<Reaction|null>(null);
+
   return <section className="admin-card reaction-admin">
     <div className="section-heading">
       <div>
@@ -506,7 +508,7 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
       {reactions.length===0 ? <div className="empty-state">لا توجد ركشانات مضافة بعد.</div> :
       reactions.map((r,i)=><div className="ad-row" key={r.id}>
         <span className="reaction-admin-item">
-          {r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:<span className="reaction-admin-no-image">بدون صورة</span>}
+          <button type="button" className="reaction-admin-preview-trigger" onClick={()=>r.icon_path&&setPreviewReaction(r)} disabled={!r.icon_path} aria-label={"معاينة "+r.name}>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:<span className="reaction-admin-no-image">بدون صورة</span>}</button>
           <strong>{r.name}</strong>
           <small>{r.enabled?"مفعّل":"معطّل"}</small>
         </span>
@@ -520,6 +522,15 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
       </div>)}
     </div>
   </section>
+  {previewReaction?.icon_path&&(
+    <div className="reaction-preview-modal" role="dialog" aria-modal="true" aria-label={"معاينة "+previewReaction.name} onClick={e=>{if(e.target===e.currentTarget)setPreviewReaction(null)}}>
+      <button type="button" className="reaction-preview-close" onClick={()=>setPreviewReaction(null)} aria-label="إغلاق">×</button>
+      <div className="reaction-preview-content">
+        <img src={mediaUrl(previewReaction.icon_path)} alt={previewReaction.name} />
+        <strong>{previewReaction.name}</strong>
+      </div>
+    </div>
+  )}
 }
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
