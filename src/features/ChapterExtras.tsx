@@ -422,7 +422,8 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
 
           added+=1;
         } catch(error:any) {
-          failed.push((item.name||"ركشان")+": "+(error?.message||"فشل الحفظ"));
+          const duplicateReaction = error?.code === "23505" || String(error?.message||"").includes("reaction_types_name_key");
+          failed.push((item.name||"ركشان")+": "+(duplicateReaction ? "الركشان موجود بالفعل" : (error?.message||"فشل الحفظ")));
           if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]).catch(()=>undefined);
         }
       }
