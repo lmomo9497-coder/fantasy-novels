@@ -5032,24 +5032,6 @@ function App() {
           </div>
         </div>
 
-        {newReleaseNovels.length > 0 && (
-          <section className="new-releases-section">
-            <div className="section-heading new-releases-heading">
-              <div>
-                <span className="eyebrow">آخر ما نُشر</span>
-                <h2>الروايات الجديدة</h2>
-              </div>
-              <span className="count-badge">{newReleaseNovels.length}</span>
-            </div>
-
-            <div className="new-releases-grid">
-              {newReleaseNovels.map(({ novel, activityLabel }) =>
-                renderNovelCard(novel, activityLabel)
-              )}
-            </div>
-          </section>
-        )}
-
         <div className="library-tools card">
           <form
             className="library-search"
@@ -5160,6 +5142,24 @@ function App() {
             </select>
           </div>
         </div>
+
+        {newReleaseNovels.length > 0 && (
+          <section className="new-releases-section">
+            <div className="section-heading new-releases-heading">
+              <div>
+                <span className="eyebrow">آخر ما نُشر</span>
+                <h2>الروايات الجديدة</h2>
+              </div>
+              <span className="count-badge">{newReleaseNovels.length}</span>
+            </div>
+
+            <div className="new-releases-grid">
+              {newReleaseNovels.map(({ novel, activityLabel }) =>
+                renderNovelCard(novel, activityLabel)
+              )}
+            </div>
+          </section>
+        )}
 
         {siteMessage && (
           <div className="message-box">
