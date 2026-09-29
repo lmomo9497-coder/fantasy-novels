@@ -5844,3 +5844,15 @@ select:focus-visible {
 .comment-reaction-picker-arrow{font-size:20px;line-height:1;color:var(--muted);transition:transform .18s ease}
 .comment-reaction-picker.is-open .comment-reaction-picker-arrow{transform:rotate(180deg)}
 .comment-reaction-picker-options{padding:0 10px 10px;border-top:1px solid var(--line-soft)}
+
+
+.site-logo-admin{display:flex;align-items:center;gap:18px;padding:14px;border:1px solid var(--line-soft);border-radius:14px;background:var(--surface-2)}
+.site-logo-admin-preview{display:grid;place-items:center;min-width:180px;min-height:100px;padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--line-soft);overflow:hidden}
+.site-logo-admin-preview img{display:block;max-width:100%;max-height:90px;object-fit:contain}
+.site-logo-admin-actions{display:grid;gap:6px}
+.site-logo-admin-actions p{margin:0 0 6px;color:var(--muted);font-size:13px}
+@media (max-width:700px){
+  .site-logo-admin{flex-direction:column;align-items:stretch}
+  .site-logo-admin-preview{min-width:0;width:100%}
+  .site-logo-admin-actions .profile-upload-button{width:100%;justify-content:center}
+}
