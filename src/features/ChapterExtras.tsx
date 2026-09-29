@@ -297,7 +297,9 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
           <input
             ref={reactionFileInputRef}
             type="file"
-            accept="*/*"
+            // إضافة text/plain مع الصور تساعد Chrome على أندرويد على فتح
+            // منتقي الملفات العام بدل منتقي الصور، ثم نتحقق من النوع بعد الاختيار.
+            accept="image/*,text/plain"
             hidden
             onChange={handleReactionFileChange}
           />
