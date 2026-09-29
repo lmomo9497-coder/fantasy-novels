@@ -152,12 +152,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         const handles = await pickerWindow.showOpenFilePicker({
           multiple: false,
           excludeAcceptAllOption: false,
-          types: [{
-            description: "ركشان",
-            accept: {
-              "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
-            },
-          }],
         });
         const file = await handles[0]?.getFile();
         if (file) setReactionFile(file);
