@@ -222,10 +222,17 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   </div>
 }
 
+
+type PendingReactionFile = {
+  key: string;
+  file: File;
+  name: string;
+};
+
 export function ReactionAdmin({canManage}:{canManage:boolean}) {
   const [reactions,setReactions]=useState<Reaction[]>([]);
   const [reactionName,setReactionName]=useState("");
-  const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const [reactionFiles,setReactionFiles]=useState<PendingReactionFile[]>([]);
   const [editingId,setEditingId]=useState<string|null>(null);
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
@@ -246,71 +253,172 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
   }
 
   function handleFileChange(event:React.ChangeEvent<HTMLInputElement>) {
-    const file=event.target.files?.[0]||null;
+    const files=Array.from(event.target.files||[]);
     event.target.value="";
-    if(!file)return;
+    if(!files.length)return;
+
     const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
     const allowedExtensions=["png","jpg","jpeg","webp","gif"];
-    const type=String(file.type||"").toLowerCase();
-    const ext=(file.name.split(".").pop()||"").toLowerCase();
-    if(!(allowedTypes.includes(type)||allowedExtensions.includes(ext))) {
-      setReactionFile(null);
-      setMessage("اختاري ملف ركشان بصيغة PNG أو JPG أو WebP أو GIF.");
-      return;
+    const validFiles:PendingReactionFile[]=[];
+    const rejected:string[]=[];
+
+    for(const file of files){
+      const type=String(file.type||"").toLowerCase();
+      const ext=(file.name.split(".").pop()||"").toLowerCase();
+      if(!(allowedTypes.includes(type)||allowedExtensions.includes(ext))) {
+        rejected.push(file.name+" (صيغة غير مدعومة)");
+        continue;
+      }
+      if(file.size>5*1024*1024) {
+        rejected.push(file.name+" (أكبر من 5MB)");
+        continue;
+      }
+
+      const duplicate=reactionFiles.some(item=>item.file.name===file.name&&item.file.size===file.size&&item.file.lastModified===file.lastModified);
+      if(duplicate)continue;
+
+      const baseName=file.name.replace(/\.[^/.]+$/,"").trim();
+      validFiles.push({
+        key:crypto.randomUUID(),
+        file,
+        name:baseName.slice(0,80)||"ركشان"
+      });
     }
-    if(file.size>5*1024*1024) {
-      setReactionFile(null);
-      setMessage("حجم الرياكشن كبير. الحد الأقصى 5MB.");
-      return;
+
+    if(editingId && validFiles.length>1) {
+      validFiles.splice(1);
+      rejected.push("وضع التعديل يقبل ملفًا واحدًا فقط.");
     }
-    setReactionFile(file);
-    setMessage("");
+
+    if(validFiles.length) {
+      setReactionFiles(prev=>{
+        const next=[...prev,...validFiles];
+        return editingId ? next.slice(-1) : next.slice(0,50);
+      });
+    }
+
+    if(rejected.length){
+      setMessage(
+        (validFiles.length?"تم اختيار "+validFiles.length+" ملف. ":"")+
+        "تم تجاهل: "+rejected.slice(0,3).join("، ")+(rejected.length>3?" وغيرها.":"")
+      );
+    } else {
+      setMessage(validFiles.length>1?"تم اختيار "+validFiles.length+" ركشانات دفعة واحدة.":"");
+    }
+  }
+
+  function removePending(key:string) {
+    setReactionFiles(prev=>prev.filter(item=>item.key!==key));
+  }
+
+  function updatePendingName(key:string,name:string) {
+    setReactionFiles(prev=>prev.map(item=>item.key===key?{...item,name:name.slice(0,80)}:item));
   }
 
   function resetForm() {
     setReactionName("");
-    setReactionFile(null);
+    setReactionFiles([]);
     setEditingId(null);
     setMessage("");
   }
 
   async function save() {
-    const name=reactionName.trim();
-    if(!name) {
+    const trimmedName=reactionName.trim();
+    const current=editingId ? reactions.find(r=>r.id===editingId) : null;
+
+    if(editingId && !trimmedName) {
       setMessage("اكتبي اسم الركشان أولًا.");
       return;
     }
+    if(!editingId && !reactionFiles.length && !trimmedName) {
+      setMessage("اختاري ركشانًا واحدًا أو أكثر، أو اكتبي اسم ركشان لإضافته بدون ملف.");
+      return;
+    }
+
     setBusy(true);
     setMessage("");
-    let uploadedPath:string|null=null;
-    try {
-      const current=editingId ? reactions.find(r=>r.id===editingId) : null;
-      let icon_path=current?.icon_path ?? null;
-      if(reactionFile) {
-        const ext=(reactionFile.name.split(".").pop()||"png").toLowerCase();
-        uploadedPath="reactions/"+crypto.randomUUID()+"."+ext;
-        const type=String(reactionFile.type||"").toLowerCase() || (ext==="gif"?"image/gif":ext==="webp"?"image/webp":"image/"+(ext==="jpg"?"jpeg":ext));
-        const {error}=await supabase.storage.from("ad-media").upload(uploadedPath,reactionFile,{upsert:false,contentType:type,cacheControl:"31536000"});
-        if(error)throw error;
-        icon_path=uploadedPath;
-      }
-      const wasEditing=Boolean(editingId);
-      const payload=wasEditing
-        ? {name,icon_path}
-        : {name,icon_path,sort_order:reactions.length};
-      const result=wasEditing
-        ? await supabase.from("reaction_types").update(payload).eq("id",editingId)
-        : await supabase.from("reaction_types").insert(payload);
-      if(result.error)throw result.error;
 
-      if(wasEditing && reactionFile && current?.icon_path && current.icon_path!==icon_path) {
-        await supabase.storage.from("ad-media").remove([current.icon_path]);
+    try {
+      if(editingId) {
+        const fileItem=reactionFiles[0];
+        let icon_path=current?.icon_path ?? null;
+        let uploadedPath:string|null=null;
+
+        if(fileItem) {
+          const ext=(fileItem.file.name.split(".").pop()||"png").toLowerCase();
+          uploadedPath="reactions/"+crypto.randomUUID()+"."+ext;
+          const type=String(fileItem.file.type||"").toLowerCase() || (ext==="gif"?"image/gif":ext==="webp"?"image/webp":"image/"+(ext==="jpg"?"jpeg":ext));
+          const {error}=await supabase.storage.from("ad-media").upload(uploadedPath,fileItem.file,{upsert:false,contentType:type,cacheControl:"31536000"});
+          if(error)throw error;
+          icon_path=uploadedPath;
+        }
+
+        const {error}=await supabase.from("reaction_types").update({name:trimmedName,icon_path}).eq("id",editingId);
+        if(error) {
+          if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]);
+          throw error;
+        }
+
+        if(fileItem && current?.icon_path && current.icon_path!==icon_path) {
+          await supabase.storage.from("ad-media").remove([current.icon_path]);
+        }
+
+        resetForm();
+        await load();
+        setMessage("تم تحديث الركشان.");
+        return;
       }
+
+      const pending:PendingReactionFile[]=reactionFiles.length
+        ? reactionFiles
+        : [{key:crypto.randomUUID(),file:null as unknown as File,name:trimmedName.slice(0,80)}];
+
+      let added=0;
+      const failed:string[]=[];
+
+      for(const item of pending) {
+        let uploadedPath:string|null=null;
+        try {
+          let icon_path:string|null=null;
+
+          if(item.file) {
+            const ext=(item.file.name.split(".").pop()||"png").toLowerCase();
+            uploadedPath="reactions/"+crypto.randomUUID()+"."+ext;
+            const type=String(item.file.type||"").toLowerCase() || (ext==="gif"?"image/gif":ext==="webp"?"image/webp":"image/"+(ext==="jpg"?"jpeg":ext));
+            const {error}=await supabase.storage.from("ad-media").upload(uploadedPath,item.file,{upsert:false,contentType:type,cacheControl:"31536000"});
+            if(error)throw error;
+            icon_path=uploadedPath;
+          }
+
+          const sortOrder=reactions.length+added;
+          const {error}=await supabase.from("reaction_types").insert({
+            name:item.name.trim()||"ركشان",
+            icon_path,
+            sort_order:sortOrder
+          });
+          if(error) {
+            if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]);
+            throw error;
+          }
+
+          added+=1;
+        } catch(error:any) {
+          failed.push((item.name||"ركشان")+": "+(error?.message||"فشل الحفظ"));
+          if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]).catch(()=>undefined);
+        }
+      }
+
       resetForm();
       await load();
-      setMessage(wasEditing?"تم تحديث الركشان.":"تمت إضافة الركشان.");
+
+      if(failed.length===0) {
+        setMessage("تمت إضافة "+added+" "+(added===1?"ركشان":"ركشانات")+" دفعة واحدة.");
+      } else if(added>0) {
+        setMessage("تمت إضافة "+added+"، وتعذر إضافة "+failed.length+". "+failed.slice(0,2).join(" — "));
+      } else {
+        setMessage("تعذر إضافة الركشانات. "+failed.slice(0,2).join(" — "));
+      }
     } catch(error:any) {
-      if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]);
       setMessage(error?.message||"تعذر حفظ الركشان.");
     } finally {
       setBusy(false);
@@ -352,23 +460,48 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
       <div>
         <span className="eyebrow">التعليقات</span>
         <h2>ركشانات التعليقات</h2>
-        <p>أضيفي ركشاناتك من ملفات الجوال، بما فيها GIF المتحرك. لا يوجد رفع للقراء؛ هم يختارون فقط من الركشانات المفعلة.</p>
+        <p>يمكنك الآن تحديد أكثر من ركشان من ملفات الجوال ورفعها دفعة واحدة، بما فيها GIF المتحرك. القراء لا يرفعون ملفات.</p>
       </div>
       <span className="count-badge">{reactions.length}</span>
     </div>
     {message&&<div className="message-box">{message}</div>}
+
     <div className="reaction-admin-row">
-      <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم الركشان" />
-      <input ref={reactionFileInputRef} type="file" accept="*/*" hidden onChange={handleFileChange} />
-      <button type="button" className="secondary-button" onClick={pickFile}>
-        {reactionFile ? "تم اختيار الملف" : editingId ? "استبدال الملف (اختياري)" : "اختيار الركشان من الملفات"}
+      <input
+        value={reactionName}
+        onChange={e=>setReactionName(e.target.value)}
+        placeholder={editingId||reactionFiles.length<2?"اسم الركشان":"الأسماء ستؤخذ من أسماء الملفات أدناه"}
+        disabled={Boolean(reactionFiles.length>1&&!editingId)}
+      />
+      <input ref={reactionFileInputRef} type="file" accept="*/*" multiple={!editingId} hidden onChange={handleFileChange} />
+      <button type="button" className="secondary-button" disabled={busy} onClick={pickFile}>
+        {reactionFiles.length ? "إضافة ملفات ("+reactionFiles.length+")" : editingId ? "استبدال الملف (اختياري)" : "اختيار ركشانات من الملفات"}
       </button>
       <button type="button" className="primary-button" disabled={busy} onClick={()=>void save()}>
-        {busy?"جارٍ الحفظ...":editingId?"حفظ التعديل":"إضافة الركشان"}
+        {busy?"جارٍ الحفظ...":editingId?"حفظ التعديل":reactionFiles.length>1?"إضافة "+reactionFiles.length+" ركشانات":"إضافة الركشان"}
       </button>
       {editingId&&<button type="button" className="secondary-button" disabled={busy} onClick={resetForm}>إلغاء</button>}
     </div>
-    <small className="form-hint">الصيغ: PNG / JPG / WebP / GIF — الحد الأقصى 5MB. زر اختيار الملفات يستخدم مدير الملفات في أندرويد، وليس رفعًا عامًا للقراء.</small>
+
+    {reactionFiles.length>0&&(
+      <div className="reaction-admin-file-list">
+        <div className="reaction-admin-file-list-head">
+          <strong>الركشانات المختارة ({reactionFiles.length})</strong>
+          {!editingId&&reactionFiles.length<50&&<small>يمكنك الضغط على «اختيار ركشانات من الملفات» لإضافة ملفات أخرى قبل الحفظ.</small>}
+        </div>
+        {reactionFiles.map(item=>(
+          <div className="reaction-admin-file-item" key={item.key}>
+            <img src={URL.createObjectURL(item.file)} alt="" className="reaction-admin-file-preview" />
+            <input value={item.name} onChange={e=>updatePendingName(item.key,e.target.value)} aria-label={"اسم "+item.file.name} />
+            <span className="reaction-admin-file-name" title={item.file.name}>{item.file.name}</span>
+            <button type="button" className="danger-button small-button" disabled={busy} onClick={()=>removePending(item.key)}>إزالة</button>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <small className="form-hint">الصيغ: PNG / JPG / WebP / GIF — الحد الأقصى 5MB لكل ملف، وبحد أقصى 50 ركشانًا في الدفعة الواحدة. على أندرويد سيفتح زر الاختيار مدير الملفات، ويمكن تحديد عدة ملفات مرة واحدة.</small>
+
     <div className="reaction-admin-list">
       {reactions.length===0 ? <div className="empty-state">لا توجد ركشانات مضافة بعد.</div> :
       reactions.map((r,i)=><div className="ad-row" key={r.id}>
@@ -381,14 +514,13 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
           <button className="secondary-button" disabled={busy} onClick={()=>void toggle(r)}>{r.enabled?"تعطيل":"تفعيل"}</button>
           <button className="secondary-button" disabled={busy||i===0} onClick={()=>void move(r,-1)}>↑</button>
           <button className="secondary-button" disabled={busy||i===reactions.length-1} onClick={()=>void move(r,1)}>↓</button>
-          <button className="secondary-button" disabled={busy} onClick={()=>{setEditingId(r.id);setReactionName(r.name);setReactionFile(null);setMessage("");}}>تعديل</button>
+          <button className="secondary-button" disabled={busy} onClick={()=>{setEditingId(r.id);setReactionName(r.name);setReactionFiles([]);setMessage("");}}>تعديل</button>
           <button className="danger-button" disabled={busy} onClick={()=>void remove(r)}>حذف</button>
         </span>
       </div>)}
     </div>
   </section>
 }
-
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
   const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",priority:0,frequency_cap:0,start_at:"",end_at:""});
