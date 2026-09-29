@@ -952,7 +952,12 @@ function TextSceneEditor({
         </div>
       </div>
 
-      <div className="text-scene-editor-controls">
+      <details className="text-scene-editor-settings">
+        <summary className="text-scene-editor-settings-summary">
+          <span>إعدادات النص</span>
+          <span className="text-scene-editor-settings-hint">الحجم · العرض · اللون · المحاذاة</span>
+        </summary>
+        <div className="text-scene-editor-controls">
         <div className="text-scene-controls-header">
           <div>
             <span className="text-scene-controls-kicker">TEXT STYLE</span>
@@ -1068,7 +1073,8 @@ function TextSceneEditor({
             </button>
           )}
         </div>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -5988,60 +5994,48 @@ function App() {
                   a.block_order - b.block_order
               )
               .map((block, index, array) => (
-                <div
-                  className="editor-block"
-                  key={block.id}
-                >
-                  <div className="editor-block-header">
+                <details className="editor-block-collapse" key={block.id}>
+                  <summary className="editor-block-summary">
                     <strong>
                       {index + 1}.{" "}
                       {block.block_type === "text"
                         ? "نص"
-                        : block.block_type ===
-                            "heading"
+                        : block.block_type === "heading"
                           ? "عنوان"
-                          : block.block_type ===
-                              "image"
+                          : block.block_type === "image"
                             ? "صورة"
-                            : block.block_type ===
-                                "gif"
+                            : block.block_type === "gif"
                               ? "GIF"
-                              : block.block_type ===
-                                  "audio"
+                              : block.block_type === "audio"
                                 ? "صوت"
-                                : block.block_type ===
-                                    "quote"
+                                : block.block_type === "quote"
                                   ? "اقتباس"
                                   : "فاصل"}
                     </strong>
-
-                    <div className="editor-actions">
+                    <span className="editor-block-summary-actions">
                       <button
+                        type="button"
                         className="icon-button"
                         disabled={index === 0}
-                        onClick={() =>
-                          moveChapterBlock(
-                            block,
-                            "up"
-                          )
-                        }
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void moveChapterBlock(block, "up");
+                        }}
                         title="تحريك لأعلى"
                       >
                         ↑
                       </button>
 
                       <button
+                        type="button"
                         className="icon-button"
-                        disabled={
-                          index ===
-                          array.length - 1
-                        }
-                        onClick={() =>
-                          moveChapterBlock(
-                            block,
-                            "down"
-                          )
-                        }
+                        disabled={index === array.length - 1}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void moveChapterBlock(block, "down");
+                        }}
                         title="تحريك لأسفل"
                       >
                         ↓
@@ -6049,16 +6043,21 @@ function App() {
 
                       {canManage && (
                         <button
+                          type="button"
                           className="danger-button"
-                          onClick={() =>
-                            deleteChapterBlock(block)
-                          }
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void deleteChapterBlock(block);
+                          }}
                         >
                           حذف
                         </button>
                       )}
-                    </div>
-                  </div>
+                    </span>
+                  </summary>
+
+                  <div className="editor-block">
 
                   {(block.block_type === "text" ||
                     block.block_type === "heading" ||
@@ -6429,7 +6428,8 @@ function App() {
                       renderChapterBlock(block, false)
                     )}
                   </div>
-                </div>
+                  </div>
+                </details>
               ))
           )}
         </div>
