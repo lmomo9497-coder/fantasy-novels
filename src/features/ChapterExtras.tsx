@@ -152,20 +152,17 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         const handles = await pickerWindow.showOpenFilePicker({
           multiple: false,
           excludeAcceptAllOption: false,
+          id: "fantasy-novels-sticker-files",
+          startIn: "documents",
         });
         const file = await handles[0]?.getFile();
         if (file) setReactionFile(file);
-        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        setMessage("تعذر فتح مدير الملفات في هذا المتصفح. افتحي الموقع من Chrome أو Samsung Internet الحديث.");
       }
-
-      const input = document.getElementById("reaction-file-picker") as HTMLInputElement | null;
-      input?.click();
-    } catch (error) {
-      const input = document.getElementById("reaction-file-picker") as HTMLInputElement | null;
-      if (input && error instanceof DOMException && error.name !== "AbortError") {
-        input.click();
-      }
-    }
   }
 
   async function addReactionType(){
@@ -280,16 +277,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
         <div className="reaction-admin-row">
           <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" />
-          <input
-            id="reaction-file-picker"
-            type="file"
-            accept="*/*"
-            hidden
-            onChange={e=>{
-              setReactionFile(e.target.files?.[0]||null);
-              e.currentTarget.value="";
-            }}
-          />
           <button type="button" className="secondary-button" onClick={()=>void pickReactionFile()}>
             {reactionFile ? "تم اختيار الركشان" : "اختيار الركشان من الملفات"}
           </button>
