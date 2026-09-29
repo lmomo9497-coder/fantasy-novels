@@ -457,7 +457,8 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
 
   const [previewReaction,setPreviewReaction]=useState<Reaction|null>(null);
 
-  return <section className="admin-card reaction-admin">
+  return <>
+    <section className="admin-card reaction-admin">
     <div className="section-heading">
       <div>
         <span className="eyebrow">التعليقات</span>
@@ -521,8 +522,8 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
         </span>
       </div>)}
     </div>
-  </section>
-  {previewReaction?.icon_path&&(
+    </section>
+    {previewReaction?.icon_path&&(
     <div className="reaction-preview-modal" role="dialog" aria-modal="true" aria-label={"معاينة "+previewReaction.name} onClick={e=>{if(e.target===e.currentTarget)setPreviewReaction(null)}}>
       <button type="button" className="reaction-preview-close" onClick={()=>setPreviewReaction(null)} aria-label="إغلاق">×</button>
       <div className="reaction-preview-content">
@@ -530,7 +531,8 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
         <strong>{previewReaction.name}</strong>
       </div>
     </div>
-  )}
+    )}
+  </>
 }
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
