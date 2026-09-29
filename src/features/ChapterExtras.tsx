@@ -17,6 +17,8 @@ type FilePickerWindow = Window & {
   showOpenFilePicker?: (options?: {
     multiple?: boolean;
     excludeAcceptAllOption?: boolean;
+    id?: string;
+    startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
     types?: Array<{
       description?: string;
       accept: Record<string, string[]>;
