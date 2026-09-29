@@ -7107,7 +7107,6 @@ function App() {
             )}
               </div>
             </div>
-          </div>
           </details>
         )}
       </section>
