@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 type Props = { chapterId: string; canManage: boolean; isOwner: boolean };
@@ -135,7 +135,42 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
-  function pickReactionFile() {
+  async function pickReactionFile() {
+    try {
+      if ("showOpenFilePicker" in window) {
+        const picker = (window as Window & {
+          showOpenFilePicker?: (options?: {
+            multiple?: boolean;
+            excludeAcceptAllOption?: boolean;
+            types?: Array<{description:string;accept:Record<string,string[]>}>;
+          }) => Promise<Array<{getFile:()=>Promise<File>}>>;
+        }).showOpenFilePicker;
+
+        if (picker) {
+          const handles = await picker({
+            multiple: false,
+            excludeAcceptAllOption: false,
+            types: [{
+              description: "ركشانات وصور",
+              accept: {
+                "image/png": [".png"],
+                "image/jpeg": [".jpg", ".jpeg"],
+                "image/webp": [".webp"],
+                "image/gif": [".gif"]
+              }
+            }]
+          });
+          const file = await handles[0].getFile();
+          setReactionFile(file);
+          setMessage("");
+          return;
+        }
+      }
+    } catch (error) {
+      if ((error as DOMException)?.name === "AbortError") return;
+    }
+
+    // Fallback للأجهزة/المتصفحات التي لا تدعم مدير الملفات الحديث.
     reactionFileInputRef.current?.click();
   }
 
@@ -261,7 +296,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
           <input
             ref={reactionFileInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
+            accept=".png,.jpg,.jpeg,.webp,.gif"
             hidden
             onChange={handleReactionFileChange}
           />
