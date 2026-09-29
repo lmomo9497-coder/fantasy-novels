@@ -5856,3 +5856,31 @@ select:focus-visible {
   .site-logo-admin-preview{min-width:0;width:100%}
   .site-logo-admin-actions .profile-upload-button{width:100%;justify-content:center}
 }
+
+
+/* Compact chapter editor */
+.editor-block-list{display:grid;gap:10px}
+.editor-block-collapse{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.editor-block-summary{display:flex;align-items:center;gap:10px;min-height:54px;padding:8px 10px 8px 12px;cursor:pointer;list-style:none;color:var(--text);font-weight:800}
+.editor-block-summary::-webkit-details-marker{display:none}
+.editor-block-summary::after{content:"▸";margin-inline-start:auto;color:var(--muted);font-size:17px;transition:transform .18s ease}
+.editor-block-collapse[open]>.editor-block-summary::after{transform:rotate(90deg)}
+.editor-block-summary:hover{background:var(--surface-2)}
+.editor-block-summary-actions{display:flex;align-items:center;gap:5px;margin-inline-start:auto}
+.editor-block-summary-actions .icon-button{min-width:34px;height:34px;padding:0}
+.editor-block-summary-actions .danger-button{min-height:34px;padding:6px 10px;font-size:12px}
+.editor-block-collapse>.editor-block{border-top:1px solid var(--line-soft);border-radius:0;box-shadow:none;padding:12px}
+.text-scene-editor-settings{margin-top:10px;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2);overflow:hidden}
+.text-scene-editor-settings-summary{display:flex;align-items:center;gap:10px;min-height:42px;padding:8px 11px;cursor:pointer;list-style:none;color:var(--text);font-size:12px;font-weight:800}
+.text-scene-editor-settings-summary::-webkit-details-marker{display:none}
+.text-scene-editor-settings-summary::after{content:"▸";margin-inline-start:auto;color:var(--muted);transition:transform .18s ease}
+.text-scene-editor-settings[open]>.text-scene-editor-settings-summary::after{transform:rotate(90deg)}
+.text-scene-editor-settings-hint{color:var(--muted);font-size:10px;font-weight:600}
+.text-scene-editor-settings .text-scene-editor-controls{margin-top:0;border-top:1px solid var(--line-soft);border-radius:0}
+@media (max-width:700px){
+  .editor-block-summary{min-height:50px;padding:7px 9px}
+  .editor-block-summary-actions .icon-button{min-width:32px;height:32px}
+  .editor-block-summary-actions .danger-button{min-height:32px;padding:5px 8px}
+  .editor-block-collapse>.editor-block{padding:9px}
+  .text-scene-editor-settings-summary{min-height:40px;padding:7px 9px}
+}
