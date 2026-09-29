@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
-import { AdsAdmin, ChapterExtras, ReactionAdmin } from "./features/ChapterExtras";
+import { AdsAdmin, ChapterExtras, CommentsAdmin, ReactionAdmin } from "./features/ChapterExtras";
 
 type Role = "owner" | "staff" | "reader";
 
@@ -6969,6 +6969,15 @@ function App() {
             </div>
           )}
         </div>
+
+        <details className="admin-collapse">
+          <summary className="admin-collapse-summary">
+            <span>إدارة التعليقات</span>
+          </summary>
+          <div className="admin-collapse-content">
+            <CommentsAdmin canManage={canManage} />
+          </div>
+        </details>
 
         <details className="admin-collapse">
           <summary className="admin-collapse-summary">
