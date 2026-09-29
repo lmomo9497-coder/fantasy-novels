@@ -4769,12 +4769,14 @@ function App() {
               onClick={goHome}
               aria-label="روايات خيالية - الرئيسية"
             >
-              <img
-                src={siteLogoUrl || "/logo.svg"}
-                alt="روايات خيالية"
-                className="brand-logo"
-                draggable={false}
-              />
+              {siteLogoUrl && (
+                <img
+                  src={siteLogoUrl}
+                  alt="روايات خيالية"
+                  className="brand-logo"
+                  draggable={false}
+                />
+              )}
             </button>
             <div className="header-actions">
               {user && (
@@ -6985,7 +6987,7 @@ function App() {
               <div className="site-logo-admin">
                 <div className="site-logo-admin-preview">
                   <img
-                    src={siteLogoUrl || "/logo.svg"}
+                    src={siteLogoUrl}
                     alt="شعار الموقع الحالي"
                   />
                 </div>
