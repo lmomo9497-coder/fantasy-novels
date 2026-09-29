@@ -5796,3 +5796,16 @@ select:focus-visible {
 .reaction-preview-content img{display:block;max-width:92vw;max-height:78vh;width:auto;height:auto;object-fit:contain;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.5)}
 .reaction-preview-content strong{font-size:15px}
 .reaction-preview-close{position:fixed;top:16px;right:16px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:30px;line-height:1;cursor:pointer}
+
+
+/* Collapsible admin sections */
+.admin-collapse{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.admin-collapse-summary{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;cursor:pointer;list-style:none;color:var(--text);font-weight:800;user-select:none}
+.admin-collapse-summary::-webkit-details-marker{display:none}
+.admin-collapse-summary::after{content:"▸";margin-inline-start:auto;font-size:18px;line-height:1;transition:transform .18s ease}
+.admin-collapse[open]>.admin-collapse-summary::after{transform:rotate(90deg)}
+.admin-collapse-summary:hover{background:var(--surface-2)}
+.admin-collapse-content{padding:0 14px 14px}
+.admin-collapse-content>.reaction-admin,
+.admin-collapse-content>.ads-admin{margin-top:0}
+.admin-collapse-content>.admin-card{margin-top:0}
