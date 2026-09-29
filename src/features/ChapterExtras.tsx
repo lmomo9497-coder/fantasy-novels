@@ -554,6 +554,107 @@ export function ReactionAdmin({canManage}:{canManage:boolean}) {
     )}
   </>
 }
+export function CommentsAdmin({canManage}:{canManage:boolean}) {
+  const [comments,setComments]=useState<any[]>([]);
+  const [query,setQuery]=useState("");
+  const [busyId,setBusyId]=useState<string|null>(null);
+  const [message,setMessage]=useState("");
+
+  async function load() {
+    if(!canManage)return;
+    const {data,error}=await supabase
+      .from("chapter_comments")
+      .select("id,content,author_name,created_at,parent_comment_id,chapters(title,chapter_number,novels(title))")
+      .order("created_at",{ascending:false})
+      .limit(200);
+    if(error){setMessage(error.message);return}
+    setComments(data||[]);
+  }
+
+  useEffect(()=>{void load()},[canManage]);
+
+  async function remove(comment:any) {
+    const ok=window.confirm("حذف هذا التعليق؟ سيتم حذف ردوده والركشانات المرفقة به أيضًا.");
+    if(!ok)return;
+    setBusyId(comment.id);
+    setMessage("");
+    const {error}=await supabase.from("chapter_comments").delete().eq("id",comment.id);
+    if(error) setMessage(error.message);
+    else await load();
+    setBusyId(null);
+  }
+
+  if(!canManage)return null;
+
+  const normalized=query.trim().toLocaleLowerCase("ar");
+  const visible=comments.filter(comment=>{
+    if(!normalized)return true;
+    const chapter=comment.chapters;
+    const novel=chapter?.novels;
+    const haystack=[
+      comment.author_name,
+      comment.content,
+      novel?.title,
+      chapter?.title,
+      chapter?.chapter_number
+    ].filter(Boolean).join(" ").toLocaleLowerCase("ar");
+    return haystack.includes(normalized);
+  });
+
+  return <section className="admin-card comments-admin">
+    <div className="section-heading">
+      <div>
+        <span className="eyebrow">الإشراف</span>
+        <h2>إدارة التعليقات</h2>
+        <p>احذفي أي تعليق غير مناسب. حذف التعليق يحذف ردوده والركشانات المرتبطة به تلقائيًا.</p>
+      </div>
+      <span className="count-badge">{comments.length}</span>
+    </div>
+
+    {message&&<div className="message-box">{message}</div>}
+
+    <input
+      className="comments-admin-search"
+      value={query}
+      onChange={e=>setQuery(e.target.value)}
+      placeholder="ابحثي باسم الكاتب أو نص التعليق أو الرواية..."
+      aria-label="البحث في التعليقات"
+    />
+
+    {comments.length===0 ? (
+      <div className="empty-state">لا توجد تعليقات حاليًا.</div>
+    ) : visible.length===0 ? (
+      <div className="empty-state">لا توجد نتائج مطابقة للبحث.</div>
+    ) : (
+      <div className="comments-admin-list">
+        {visible.map(comment=>{
+          const chapter=comment.chapters;
+          const novel=chapter?.novels;
+          const place=[novel?.title,chapter?.chapter_number ? "الفصل "+chapter.chapter_number : chapter?.title].filter(Boolean).join(" · ");
+          return <article className="comments-admin-row" key={comment.id}>
+            <div className="comments-admin-body">
+              <div className="comments-admin-head">
+                <strong>{comment.author_name||"قارئ"}</strong>
+                <time>{new Date(comment.created_at).toLocaleString("ar-SA")}</time>
+              </div>
+              <p>{comment.content}</p>
+              {place&&<small>{place}</small>}
+            </div>
+            <button
+              type="button"
+              className="danger-button"
+              disabled={busyId===comment.id}
+              onClick={()=>void remove(comment)}
+            >
+              {busyId===comment.id?"جارٍ الحذف...":"حذف التعليق"}
+            </button>
+          </article>
+        })}
+      </div>
+    )}
+  </section>
+}
+
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
   const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",priority:0,frequency_cap:0,start_at:"",end_at:""});
