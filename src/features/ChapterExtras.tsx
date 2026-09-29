@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = { chapterId: string; canManage: boolean; isOwner: boolean };
+type Props = { chapterId: string; isOwner: boolean };
 
 type Ad = {
   id: string; internal_name: string; ad_type: "image"|"native"; status: string;
@@ -26,9 +26,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [user,setUser]=useState<any>(null);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
-  const [reactionName,setReactionName]=useState("");
-  const [reactionFile,setReactionFile]=useState<File|null>(null);
-  const reactionFileInputRef=useRef<HTMLInputElement|null>(null);
   const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
   const [selectedReactionIds,setSelectedReactionIds]=useState<string[]>([]);
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
@@ -135,65 +132,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
-  function pickReactionFile() {
-    // نستخدم نفس منتقي الملفات الأصلي المستخدم لرفع الصوت.
-    // accept="*/*" يمنع أندرويد من تحويل الزر إلى معرض الصور،
-    // وبالتالي يمكن فتح مجلدات WhatsApp وAndroid/media واختيار ملف الركشان الحقيقي.
-    reactionFileInputRef.current?.click();
-  }
-
-  function handleReactionFileChange(event:React.ChangeEvent<HTMLInputElement>) {
-    const file=event.target.files?.[0]||null;
-    event.target.value="";
-    if(!file)return;
-
-    const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
-    const allowedExtensions=["png","jpg","jpeg","webp","gif"];
-    const normalizedType=String(file.type||"").toLowerCase();
-    const ext=(file.name.split(".").pop()||"").toLowerCase();
-    const typeAllowed=allowedTypes.includes(normalizedType)||allowedExtensions.includes(ext);
-
-    if(!typeAllowed){
-      setReactionFile(null);
-      setMessage("اختاري ملف ركشان بصيغة PNG أو JPG أو WebP أو GIF.");
-      return;
-    }
-
-    setReactionFile(file);
-    setMessage("");
-  }
-
-  async function addReactionType(){
-    if(!isOwner||!reactionName.trim())return;
-    let icon_path:string|null=null;
-    if(reactionFile){
-      const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
-      const allowedExtensions=["png","jpg","jpeg","webp","gif"];
-      const normalizedType=String(reactionFile.type||"").toLowerCase();
-      const ext=(reactionFile.name.split(".").pop()||"").toLowerCase();
-      const maxReactionBytes=5*1024*1024;
-      const typeAllowed=allowedTypes.includes(normalizedType)||allowedExtensions.includes(ext);
-      if(!typeAllowed){
-        setMessage("نوع الملف غير مدعوم. استخدمي PNG أو JPG أو WebP أو GIF.");
-        return;
-      }
-      if(reactionFile.size>maxReactionBytes){
-        setMessage("حجم الرياكشن كبير. الحد الأقصى 5MB حتى لا يضغط على الموقع.");
-        return;
-      }
-      icon_path="reactions/"+crypto.randomUUID()+"."+ext;
-      const uploadContentType=
-        normalizedType ||
-        (ext === "gif" ? "image/gif"
-          : ext === "webp" ? "image/webp"
-          : "image/"+(ext === "jpg" ? "jpeg" : ext));
-      const {error}=await supabase.storage.from("ad-media").upload(icon_path,reactionFile,{upsert:false,contentType:uploadContentType,cacheControl:"31536000"});
-      if(error){setMessage(error.message);return}
-    }
-    const {error}=await supabase.from("reaction_types").insert({name:reactionName.trim(),icon_path,sort_order:reactions.length});
-    if(error)setMessage(error.message); else {setReactionName("");setReactionFile(null);await loadComments(user?.id ?? null)}
-  }
-
   return <div className="chapter-extras">
     {ad && <div className="chapter-ad-slot" aria-label="إعلان">
       <span className="ad-label">إعلان</span>
@@ -219,19 +157,27 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
               <span>رياكشن مع التعليق</span>
               {selectedReactionIds.length>0 && <button type="button" className="clear-reaction-selection" onClick={()=>setSelectedReactionIds([])}>إلغاء الاختيار</button>}
             </div>
-            {favoriteReactionIds.length>0 ? (
+            {reactions.some(r=>r.enabled) ? (
               <div className="comment-reactions reaction-picker-list">
-                {reactions.filter(r=>r.enabled&&favoriteReactionIds.includes(r.id)).map(r=>(
-                  <div className={"reaction-chip"+(selectedReactionIds.includes(r.id)?" selected":"")} key={"composer-fav-"+r.id}>
-                    <button type="button" className="reaction-use-button" onClick={()=>toggleDraftReaction(r.id)} title={"إضافة "+r.name}>
+                {reactions.filter(r=>r.enabled).map(r=>(
+                  <div className={"reaction-chip"+(selectedReactionIds.includes(r.id)?" selected":"")} key={"composer-"+r.id}>
+                    <button type="button" className="reaction-use-button" onClick={()=>toggleDraftReaction(r.id)} title={"إضافة "+r.name} aria-pressed={selectedReactionIds.includes(r.id)}>
                       {r.icon_path?<img src={mediaUrl(r.icon_path)} alt={r.name} loading="lazy" />:r.name}
                     </button>
-                    <button type="button" className="reaction-favorite-button active" onClick={()=>void toggleFavoriteReaction(r.id)} title="إزالة من المفضلة" aria-label="إزالة من المفضلة">♥</button>
+                    <button
+                      type="button"
+                      className={"reaction-favorite-button"+(favoriteReactionIds.includes(r.id)?" active":"")}
+                      onClick={()=>void toggleFavoriteReaction(r.id)}
+                      title={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
+                      aria-label={favoriteReactionIds.includes(r.id)?"إزالة من المفضلة":"حفظ في المفضلة"}
+                    >
+                      {favoriteReactionIds.includes(r.id)?"♥":"♡"}
+                    </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <span className="reaction-picker-empty">احفظي رياكشناتك بالضغط على ♡ لتظهر هنا.</span>
+              <span className="reaction-picker-empty">لا توجد رياكشنات مفعلة حاليًا.</span>
             )}
           </div>
         )}
@@ -271,32 +217,175 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
           )}
         </article>)}
       </React.Fragment>)}
-      {isOwner&&<div className="reaction-admin">
-        <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
-        <div className="reaction-admin-row">
-          <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" />
-          <input
-            ref={reactionFileInputRef}
-            type="file"
-            // نترك المنتقي عامًا حتى يظهر منتقي الملفات في أندرويد، ثم نتحقق من الصيغة بعد الاختيار.
-            accept="*/*"
-            hidden
-            onChange={handleReactionFileChange}
-          />
-          <button type="button" className="secondary-button" onClick={pickReactionFile}>
-            {reactionFile ? "تم اختيار الركشان" : "اختيار الركشان من الملفات"}
-          </button>
-          <button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button>
-        </div>
-        <div className="reaction-admin-list">{reactions.map((r,i)=><div className="ad-row" key={r.id}><span>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" style={{width:24,height:24,objectFit:"contain",verticalAlign:"middle"}}/>:""} {r.name}</span><span>
-          <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await loadComments(user?.id ?? null)}}>{r.enabled?"تعطيل":"تفعيل"}</button>
-          <button className="secondary-button" disabled={i===0} onClick={async()=>{if(i===0)return;const prev=reactions[i-1];await Promise.all([supabase.from("reaction_types").update({sort_order:prev.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",prev.id)]);await loadComments(user?.id ?? null)}}>↑</button>
-          <button className="secondary-button" disabled={i===reactions.length-1} onClick={async()=>{if(i===reactions.length-1)return;const next=reactions[i+1];await Promise.all([supabase.from("reaction_types").update({sort_order:next.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",next.id)]);await loadComments(user?.id ?? null)}}>↓</button>
-          <button className="danger-button" onClick={async()=>{await supabase.from("reaction_types").delete().eq("id",r.id);await loadComments(user?.id ?? null)}}>حذف</button>
-        </span></div>)}</div>
-      </div>}
+
     </section>}
   </div>
+}
+
+export function ReactionAdmin({canManage}:{canManage:boolean}) {
+  const [reactions,setReactions]=useState<Reaction[]>([]);
+  const [reactionName,setReactionName]=useState("");
+  const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const [editingId,setEditingId]=useState<string|null>(null);
+  const [message,setMessage]=useState("");
+  const [busy,setBusy]=useState(false);
+  const reactionFileInputRef=useRef<HTMLInputElement|null>(null);
+
+  async function load() {
+    if(!canManage)return;
+    const {data,error}=await supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order");
+    if(error)setMessage(error.message);
+    setReactions((data||[]) as Reaction[]);
+  }
+  useEffect(()=>{void load()},[canManage]);
+
+  if(!canManage)return null;
+
+  function pickFile() {
+    reactionFileInputRef.current?.click();
+  }
+
+  function handleFileChange(event:React.ChangeEvent<HTMLInputElement>) {
+    const file=event.target.files?.[0]||null;
+    event.target.value="";
+    if(!file)return;
+    const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
+    const allowedExtensions=["png","jpg","jpeg","webp","gif"];
+    const type=String(file.type||"").toLowerCase();
+    const ext=(file.name.split(".").pop()||"").toLowerCase();
+    if(!(allowedTypes.includes(type)||allowedExtensions.includes(ext))) {
+      setReactionFile(null);
+      setMessage("اختاري ملف ركشان بصيغة PNG أو JPG أو WebP أو GIF.");
+      return;
+    }
+    if(file.size>5*1024*1024) {
+      setReactionFile(null);
+      setMessage("حجم الرياكشن كبير. الحد الأقصى 5MB.");
+      return;
+    }
+    setReactionFile(file);
+    setMessage("");
+  }
+
+  function resetForm() {
+    setReactionName("");
+    setReactionFile(null);
+    setEditingId(null);
+    setMessage("");
+  }
+
+  async function save() {
+    const name=reactionName.trim();
+    if(!name) {
+      setMessage("اكتبي اسم الركشان أولًا.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    let uploadedPath:string|null=null;
+    try {
+      const current=editingId ? reactions.find(r=>r.id===editingId) : null;
+      let icon_path=current?.icon_path ?? null;
+      if(reactionFile) {
+        const ext=(reactionFile.name.split(".").pop()||"png").toLowerCase();
+        uploadedPath="reactions/"+crypto.randomUUID()+"."+ext;
+        const type=String(reactionFile.type||"").toLowerCase() || (ext==="gif"?"image/gif":ext==="webp"?"image/webp":"image/"+(ext==="jpg"?"jpeg":ext));
+        const {error}=await supabase.storage.from("ad-media").upload(uploadedPath,reactionFile,{upsert:false,contentType:type,cacheControl:"31536000"});
+        if(error)throw error;
+        icon_path=uploadedPath;
+      }
+      const payload=editingId
+        ? {name,icon_path}
+        : {name,icon_path,sort_order:reactions.length};
+      const result=editingId
+        ? await supabase.from("reaction_types").update(payload).eq("id",editingId)
+        : await supabase.from("reaction_types").insert(payload);
+      if(result.error)throw result.error;
+
+      if(editingId && reactionFile && current?.icon_path && current.icon_path!==icon_path) {
+        await supabase.storage.from("ad-media").remove([current.icon_path]);
+      }
+      resetForm();
+      await load();
+      setMessage(editingId?"تم تحديث الركشان.":"تمت إضافة الركشان.");
+    } catch(error:any) {
+      if(uploadedPath)await supabase.storage.from("ad-media").remove([uploadedPath]);
+      setMessage(error?.message||"تعذر حفظ الركشان.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggle(reaction:Reaction) {
+    setBusy(true);
+    const {error}=await supabase.from("reaction_types").update({enabled:!reaction.enabled}).eq("id",reaction.id);
+    if(error)setMessage(error.message); else await load();
+    setBusy(false);
+  }
+
+  async function move(reaction:Reaction,direction:-1|1) {
+    const index=reactions.findIndex(r=>r.id===reaction.id);
+    const other=reactions[index+direction];
+    if(!other)return;
+    setBusy(true);
+    const {error}=await supabase.from("reaction_types").update({sort_order:other.sort_order}).eq("id",reaction.id);
+    const {error:error2}=await supabase.from("reaction_types").update({sort_order:reaction.sort_order}).eq("id",other.id);
+    if(error||error2)setMessage((error||error2)?.message||"تعذر ترتيب الركشانات."); else await load();
+    setBusy(false);
+  }
+
+  async function remove(reaction:Reaction) {
+    setBusy(true);
+    const {error}=await supabase.from("reaction_types").delete().eq("id",reaction.id);
+    if(error)setMessage(error.message);
+    else {
+      if(reaction.icon_path)await supabase.storage.from("ad-media").remove([reaction.icon_path]);
+      if(editingId===reaction.id)resetForm();
+      await load();
+    }
+    setBusy(false);
+  }
+
+  return <section className="admin-card reaction-admin">
+    <div className="section-heading">
+      <div>
+        <span className="eyebrow">التعليقات</span>
+        <h2>ركشانات التعليقات</h2>
+        <p>أضيفي ركشاناتك من ملفات الجوال، بما فيها GIF المتحرك. لا يوجد رفع للقراء؛ هم يختارون فقط من الركشانات المفعلة.</p>
+      </div>
+      <span className="count-badge">{reactions.length}</span>
+    </div>
+    {message&&<div className="message-box">{message}</div>}
+    <div className="reaction-admin-row">
+      <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم الركشان" />
+      <input ref={reactionFileInputRef} type="file" accept="*/*" hidden onChange={handleFileChange} />
+      <button type="button" className="secondary-button" onClick={pickFile}>
+        {reactionFile ? "تم اختيار الملف" : editingId ? "استبدال الملف (اختياري)" : "اختيار الركشان من الملفات"}
+      </button>
+      <button type="button" className="primary-button" disabled={busy} onClick={()=>void save()}>
+        {busy?"جارٍ الحفظ...":editingId?"حفظ التعديل":"إضافة الركشان"}
+      </button>
+      {editingId&&<button type="button" className="secondary-button" disabled={busy} onClick={resetForm}>إلغاء</button>}
+    </div>
+    <small className="form-hint">الصيغ: PNG / JPG / WebP / GIF — الحد الأقصى 5MB. زر اختيار الملفات يستخدم مدير الملفات في أندرويد، وليس رفعًا عامًا للقراء.</small>
+    <div className="reaction-admin-list">
+      {reactions.length===0 ? <div className="empty-state">لا توجد ركشانات مضافة بعد.</div> :
+      reactions.map((r,i)=><div className="ad-row" key={r.id}>
+        <span className="reaction-admin-item">
+          {r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" loading="lazy" />:<span className="reaction-admin-no-image">بدون صورة</span>}
+          <strong>{r.name}</strong>
+          <small>{r.enabled?"مفعّل":"معطّل"}</small>
+        </span>
+        <span className="reaction-admin-actions">
+          <button className="secondary-button" disabled={busy} onClick={()=>void toggle(r)}>{r.enabled?"تعطيل":"تفعيل"}</button>
+          <button className="secondary-button" disabled={busy||i===0} onClick={()=>void move(r,-1)}>↑</button>
+          <button className="secondary-button" disabled={busy||i===reactions.length-1} onClick={()=>void move(r,1)}>↓</button>
+          <button className="secondary-button" disabled={busy} onClick={()=>{setEditingId(r.id);setReactionName(r.name);setReactionFile(null);setMessage("");}}>تعديل</button>
+          <button className="danger-button" disabled={busy} onClick={()=>void remove(r)}>حذف</button>
+        </span>
+      </div>)}
+    </div>
+  </section>
 }
 
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
