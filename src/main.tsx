@@ -5032,7 +5032,7 @@ function App() {
           </div>
         </div>
 
-        <div className="library-tools card">
+        <div className="library-tools card library-search-panel">
           <form
             className="library-search"
             onSubmit={(event) => {
@@ -5055,7 +5055,27 @@ function App() {
               ⌕
             </button>
           </form>
+        </div>
 
+        {newReleaseNovels.length > 0 && (
+          <section className="new-releases-section">
+            <div className="section-heading new-releases-heading">
+              <div>
+                <span className="eyebrow">آخر ما نُشر</span>
+                <h2>الروايات الجديدة</h2>
+              </div>
+              <span className="count-badge">{newReleaseNovels.length}</span>
+            </div>
+
+            <div className="new-releases-grid">
+              {newReleaseNovels.map(({ novel, activityLabel }) =>
+                renderNovelCard(novel, activityLabel)
+              )}
+            </div>
+          </section>
+        )}
+
+        <div className="library-tools card library-filters-panel">
           <div className="library-filters">
             <button
               className={selectedCategoryFilter.length === 0 ? "category-filter-button active" : "category-filter-button"}
@@ -5142,24 +5162,6 @@ function App() {
             </select>
           </div>
         </div>
-
-        {newReleaseNovels.length > 0 && (
-          <section className="new-releases-section">
-            <div className="section-heading new-releases-heading">
-              <div>
-                <span className="eyebrow">آخر ما نُشر</span>
-                <h2>الروايات الجديدة</h2>
-              </div>
-              <span className="count-badge">{newReleaseNovels.length}</span>
-            </div>
-
-            <div className="new-releases-grid">
-              {newReleaseNovels.map(({ novel, activityLabel }) =>
-                renderNovelCard(novel, activityLabel)
-              )}
-            </div>
-          </section>
-        )}
 
         {siteMessage && (
           <div className="message-box">
