@@ -1,15 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" role="img" aria-labelledby="title desc">
-<title id="title">روايات خيالية</title><desc id="desc">شعار عربي بسيط وأنيق لروايات خيالية، يجمع بين كتاب مفتوح ونجمة خيالية.</desc>
-<defs><linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7a7e6"/><stop offset=".55" stop-color="#a86bd0"/><stop offset="1" stop-color="#ef86bd"/></linearGradient><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7eefb"/><stop offset="1" stop-color="#cdb6d8"/></linearGradient></defs>
-<g transform="translate(22 25)">
-<path d="M12 72V34c18-10 35-8 52 4v42C47 68 30 66 12 72Z" fill="none" stroke="url(#ink)" stroke-width="5" stroke-linejoin="round"/>
-<path d="M116 72V34C98 24 81 26 64 38v42c17-12 34-14 52-8Z" fill="none" stroke="url(#ink)" stroke-width="5" stroke-linejoin="round"/>
-<path d="M64 39v41" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
-<path d="M27 55c11-4 22-3 32 3M101 55c-11-4-22-3-32 3" fill="none" stroke="#9d75ad" stroke-width="2.5" stroke-linecap="round"/>
-<path d="M64 5l3.5 8.5L76 17l-8.5 3.5L64 29l-3.5-8.5L52 17l8.5-3.5Z" fill="url(#accent)"/><circle cx="89" cy="13" r="3" fill="#ef86bd"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 170" role="img" aria-labelledby="title desc">
+<title id="title">روايات خيالية</title><desc id="desc">شعار عربي متوازن لروايات خيالية مع كتاب مفتوح ونجمة.</desc>
+<defs>
+<linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9b2e8"/><stop offset=".55" stop-color="#a967d2"/><stop offset="1" stop-color="#ef8bbd"/></linearGradient>
+<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7ff"/><stop offset="1" stop-color="#cdb7d7"/></linearGradient>
+</defs>
+<g transform="translate(18 29)">
+<path d="M10 86V39c19-11 37-10 55 5v48C47 77 28 76 10 86Z" fill="#17131b" stroke="url(#paper)" stroke-width="5.5" stroke-linejoin="round"/>
+<path d="M118 86V39C100 29 82 28 64 44v48c18-15 37-16 54-6Z" fill="#17131b" stroke="url(#paper)" stroke-width="5.5" stroke-linejoin="round"/>
+<path d="M64 44v48" stroke="url(#accent)" stroke-width="4.5" stroke-linecap="round"/>
+<path d="M25 61c12-4 25-2 36 5M103 61c-12-4-25-2-36 5" fill="none" stroke="#8f6a9e" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M64 4l4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" fill="url(#accent)"/>
+<circle cx="93" cy="17" r="3.2" fill="#ef8bbd"/>
 </g>
-<g transform="translate(178 35)">
-<text x="0" y="52" direction="rtl" unicode-bidi="normal" text-anchor="start" font-family="Noto Naskh Arabic, Amiri, Noto Sans Arabic, serif" font-size="49" font-weight="700" fill="url(#ink)">روايات خيالية</text>
-<rect x="2" y="66" width="92" height="3" rx="1.5" fill="url(#accent)"/>
-<text x="0" y="94" direction="rtl" unicode-bidi="normal" text-anchor="start" font-family="Noto Sans Arabic, Arial, sans-serif" font-size="14" font-weight="500" fill="#a99cad">اقرأ • استمع • عش الحكاية</text>
-</g></svg>
+<g>
+<text x="408" y="76" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+font-family="Noto Naskh Arabic, Amiri, Noto Sans Arabic, serif" font-size="54" font-weight="700" fill="url(#paper)">روايات خيالية</text>
+<path d="M246 92H570" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
+<text x="408" y="119" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+font-family="Noto Sans Arabic, Arial, sans-serif" font-size="14" font-weight="500" fill="#a99cad">اقرأ • استمع • عش الحكاية</text>
+</g>
+</svg>
