@@ -2945,6 +2945,18 @@ select:focus-visible {
   margin-bottom: 22px;
 }
 
+.library-search-panel {
+  margin-bottom: 18px;
+}
+
+.library-filters-panel {
+  margin-top: 0;
+}
+
+.library-filters-panel .library-filters {
+  margin-bottom: 0;
+}
+
 .library-search {
   width: 100%;
   margin-bottom: 12px;
@@ -5280,7 +5292,7 @@ select:focus-visible {
 }
 
 .new-releases-section {
-  margin-bottom: 42px;
+  margin-bottom: 18px;
 }
 
 .new-releases-heading {
