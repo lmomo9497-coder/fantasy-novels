@@ -1559,6 +1559,8 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [siteMessage, setSiteMessage] = useState("");
+  const [siteLogoUrl, setSiteLogoUrl] = useState("");
+  const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [loginToast, setLoginToast] = useState("");
   const [logoutToast, setLogoutToast] = useState("");
 
@@ -1998,6 +2000,7 @@ function App() {
   useEffect(() => {
     loadPublishedNovels();
     loadCategories();
+    void loadSiteLogo();
   }, []);
 
   useEffect(() => {
@@ -2131,6 +2134,78 @@ function App() {
       ...novel,
       reader_count: counts.get(novel.id) ?? 0,
     }));
+  }
+
+  async function loadSiteLogo() {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "logo_url")
+      .maybeSingle();
+
+    if (error) {
+      console.error("Site logo settings error:", error);
+      return;
+    }
+
+    setSiteLogoUrl(data?.value || "");
+  }
+
+  async function uploadSiteLogo(file: File) {
+    if (!isOwner) return;
+
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setSiteMessage("اختاري شعارًا بصيغة PNG أو JPG أو WebP.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSiteMessage("حجم الشعار يجب ألا يتجاوز 5MB.");
+      return;
+    }
+
+    setUploadingSiteLogo(true);
+    setSiteMessage("");
+
+    try {
+      const path = "branding/logo";
+      const { error: uploadError } = await supabase.storage
+        .from("ad-media")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        setSiteMessage(uploadError.message);
+        return;
+      }
+
+      const baseUrl = getPublicMediaUrl("ad-media", path);
+      const logoUrl = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "v=" + Date.now();
+
+      const { error: settingsError } = await supabase
+        .from("site_settings")
+        .upsert({
+          key: "logo_url",
+          value: logoUrl,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (settingsError) {
+        setSiteMessage(settingsError.message);
+        return;
+      }
+
+      setSiteLogoUrl(logoUrl);
+      setSiteMessage("تم تحديث شعار الموقع.");
+    } catch (error: any) {
+      setSiteMessage(error?.message || "تعذر رفع الشعار.");
+    } finally {
+      setUploadingSiteLogo(false);
+    }
   }
 
   async function loadPublishedNovels() {
@@ -4695,7 +4770,7 @@ function App() {
               aria-label="روايات خيالية - الرئيسية"
             >
               <img
-                src="/logo.svg"
+                src={siteLogoUrl || "/logo.svg"}
                 alt="روايات خيالية"
                 className="brand-logo"
                 draggable={false}
@@ -6900,6 +6975,41 @@ function App() {
         </div>
 
         {renderNovelForm()}
+
+        {isOwner && (
+          <details className="admin-collapse">
+            <summary className="admin-collapse-summary">
+              <span>شعار الموقع</span>
+            </summary>
+            <div className="admin-collapse-content">
+              <div className="site-logo-admin">
+                <div className="site-logo-admin-preview">
+                  <img
+                    src={siteLogoUrl || "/logo.svg"}
+                    alt="شعار الموقع الحالي"
+                  />
+                </div>
+                <div className="site-logo-admin-actions">
+                  <strong>رفع شعار جديد</strong>
+                  <p>يظهر الشعار مباشرة في أعلى الموقع بعد رفعه.</p>
+                  <label className="profile-upload-button">
+                    {uploadingSiteLogo ? "جارٍ الرفع..." : "اختيار الشعار"}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      disabled={uploadingSiteLogo}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void uploadSiteLogo(file);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </details>
+        )}
 
         <div className="admin-card">
           <div className="section-heading">
