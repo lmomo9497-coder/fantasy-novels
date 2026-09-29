@@ -166,6 +166,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         setMessage("تعذر فتح مدير الملفات في هذا المتصفح. افتحي الموقع من Chrome أو Samsung Internet الحديث.");
       }
     }
+  }
 
   async function addReactionType(){
     if(!isOwner||!reactionName.trim())return;
