@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
-import { AdsAdmin, ChapterExtras } from "./features/ChapterExtras";
+import { AdsAdmin, ChapterExtras, ReactionAdmin } from "./features/ChapterExtras";
 
 type Role = "owner" | "staff" | "reader";
 
@@ -6529,7 +6529,7 @@ function App() {
         </article>
 
         {!selectedNovelAdminView && selectedChapter && (
-          <ChapterExtras chapterId={selectedChapter.id} canManage={canManage} isOwner={isOwner} />
+          <ChapterExtras chapterId={selectedChapter.id} isOwner={isOwner} />
         )}
 
         {!selectedNovelAdminView && (
@@ -6969,6 +6969,8 @@ function App() {
             </div>
           )}
         </div>
+
+        <ReactionAdmin canManage={canManage} />
 
         {isOwner && (
           <AdsAdmin isOwner={isOwner} />
