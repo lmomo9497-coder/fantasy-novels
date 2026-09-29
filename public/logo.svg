@@ -1,86 +1,92 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 190" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 210" role="img" aria-labelledby="title desc">
 <title id="title">روايات خيالية</title>
-<desc id="desc">قطة جالسة من الخلف فوق كتاب مفتوح، وذيلها يمتد بانسيابية أسفل اسم روايات خيالية.</desc>
+<desc id="desc">قطة جالسة من الخلف فوق كتاب مفتوح، وذيل طويل ينساب تحت اسم روايات خيالية.</desc>
 <defs>
-  <linearGradient id="name" x1="0" y1="0" x2="1" y2="0">
-    <stop stop-color="#e9c9f2"/>
-    <stop offset=".5" stop-color="#a764cf"/>
-    <stop offset="1" stop-color="#f08fbe"/>
-  </linearGradient>
-  <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
-    <stop stop-color="#9d62ca"/>
-    <stop offset=".55" stop-color="#d17bce"/>
-    <stop offset="1" stop-color="#f09abd"/>
-  </linearGradient>
-  <linearGradient id="cat" x1="0" y1="0" x2="1" y2="1">
-    <stop stop-color="#d9b5e5"/>
-    <stop offset=".5" stop-color="#8c55b9"/>
-    <stop offset="1" stop-color="#ed8ebc"/>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0">
+    <stop stop-color="#a96bd0"/>
+    <stop offset=".55" stop-color="#d47acb"/>
+    <stop offset="1" stop-color="#f19abf"/>
   </linearGradient>
 </defs>
 
-<!-- الاسم: واضح وفوق الذيل، بدون خط إضافي -->
-<text x="292" y="72" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+<!-- الكتابة فوق الذيل -->
+<text x="286" y="78" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
   font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
-  font-size="56" font-weight="850" fill="url(#name)">روايات خيالية</text>
+  font-size="58" font-weight="800" fill="url(#ink)">روايات خيالية</text>
 
-<g transform="translate(520 8)">
+<!-- الذيل: خط واحد طويل وناعم أسفل الكتابة، خارج من القطة -->
+<path d="M554 128
+         C526 133 505 133 485 128
+         C458 121 445 108 451 94
+         C458 78 482 76 499 87
+         C514 97 513 113 502 121
+         C490 130 471 130 456 123
+         C425 110 394 112 355 119
+         C309 127 263 129 217 126
+         C170 123 126 115 88 117
+         C59 118 35 125 18 137"
+  fill="none" stroke="url(#ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- القطة والكتاب -->
+<g stroke="url(#ink)" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <!-- الكتاب المفتوح -->
-  <path d="M-118 153 C-84 139 -47 137 -8 151 L0 178 C-39 163 -78 163 -119 175 Z"
-    fill="#17131b" stroke="#eadcf0" stroke-width="4.5" stroke-linejoin="round"/>
-  <path d="M0 178 L8 151 C47 137 84 139 118 153 L119 175 C78 163 39 163 0 178 Z"
-    fill="#17131b" stroke="#eadcf0" stroke-width="4.5" stroke-linejoin="round"/>
-  <path d="M0 151V178" stroke="url(#line)" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M-91 154 C-66 148 -43 149 -20 157 M91 154 C66 148 43 149 20 157"
-    fill="none" stroke="#765287" stroke-width="2" stroke-linecap="round"/>
+  <path d="M404 160
+           C365 146 319 144 274 154
+           L258 190
+           C309 177 359 179 408 197
+           Z" stroke-width="5"/>
+  <path d="M408 197
+           C457 179 507 177 558 190
+           L542 154
+           C497 144 451 146 412 160
+           Z" stroke-width="5"/>
+  <path d="M408 160V197" stroke-width="4"/>
+  <path d="M282 160 C318 154 349 156 381 165
+           M534 160 C498 154 467 156 435 165"
+        stroke-width="2.5" opacity=".7"/>
 
-  <!-- الذيل: يبدأ من القطة، يلتف بخفة ثم يمتد طويلاً تحت الاسم -->
-  <path d="M48 104
-           C76 108 99 99 109 82
-           C120 63 108 45 87 44
-           C68 43 56 56 61 69
-           C66 82 82 84 94 76
-           C104 69 104 57 96 50
-           M48 104
-           C27 117 1 125 -31 128
-           C-77 132 -127 129 -176 121
-           C-220 114 -260 111 -302 115"
-    fill="none" stroke="url(#line)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- جسم القطة الجالسة من الخلف -->
+  <path d="M393 116
+           C377 104 369 88 371 69
+           C373 49 385 34 403 28
+           L397 7
+           L419 25
+           C430 21 443 21 454 25
+           L477 7
+           L470 29
+           C488 36 499 51 500 70
+           C501 90 492 106 476 117
+           C465 124 452 128 435 128
+           C418 128 404 124 393 116Z"
+        fill="#211b29" stroke-width="4"/>
 
-  <!-- القطة من الخلف، جالسة على مؤخرتها -->
-  <!-- الرأس والأذنان -->
-  <path d="M-7 63
-           C-8 47 0 32 14 25
-           L8 2 L28 19
-           C39 15 52 15 64 19
-           L85 2 L79 27
-           C92 36 99 50 98 66
-           C97 83 87 94 72 99
-           C58 104 41 104 27 100
-           C12 96 1 84 -1 69 Z"
-    fill="#211c29" stroke="url(#cat)" stroke-width="3.5" stroke-linejoin="round"/>
+  <!-- الجذع/المؤخرة والجلوس -->
+  <path d="M393 103
+           C374 114 366 133 370 150
+           C374 166 386 174 404 174
+           C416 174 427 169 435 160
+           C443 169 454 174 466 174
+           C484 174 496 166 500 150
+           C504 133 496 114 477 103
+           C464 96 449 93 435 94
+           C421 93 406 96 393 103Z"
+        fill="#211b29" stroke-width="4"/>
 
-  <!-- الجسم الجالس -->
-  <path d="M16 82
-           C-1 91 -10 108 -7 126
-           C-4 142 8 150 26 150
-           C38 150 48 145 55 137
-           C62 145 73 150 86 150
-           C104 150 116 141 119 126
-           C122 107 113 91 96 82
-           C86 77 74 74 56 75
-           C39 74 27 77 16 82 Z"
-    fill="#211c29" stroke="url(#cat)" stroke-width="3.5" stroke-linejoin="round"/>
+  <!-- أقدام فوق الكتاب -->
+  <path d="M374 170 C383 164 399 164 410 171
+           C416 175 414 182 407 184
+           C394 186 380 181 374 176Z"
+        fill="#211b29" stroke-width="3"/>
+  <path d="M460 171 C471 164 487 164 496 170
+           L496 176 C490 181 476 186 463 184
+           C456 182 454 175 460 171Z"
+        fill="#211b29" stroke-width="3"/>
 
-  <!-- تفاصيل بسيطة للظهر، بدون وجه -->
-  <path d="M27 91 C38 99 49 103 57 103 C67 103 78 99 88 91"
-    fill="none" stroke="#81549f" stroke-width="2.7" stroke-linecap="round"/>
-  <path d="M31 112 C39 120 44 128 48 138 M84 112 C76 120 71 128 67 138"
-    fill="none" stroke="#684383" stroke-width="2.2" stroke-linecap="round"/>
-
-  <!-- المؤخرة والقدمين فوق الكتاب -->
-  <ellipse cx="56" cy="132" rx="34" ry="21" fill="#2a2434"/>
-  <ellipse cx="22" cy="151" rx="22" ry="9" fill="#211c29" stroke="url(#cat)" stroke-width="2.5"/>
-  <ellipse cx="90" cy="151" rx="22" ry="9" fill="#211c29" stroke="url(#cat)" stroke-width="2.5"/>
+  <!-- لمسات ظهر بسيطة -->
+  <path d="M404 102 C414 110 425 114 435 114 C446 114 457 110 467 102"
+        stroke-width="2.5" opacity=".65"/>
+  <path d="M409 121 C417 130 423 139 427 151
+           M461 121 C453 130 447 139 443 151"
+        stroke-width="2.2" opacity=".55"/>
 </g>
 </svg>
