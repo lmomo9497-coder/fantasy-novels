@@ -1,22 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 170" role="img" aria-labelledby="title desc">
-<title id="title">روايات خيالية</title><desc id="desc">شعار عربي متوازن لروايات خيالية مع كتاب مفتوح ونجمة.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" role="img" aria-labelledby="title desc">
+<title id="title">روايات خيالية</title>
+<desc id="desc">شعار روايات خيالية بكتاب مفتوح وقط صغير يجلس فوقه.</desc>
 <defs>
-<linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9b2e8"/><stop offset=".55" stop-color="#a967d2"/><stop offset="1" stop-color="#ef8bbd"/></linearGradient>
-<linearGradient id="paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7ff"/><stop offset="1" stop-color="#cdb7d7"/></linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#dcb6eb"/>
+    <stop offset=".58" stop-color="#a86ad1"/>
+    <stop offset="1" stop-color="#f08bbd"/>
+  </linearGradient>
+  <linearGradient id="text" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff8ff"/>
+    <stop offset="1" stop-color="#d9c5e1"/>
+  </linearGradient>
 </defs>
-<g transform="translate(18 29)">
-<path d="M10 86V39c19-11 37-10 55 5v48C47 77 28 76 10 86Z" fill="#17131b" stroke="url(#paper)" stroke-width="5.5" stroke-linejoin="round"/>
-<path d="M118 86V39C100 29 82 28 64 44v48c18-15 37-16 54-6Z" fill="#17131b" stroke="url(#paper)" stroke-width="5.5" stroke-linejoin="round"/>
-<path d="M64 44v48" stroke="url(#accent)" stroke-width="4.5" stroke-linecap="round"/>
-<path d="M25 61c12-4 25-2 36 5M103 61c-12-4-25-2-36 5" fill="none" stroke="#8f6a9e" stroke-width="2.5" stroke-linecap="round"/>
-<path d="M64 4l4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" fill="url(#accent)"/>
-<circle cx="93" cy="17" r="3.2" fill="#ef8bbd"/>
-</g>
+
+<!-- الاسم: واضح، هادئ، ومتوازن -->
 <g>
-<text x="408" y="76" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
-font-family="Noto Naskh Arabic, Amiri, Noto Sans Arabic, serif" font-size="54" font-weight="700" fill="url(#paper)">روايات خيالية</text>
-<path d="M246 92H570" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
-<text x="408" y="119" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
-font-family="Noto Sans Arabic, Arial, sans-serif" font-size="14" font-weight="500" fill="#a99cad">اقرأ • استمع • عش الحكاية</text>
+  <text x="260" y="72" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+        font-family="Noto Naskh Arabic, Amiri, Noto Sans Arabic, serif"
+        font-size="48" font-weight="700" fill="url(#text)">روايات خيالية</text>
+  <path d="M104 91H415" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
+</g>
+
+<!-- الكتاب + القطة في اليمين -->
+<g transform="translate(426 17)">
+  <!-- الكتاب المفتوح -->
+  <path d="M6 86V53c18-9 36-8 57 5v34C42 79 25 78 6 86Z"
+        fill="#17131b" stroke="url(#text)" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M122 86V53c-21-13-39-14-59-1v40c20-13 38-14 59-6Z"
+        fill="#17131b" stroke="url(#text)" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M64 56v36" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M24 67c11-3 22-2 33 4M104 67c-11-3-22-2-33 4"
+        fill="none" stroke="#8e699d" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- القطة -->
+  <path d="M39 50V31l11 8c5-3 11-4 16-4s11 1 16 4l11-8v19c0 15-11 25-27 25S39 65 39 50Z"
+        fill="#20202a" stroke="url(#accent)" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M48 30 43 18l14 8M80 26l14-8-5 12"
+        fill="#20202a" stroke="url(#accent)" stroke-width="3.2" stroke-linejoin="round"/>
+  <circle cx="57" cy="47" r="2.2" fill="#f0c8e5"/>
+  <circle cx="71" cy="47" r="2.2" fill="#f0c8e5"/>
+  <path d="M62 54q2 2 4 0M64 54v4M64 58q-5 3-9 0M64 58q5 3 9 0"
+        fill="none" stroke="#d9bddf" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M42 61c-8 6-8 15 1 20 5 3 10 2 13-1"
+        fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M105 27l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#accent)"/>
 </g>
 </svg>
