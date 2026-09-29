@@ -1,75 +1,74 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 160" role="img" aria-labelledby="title desc">
 <title id="title">روايات خيالية</title>
-<desc id="desc">قطة جالسة من الخلف فوق كتاب مفتوح، وذيلها يمتد بانحناءة ناعمة تحت اسم روايات خيالية.</desc>
+<desc id="desc">قطة جالسة من الخلف على كتاب مفتوح، وذيلها ينساب بخط واحد أنيق تحت اسم روايات خيالية.</desc>
 <defs>
-  <linearGradient id="name" x1="0" y1="0" x2="1" y2="0">
-    <stop stop-color="#f5ddf4"/><stop offset=".5" stop-color="#c27be0"/><stop offset="1" stop-color="#f09ac6"/>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+    <stop stop-color="#f4daf3"/><stop offset=".48" stop-color="#b46ed5"/><stop offset="1" stop-color="#ef93bf"/>
   </linearGradient>
   <linearGradient id="cat" x1="0" y1="0" x2="1" y2="1">
-    <stop stop-color="#d9b3e7"/><stop offset=".55" stop-color="#9b63c8"/><stop offset="1" stop-color="#ee8fbe"/>
+    <stop stop-color="#e0bce9"/><stop offset=".55" stop-color="#9860c5"/><stop offset="1" stop-color="#ee91bf"/>
   </linearGradient>
 </defs>
 
-<!-- الاسم -->
-<text x="292" y="63" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
- font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
- font-size="54" font-weight="850" fill="url(#name)">روايات خيالية</text>
+<!-- اسم الموقع -->
+<text x="292" y="61" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+  font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
+  font-size="54" font-weight="850" fill="url(#g)">روايات خيالية</text>
 
-<!-- القطة والكتاب في اليمين -->
+<!-- الكتاب + القطة -->
 <g transform="translate(500 4)">
   <!-- الكتاب المفتوح -->
-  <path d="M7 135V101c20-9 42-8 69 4v34c-25-10-47-11-69-4Z"
-    fill="#17131b" stroke="#f4eafa" stroke-width="4.1" stroke-linejoin="round"/>
-  <path d="M143 135V101c-25-12-48-13-67-4v38c24-10 46-11 67 0Z"
-    fill="#17131b" stroke="#d9c5e1" stroke-width="4.1" stroke-linejoin="round"/>
-  <path d="M76 105v34" stroke="url(#cat)" stroke-width="3.6" stroke-linecap="round"/>
-  <path d="M24 113c16-3 32-2 49 4M128 113c-16-3-31-2-50 4"
-    fill="none" stroke="#866094" stroke-width="1.9" stroke-linecap="round"/>
+  <path d="M6 137V103c21-9 43-8 70 5v34c-25-10-47-11-70-5Z"
+    fill="#17131b" stroke="#f5ebf8" stroke-width="4.2" stroke-linejoin="round"/>
+  <path d="M144 137V103c-25-12-48-13-68-5v39c25-11 47-11 68 0Z"
+    fill="#17131b" stroke="#d9c5e1" stroke-width="4.2" stroke-linejoin="round"/>
+  <path d="M76 106v35" stroke="url(#cat)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M24 115c16-3 32-2 49 4M128 115c-16-3-31-2-50 4"
+    fill="none" stroke="#805a95" stroke-width="1.8" stroke-linecap="round"/>
 
-  <!-- الذيل: يبدأ من مؤخرة القطة وينساب كسطر واحد تحت الكتابة -->
-  <path d="M112 91
-           C139 91 151 108 137 118
-           C123 128 105 127 92 119
-           C73 107 51 106 28 111
-           C-5 118 -38 119 -73 111
-           C-92 107 -105 99 -101 92
-           C-98 86 -87 86 -75 90
-           C-48 99 -17 98 10 91
-           C39 84 68 76 83 65"
-    fill="none" stroke="url(#cat)" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- الذيل: يبدأ من مؤخرة القطة، ثم يهبط وينساب كخط واحد تحت الكتابة -->
+  <path d="M103 92
+           C88 99 79 99 70 96
+           C57 92 48 84 39 80
+           C21 72 1 73 -20 79
+           C-46 87 -77 91 -109 88
+           C-139 85 -165 76 -185 63"
+    fill="none" stroke="url(#cat)" stroke-width="6.4"
+    stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- جسم القطة من الخلف، جالسة على مؤخرتها -->
-  <path d="M49 66
-           C49 51 59 38 75 33
-           C91 28 110 34 120 48
-           C128 59 132 75 127 88
-           C123 98 113 102 103 99
-           C96 97 89 92 84 87
-           C79 93 72 99 64 100
-           C52 101 45 91 45 80
-           C45 74 46 69 49 66Z"
-    fill="#24202d" stroke="url(#cat)" stroke-width="3.3" stroke-linejoin="round"/>
+  <!-- القطة من الخلف، جالسة على مؤخرتها -->
+  <!-- الذراعان/الكتفان والظهر -->
+  <path d="M54 63
+           C53 49 61 38 75 33
+           C91 28 108 33 119 46
+           C127 56 132 71 129 84
+           C127 95 119 102 108 101
+           C98 100 91 94 85 88
+           C79 95 71 101 61 101
+           C50 101 44 93 44 82
+           C44 74 47 67 54 63Z"
+    fill="#25202e" stroke="url(#cat)" stroke-width="3.2" stroke-linejoin="round"/>
 
-  <!-- الرأس من الخلف -->
-  <path d="M51 55V28l16 10c8-5 18-6 28-4 8 2 15 5 21 10l15-12v25
-           c0 18-17 30-40 30S51 73 51 55Z"
-    fill="#24202d" stroke="url(#cat)" stroke-width="3.3" stroke-linejoin="round"/>
-  <path d="M56 29 50 11l20 13M113 29l19-18-5 22"
-    fill="#24202d" stroke="url(#cat)" stroke-width="3.3" stroke-linejoin="round"/>
+  <!-- رأس/أذنان من الخلف: بدون وجه أو عيون -->
+  <path d="M50 59V29l17 10c8-5 18-6 28-4 8 2 15 5 21 10l15-12v26
+           c0 18-17 31-40 31S50 77 50 59Z"
+    fill="#25202e" stroke="url(#cat)" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M55 30 49 11l20 13M113 29l20-18-6 22"
+    fill="#25202e" stroke="url(#cat)" stroke-width="3.2" stroke-linejoin="round"/>
 
-  <!-- خط الظهر والكتفين لإظهار أنها جالسة من الخلف -->
-  <path d="M67 64c6 7 13 10 21 10s16-3 22-10" fill="none"
-    stroke="#8d5baa" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M71 78c4 8 8 12 13 16M104 78c-4 8-8 12-13 16"
-    fill="none" stroke="#7e559d" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- لمسات خفيفة على الظهر لتأكيد زاوية الخلف -->
+  <path d="M67 61c6 8 13 12 21 12s16-4 22-12"
+    fill="none" stroke="#8a5aa8" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M67 77c4 8 8 13 15 17M106 77c-4 8-8 13-15 17"
+    fill="none" stroke="#704b8d" stroke-width="2.1" stroke-linecap="round"/>
 
-  <!-- المؤخرة والقدمين على الكتاب -->
-  <ellipse cx="75" cy="93" rx="24" ry="17" fill="#2a2534"/>
-  <ellipse cx="57" cy="118" rx="15" ry="8" fill="#24202d" stroke="url(#cat)" stroke-width="2.4"/>
-  <ellipse cx="106" cy="118" rx="15" ry="8" fill="#24202d" stroke="url(#cat)" stroke-width="2.4"/>
-  <path d="M49 118h16M98 118h16" stroke="#b07ac9" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- المؤخرة والقدمان على الكتاب -->
+  <ellipse cx="76" cy="94" rx="27" ry="18" fill="#2b2537"/>
+  <ellipse cx="58" cy="119" rx="16" ry="8" fill="#25202e" stroke="url(#cat)" stroke-width="2.4"/>
+  <ellipse cx="105" cy="119" rx="16" ry="8" fill="#25202e" stroke="url(#cat)" stroke-width="2.4"/>
+  <path d="M48 120h20M96 120h19" stroke="#b679cd" stroke-width="1.5" stroke-linecap="round"/>
 
   <!-- نجمة صغيرة -->
-  <path d="M135 7l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#cat)"/>
+  <path d="M137 8l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#cat)"/>
 </g>
 </svg>
