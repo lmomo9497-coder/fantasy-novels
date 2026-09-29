@@ -13,6 +13,17 @@ type Ad = {
 
 type Reaction = { id:string; name:string; icon_path:string|null; enabled:boolean; sort_order:number };
 
+type FilePickerWindow = Window & {
+  showOpenFilePicker?: (options?: {
+    multiple?: boolean;
+    excludeAcceptAllOption?: boolean;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<Array<{ getFile: () => Promise<File> }>>;
+};
+
 function mediaUrl(path:string|null) {
   return path ? supabase.storage.from("ad-media").getPublicUrl(path).data.publicUrl : "";
 }
@@ -134,13 +145,46 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
+  async function pickReactionFile() {
+    try {
+      const pickerWindow = window as FilePickerWindow;
+      if (pickerWindow.showOpenFilePicker) {
+        const handles = await pickerWindow.showOpenFilePicker({
+          multiple: false,
+          excludeAcceptAllOption: false,
+          types: [{
+            description: "ركشان",
+            accept: {
+              "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+            },
+          }],
+        });
+        const file = await handles[0]?.getFile();
+        if (file) setReactionFile(file);
+        return;
+      }
+
+      const input = document.getElementById("reaction-file-picker") as HTMLInputElement | null;
+      input?.click();
+    } catch (error) {
+      const input = document.getElementById("reaction-file-picker") as HTMLInputElement | null;
+      if (input && error instanceof DOMException && error.name !== "AbortError") {
+        input.click();
+      }
+    }
+  }
+
   async function addReactionType(){
     if(!isOwner||!reactionName.trim())return;
     let icon_path:string|null=null;
     if(reactionFile){
       const allowedTypes=["image/png","image/jpeg","image/webp","image/gif"];
+      const allowedExtensions=["png","jpg","jpeg","webp","gif"];
+      const normalizedType=String(reactionFile.type||"").toLowerCase();
+      const ext=(reactionFile.name.split(".").pop()||"").toLowerCase();
       const maxReactionBytes=5*1024*1024;
-      if(!allowedTypes.includes(reactionFile.type)){
+      const typeAllowed=allowedTypes.includes(normalizedType)||allowedExtensions.includes(ext);
+      if(!typeAllowed){
         setMessage("نوع الملف غير مدعوم. استخدمي PNG أو JPG أو WebP أو GIF.");
         return;
       }
@@ -148,9 +192,13 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         setMessage("حجم الرياكشن كبير. الحد الأقصى 5MB حتى لا يضغط على الموقع.");
         return;
       }
-      const ext=(reactionFile.name.split(".").pop()||"png").toLowerCase();
       icon_path="reactions/"+crypto.randomUUID()+"."+ext;
-      const {error}=await supabase.storage.from("ad-media").upload(icon_path,reactionFile,{upsert:false,contentType:reactionFile.type,cacheControl:"31536000"});
+      const uploadContentType=
+        normalizedType ||
+        (ext === "gif" ? "image/gif"
+          : ext === "webp" ? "image/webp"
+          : "image/"+(ext === "jpg" ? "jpeg" : ext));
+      const {error}=await supabase.storage.from("ad-media").upload(icon_path,reactionFile,{upsert:false,contentType:uploadContentType,cacheControl:"31536000"});
       if(error){setMessage(error.message);return}
     }
     const {error}=await supabase.from("reaction_types").insert({name:reactionName.trim(),icon_path,sort_order:reactions.length});
@@ -236,7 +284,23 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       </React.Fragment>)}
       {isOwner&&<div className="reaction-admin">
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
-        <div className="reaction-admin-row"><input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" /><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={e=>setReactionFile(e.target.files?.[0]||null)} /><button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button></div>
+        <div className="reaction-admin-row">
+          <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" />
+          <input
+            id="reaction-file-picker"
+            type="file"
+            accept="*/*"
+            hidden
+            onChange={e=>{
+              setReactionFile(e.target.files?.[0]||null);
+              e.currentTarget.value="";
+            }}
+          />
+          <button type="button" className="secondary-button" onClick={()=>void pickReactionFile()}>
+            {reactionFile ? "تم اختيار الركشان" : "اختيار الركشان من الملفات"}
+          </button>
+          <button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button>
+        </div>
         <div className="reaction-admin-list">{reactions.map((r,i)=><div className="ad-row" key={r.id}><span>{r.icon_path?<img src={mediaUrl(r.icon_path)} alt="" style={{width:24,height:24,objectFit:"contain",verticalAlign:"middle"}}/>:""} {r.name}</span><span>
           <button className="secondary-button" onClick={async()=>{await supabase.from("reaction_types").update({enabled:!r.enabled}).eq("id",r.id);await loadComments(user?.id ?? null)}}>{r.enabled?"تعطيل":"تفعيل"}</button>
           <button className="secondary-button" disabled={i===0} onClick={async()=>{if(i===0)return;const prev=reactions[i-1];await Promise.all([supabase.from("reaction_types").update({sort_order:prev.sort_order}).eq("id",r.id),supabase.from("reaction_types").update({sort_order:r.sort_order}).eq("id",prev.id)]);await loadComments(user?.id ?? null)}}>↑</button>
