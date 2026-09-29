@@ -5809,3 +5809,14 @@ select:focus-visible {
 .admin-collapse-content>.reaction-admin,
 .admin-collapse-content>.ads-admin{margin-top:0}
 .admin-collapse-content>.admin-card{margin-top:0}
+
+
+/* Collapsible reaction picker inside comment composer */
+.comment-reaction-picker{margin-top:9px;padding:0;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2);overflow:hidden}
+.comment-reaction-picker-toggle{width:100%;min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:0;background:transparent;color:var(--text);cursor:pointer;text-align:right}
+.comment-reaction-picker-toggle:hover{background:var(--surface)}
+.comment-reaction-picker-toggle-label{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+.selected-reaction-count{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 6px;border-radius:999px;background:var(--accent-dark);color:var(--accent-strong);font-size:10px;font-weight:900}
+.comment-reaction-picker-arrow{font-size:20px;line-height:1;color:var(--muted);transition:transform .18s ease}
+.comment-reaction-picker.is-open .comment-reaction-picker-arrow{transform:rotate(180deg)}
+.comment-reaction-picker-options{padding:0 10px 10px;border-top:1px solid var(--line-soft)}
