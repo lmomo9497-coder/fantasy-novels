@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" role="img" aria-labelledby="title desc">
   <title id="title">روايات خيالية</title>
-  <desc id="desc">شعار روايات خيالية بكتاب مفتوح وسماعات وموجة صوتية داخل هالة ذهبية.</desc>
+  <desc id="desc">شعار روايات خيالية بكتاب مفتوح وسماعات وموجة صوتية داخل هالة بنفسجية ووردية متناسقة مع هوية الموقع.</desc>
   <defs>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff0bf"/>
-      <stop offset=".45" stop-color="#e6b55b"/>
-      <stop offset="1" stop-color="#a9682d"/>
+      <stop offset="0" stop-color="#f3d9f4"/>
+      <stop offset=".45" stop-color="#c9a2d1"/>
+      <stop offset="1" stop-color="#76507f"/>
     </linearGradient>
     <linearGradient id="night" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#26204a"/>
@@ -20,27 +20,27 @@
 
   <g transform="translate(10 10)">
     <circle cx="65" cy="65" r="57" fill="url(#night)" stroke="url(#gold)" stroke-width="3"/>
-    <circle cx="65" cy="65" r="50" fill="none" stroke="#d7a64c" stroke-opacity=".22"/>
+    <circle cx="65" cy="65" r="50" fill="none" stroke="#b98ac2" stroke-opacity=".22"/>
 
     <path d="M29 62c4-15 9-23 19-27 6-2 11 1 13 8v35c-9-7-18-7-28-2-4 2-6-1-4-14Z"
           fill="#161724" stroke="url(#gold)" stroke-width="2.2"/>
     <path d="M101 62c-4-15-9-23-19-27-6-2-11 1-13 8v35c9-7 18-7 28-2 4 2 6-1 4-14Z"
           fill="#161724" stroke="url(#gold)" stroke-width="2.2"/>
 
-    <path d="M31 83c14-8 25-7 34 2V59c-8-7-19-7-34 0Z" fill="#f7e2ae"/>
-    <path d="M99 83c-14-8-25-7-34 2V59c8-7 19-7 34 0Z" fill="#e9c77f"/>
-    <path d="M65 61v25" stroke="#b97a37" stroke-width="2"/>
+    <path d="M31 83c14-8 25-7 34 2V59c-8-7-19-7-34 0Z" fill="#f2e4f3"/>
+    <path d="M99 83c-14-8-25-7-34 2V59c8-7 19-7 34 0Z" fill="#d8b9dc"/>
+    <path d="M65 61v25" stroke="#82558d" stroke-width="2"/>
 
-    <path d="M37 44c6-10 17-15 28-10M93 44c-6-10-17-15-28-10" fill="none" stroke="#d9ad62" stroke-width="5" stroke-linecap="round"/>
+    <path d="M37 44c6-10 17-15 28-10M93 44c-6-10-17-15-28-10" fill="none" stroke="#bd91c4" stroke-width="5" stroke-linecap="round"/>
     <g filter="url(#glow)" fill="url(#gold)">
       <rect x="51" y="28" width="5" height="18" rx="2.5"/>
       <rect x="59" y="22" width="5" height="24" rx="2.5"/>
       <rect x="67" y="25" width="5" height="21" rx="2.5"/>
       <rect x="75" y="31" width="5" height="15" rx="2.5"/>
     </g>
-    <path d="M28 97c12-11 24-12 37-4 13-8 25-7 37 4" fill="none" stroke="#d4a24d" stroke-width="2" opacity=".8"/>
+    <path d="M28 97c12-11 24-12 37-4 13-8 25-7 37 4" fill="none" stroke="#a875b0" stroke-width="2" opacity=".8"/>
     <circle cx="65" cy="96" r="2" fill="#fff0bd"/>
-    <path d="M65 14l2.4 5.3 5.3 2.4-5.3 2.4L65 29.4l-2.4-5.3-5.3-2.4 5.3-2.4Z" fill="#fff1c4"/>
+    <path d="M65 14l2.4 5.3 5.3 2.4-5.3 2.4L65 29.4l-2.4-5.3-5.3-2.4 5.3-2.4Z" fill="#f7e9f8"/>
   </g>
 
   <g transform="translate(145 43)">
