@@ -2004,6 +2004,33 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const iconLinks = Array.from(
+      document.querySelectorAll<HTMLLinkElement>(
+        'link[rel="icon"], link[rel="apple-touch-icon"]'
+      )
+    );
+
+    if (!siteLogoUrl) {
+      iconLinks.forEach((link) => link.remove());
+      return;
+    }
+
+    const rels = ["icon", "apple-touch-icon"];
+    rels.forEach((rel) => {
+      let link = document.querySelector<HTMLLinkElement>(
+        'link[rel="' + rel + '"]'
+      );
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = rel;
+        document.head.appendChild(link);
+      }
+      link.href = siteLogoUrl;
+      link.type = "image/png";
+    });
+  }, [siteLogoUrl]);
+
+  useEffect(() => {
     if (user) {
       loadOwnerProfile();
       loadTeamProfiles();
