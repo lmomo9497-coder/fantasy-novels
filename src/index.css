@@ -5763,3 +5763,18 @@ select:focus-visible {
  .ad-row>div:last-child{display:flex;flex-wrap:wrap;gap:6px}
  .reaction-admin-row{display:grid;grid-template-columns:1fr}
 }
+
+
+/* Comment reaction manager */
+.admin-page .reaction-admin{margin-top:0;padding-top:0;border-top:0}
+.reaction-admin-item{display:inline-flex;align-items:center;gap:9px;min-width:0}
+.reaction-admin-item img{width:42px;height:42px;object-fit:contain;flex:none}
+.reaction-admin-item strong{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reaction-admin-item small{color:var(--muted)}
+.reaction-admin-no-image{font-size:11px;color:var(--muted)}
+.reaction-admin-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+@media (max-width:700px){
+  .reaction-admin-actions{width:100%;justify-content:flex-start}
+  .reaction-admin-item{width:100%}
+  .reaction-admin-row input{min-width:0;width:100%}
+}
