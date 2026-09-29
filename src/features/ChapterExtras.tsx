@@ -135,42 +135,15 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
-  async function pickReactionFile() {
-    try {
-      if ("showOpenFilePicker" in window) {
-        const picker = (window as Window & {
-          showOpenFilePicker?: (options?: {
-            multiple?: boolean;
-            excludeAcceptAllOption?: boolean;
-            types?: Array<{description:string;accept:Record<string,string[]>}>;
-          }) => Promise<Array<{getFile:()=>Promise<File>}>>;
-        }).showOpenFilePicker;
-
-        if (picker) {
-          // لا نحدد نوع MIME هنا عمدًا؛ على أندرويد تحديد image/* قد يحوّل
-          // الاختيار إلى معرض الصور بدل مدير الملفات. نسمح بكل الملفات ثم
-          // نتحقق من الامتداد/النوع قبل الرفع.
-          const handles = await picker({
-            multiple: false,
-            excludeAcceptAllOption: false
-          });
-          const file = await handles[0].getFile();
-          setReactionFile(file);
-          setMessage("");
-          return;
-        }
-      }
-    } catch (error) {
-      if ((error as DOMException)?.name === "AbortError") return;
-    }
-
-    // Fallback للأجهزة/المتصفحات التي لا تدعم مدير الملفات الحديث.
+  function pickReactionFile() {
+    // نستخدم نفس منتقي الملفات الأصلي المستخدم لرفع الصوت.
+    // accept="*/*" يمنع أندرويد من تحويل الزر إلى معرض الصور،
+    // وبالتالي يمكن فتح مجلدات WhatsApp وAndroid/media واختيار ملف الركشان الحقيقي.
     reactionFileInputRef.current?.click();
   }
 
   function handleReactionFileChange(event:React.ChangeEvent<HTMLInputElement>) {
     const file=event.target.files?.[0]||null;
-    setReactionFile(file);
     event.target.value="";
     if(!file)return;
 
@@ -179,7 +152,15 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     const normalizedType=String(file.type||"").toLowerCase();
     const ext=(file.name.split(".").pop()||"").toLowerCase();
     const typeAllowed=allowedTypes.includes(normalizedType)||allowedExtensions.includes(ext);
-    setMessage(typeAllowed ? "" : "هذا ليس ملف رياكشن مدعوم. اختاري PNG أو JPG أو WebP أو GIF من مدير الملفات.");
+
+    if(!typeAllowed){
+      setReactionFile(null);
+      setMessage("اختاري ملف ركشان بصيغة PNG أو JPG أو WebP أو GIF.");
+      return;
+    }
+
+    setReactionFile(file);
+    setMessage("");
   }
 
   async function addReactionType(){
@@ -299,7 +280,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
             type="file"
             // إضافة text/plain مع الصور تساعد Chrome على أندرويد على فتح
             // منتقي الملفات العام بدل منتقي الصور، ثم نتحقق من النوع بعد الاختيار.
-            accept="image/*,text/plain"
+            accept="*/*"
             hidden
             onChange={handleReactionFileChange}
           />
