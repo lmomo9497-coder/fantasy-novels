@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 170" role="img" aria-labelledby="title desc">
 <title id="title">روايات خيالية</title>
-<desc id="desc">شعار روايات خيالية بكتاب مفتوح وقط صغير يجلس فوقه.</desc>
+<desc id="desc">شعار روايات خيالية، قطة تقرأ فوق كتاب مفتوح وذيلها يمتد كخط سطر تحت الاسم.</desc>
+
 <defs>
   <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#dcb6eb"/>
-    <stop offset=".58" stop-color="#a86ad1"/>
+    <stop offset=".55" stop-color="#a86ad1"/>
     <stop offset="1" stop-color="#f08bbd"/>
   </linearGradient>
   <linearGradient id="text" x1="0" y1="0" x2="1" y2="1">
@@ -13,36 +14,75 @@
   </linearGradient>
 </defs>
 
-<!-- الاسم: واضح، هادئ، ومتوازن -->
+<!-- الاسم -->
 <g>
-  <text x="260" y="72" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
+  <text x="302" y="78" direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
         font-family="Noto Naskh Arabic, Amiri, Noto Sans Arabic, serif"
-        font-size="48" font-weight="700" fill="url(#text)">روايات خيالية</text>
-  <path d="M104 91H415" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
+        font-size="50" font-weight="700" fill="url(#text)">روايات خيالية</text>
 </g>
 
-<!-- الكتاب + القطة في اليمين -->
-<g transform="translate(426 17)">
+<!-- القطة: واقفة فوق الكتاب وتقرأ -->
+<g transform="translate(492 18)">
+  <!-- ظل خفيف تحت القطة -->
+  <ellipse cx="78" cy="126" rx="48" ry="7" fill="#0d0b11" opacity=".45"/>
+
   <!-- الكتاب المفتوح -->
-  <path d="M6 86V53c18-9 36-8 57 5v34C42 79 25 78 6 86Z"
-        fill="#17131b" stroke="url(#text)" stroke-width="4.5" stroke-linejoin="round"/>
-  <path d="M122 86V53c-21-13-39-14-59-1v40c20-13 38-14 59-6Z"
-        fill="#17131b" stroke="url(#text)" stroke-width="4.5" stroke-linejoin="round"/>
-  <path d="M64 56v36" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
-  <path d="M24 67c11-3 22-2 33 4M104 67c-11-3-22-2-33 4"
+  <path d="M8 127V92c20-10 41-9 66 5v35c-24-12-44-13-66-5Z"
+        fill="#17131b" stroke="url(#text)" stroke-width="4.2" stroke-linejoin="round"/>
+  <path d="M142 127V92c-24-14-44-15-67-5v40c24-12 44-13 67-5Z"
+        fill="#17131b" stroke="url(#text)" stroke-width="4.2" stroke-linejoin="round"/>
+  <path d="M75 97v30" stroke="url(#accent)" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M27 107c14-3 28-2 42 5M124 107c-14-3-28-2-42 5"
         fill="none" stroke="#8e699d" stroke-width="2.2" stroke-linecap="round"/>
 
-  <!-- القطة -->
-  <path d="M39 50V31l11 8c5-3 11-4 16-4s11 1 16 4l11-8v19c0 15-11 25-27 25S39 65 39 50Z"
+  <!-- جسم القطة -->
+  <path d="M54 78c0-18 10-31 27-36 18-5 37 3 46 18l10 20c4 9 1 19-7 24-8 5-19 4-26-2l-9-8-8 8c-7 7-18 9-26 4-6-4-9-10-7-28Z"
         fill="#20202a" stroke="url(#accent)" stroke-width="3.2" stroke-linejoin="round"/>
-  <path d="M48 30 43 18l14 8M80 26l14-8-5 12"
+
+  <!-- الرأس بزاوية نزول للكتاب -->
+  <path d="M49 53V29l13 9c7-5 16-7 25-5 6 1 12 4 17 8l12-9v22c0 16-14 27-33 27S49 68 49 53Z"
         fill="#20202a" stroke="url(#accent)" stroke-width="3.2" stroke-linejoin="round"/>
-  <circle cx="57" cy="47" r="2.2" fill="#f0c8e5"/>
-  <circle cx="71" cy="47" r="2.2" fill="#f0c8e5"/>
-  <path d="M62 54q2 2 4 0M64 54v4M64 58q-5 3-9 0M64 58q5 3 9 0"
+
+  <!-- الأذنان -->
+  <path d="M58 30 52 15l17 11M98 25l16-11-6 16"
+        fill="#20202a" stroke="url(#accent)" stroke-width="3.2" stroke-linejoin="round"/>
+
+  <!-- العينان ناظرتان للكتاب -->
+  <path d="M66 50q5-4 10 0M91 50q5-4 10 0"
+        fill="none" stroke="#f0c8e5" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="74" cy="50" r="2" fill="#f0c8e5"/>
+  <circle cx="94" cy="50" r="2" fill="#f0c8e5"/>
+
+  <!-- الوجه -->
+  <path d="M82 55q3 3 6 0M85 55v6M85 61q-6 4-12 0M85 61q6 4 12 0"
         fill="none" stroke="#d9bddf" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M42 61c-8 6-8 15 1 20 5 3 10 2 13-1"
-        fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
-  <path d="M105 27l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#accent)"/>
+
+  <!-- الكفّان على الكتاب -->
+  <path d="M67 83v27c0 6 5 10 10 10h1"
+        fill="none" stroke="#20202a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100 82v28c0 6-5 10-10 10h-1"
+        fill="none" stroke="#20202a" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="78" cy="121" r="2.6" fill="#d9bddf"/>
+  <circle cx="92" cy="121" r="2.6" fill="#d9bddf"/>
+
+  <!-- الذيل: يمتد كخط سطر طويل تحت الاسم -->
+  <path d="M119 78
+           C151 65 154 36 133 28
+           C119 23 112 35 120 44
+           C132 57 128 72 110 82
+           C77 101 34 116 0 108
+           C-19 104 -34 94 -44 101
+           C-55 109 -42 123 -22 126
+           C48 137 118 111 154 92"
+        fill="none" stroke="url(#accent)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- لمعة صغيرة -->
+  <path d="M128 7l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="url(#accent)"/>
 </g>
+
+<!-- امتداد الذيل كسطر دفتر واضح تحت الاسم -->
+<path d="M78 126
+         C185 143 330 142 452 126
+         C482 122 506 115 530 106"
+      fill="none" stroke="#744b85" stroke-width="1.8" stroke-linecap="round" opacity=".62"/>
 </svg>
