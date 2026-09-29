@@ -5798,6 +5798,22 @@ select:focus-visible {
 .reaction-preview-close{position:fixed;top:16px;right:16px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:30px;line-height:1;cursor:pointer}
 
 
+
+.comments-admin{margin-top:0;padding-top:0;border-top:0}
+.comments-admin-search{width:100%;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--text)}
+.comments-admin-list{display:grid;gap:8px}
+.comments-admin-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2)}
+.comments-admin-body{min-width:0;flex:1}
+.comments-admin-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
+.comments-admin-head time{color:var(--muted);font-size:11px;white-space:nowrap}
+.comments-admin-body p{margin:0 0 5px;white-space:pre-wrap;word-break:break-word}
+.comments-admin-body small{color:var(--muted)}
+@media (max-width:700px){
+  .comments-admin-row{flex-direction:column}
+  .comments-admin-row .danger-button{width:100%}
+  .comments-admin-head{align-items:flex-start;flex-direction:column;gap:2px}
+}
+
 /* Collapsible admin sections */
 .admin-collapse{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
 .admin-collapse-summary{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;cursor:pointer;list-style:none;color:var(--text);font-weight:800;user-select:none}
