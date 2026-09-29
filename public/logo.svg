@@ -1,95 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 210" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-labelledby="title desc">
 <title id="title">روايات خيالية</title>
-<desc id="desc">قطة جالسة فوق كتاب مفتوح، وذيلها يخرج بوضوح من مؤخرتها وينساب كسطر دفتر طويل أسفل الاسم.</desc>
+<desc id="desc">قطة بنفسجية وردية جالسة فوق كتاب مفتوح مع ذيل منسدل حول الكتاب واسم روايات خيالية أسفله.</desc>
 <defs>
-  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-    <stop stop-color="#9b5bd0"/>
-    <stop offset=".5" stop-color="#c56bd2"/>
-    <stop offset="1" stop-color="#f08ab9"/>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#7d3fd0"/>
+    <stop offset=".5" stop-color="#bd50d8"/>
+    <stop offset="1" stop-color="#f487bd"/>
   </linearGradient>
-  <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-    <stop stop-color="#30203e"/>
-    <stop offset=".55" stop-color="#17131d"/>
-    <stop offset="1" stop-color="#40223f"/>
+  <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+    <stop stop-color="#8b45d5"/>
+    <stop offset="1" stop-color="#f28abd"/>
   </linearGradient>
 </defs>
 
-<!-- الكتاب -->
-<g stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M410 151 C369 137 327 136 283 148 L264 187 C315 174 364 176 410 194Z"
-        fill="#17131d" stroke-width="5"/>
-  <path d="M410 194 C456 176 505 174 556 187 L537 148 C493 136 451 137 410 151Z"
-        fill="#17131d" stroke-width="5"/>
-  <path d="M410 151V194" fill="none" stroke-width="4"/>
-  <path d="M292 156 C323 151 351 153 382 161 M528 156 C497 151 469 153 438 161"
-        fill="none" stroke-width="2.4" opacity=".55"/>
+<!-- قطة جالسة من الخلف -->
+<path d="M349 116
+ C326 103 317 81 322 59
+ C326 43 335 31 350 23
+ L343 5 L368 23
+ C384 18 401 18 417 23
+ L443 5 L437 27
+ C452 37 460 52 461 70
+ C463 91 454 107 438 118
+ C423 128 404 134 384 134
+ C365 134 355 128 349 116Z"
+ fill="url(#g)"/>
 
-  <!-- القطة من الخلف -->
-  <path d="M382 107
-           C369 96 362 81 364 65
-           C366 48 376 35 391 29
-           L384 8 L407 26
-           C419 22 432 22 444 26
-           L468 8 L461 29
-           C477 36 488 49 490 65
-           C492 82 485 97 472 107
-           C459 118 446 123 427 123
-           C408 123 395 118 382 107Z"
-        fill="url(#body)" stroke-width="4"/>
+<!-- جسم القطة ومؤخرتها -->
+<path d="M349 109
+ C330 124 322 146 328 166
+ C333 184 348 194 367 194
+ C382 194 394 188 402 177
+ C410 188 423 194 439 194
+ C458 194 473 184 478 166
+ C483 145 474 124 455 109
+ C441 100 422 96 402 97
+ C382 96 363 100 349 109Z"
+ fill="url(#g)"/>
 
-  <path d="M382 103
-           C365 115 359 132 363 148
-           C367 164 380 173 397 173
-           C410 173 421 168 427 158
-           C434 168 446 173 459 173
-           C476 173 489 164 493 148
-           C497 132 490 115 472 103
-           C459 95 444 92 427 93
-           C411 92 396 95 382 103Z"
-        fill="url(#body)" stroke-width="4"/>
+<!-- تفاصيل ظهر بسيطة -->
+<path d="M361 112 C374 121 389 126 402 126 C416 126 431 121 444 112"
+ fill="none" stroke="#f5b1dd" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+<path d="M373 135 C379 148 384 160 387 174 M431 135 C425 148 420 160 417 174"
+ fill="none" stroke="#7b42a6" stroke-opacity=".7" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- الأرجل -->
-  <path d="M397 114 C398 131 401 144 406 155
-           M457 114 C456 131 453 144 448 155"
-        fill="none" stroke-width="3" opacity=".8"/>
-  <path d="M372 169 C383 163 398 164 407 171
-           C414 176 411 182 404 184 C389 186 377 181 372 176Z"
-        fill="#201827" stroke-width="3"/>
-  <path d="M447 171 C456 164 471 163 482 169
-           L482 176 C477 181 464 186 449 184
-           C442 182 440 176 447 171Z"
-        fill="#201827" stroke-width="3"/>
+<!-- الكتاب المفتوح -->
+<path d="M402 177
+ C355 159 304 158 254 172
+ L230 215
+ C287 200 345 202 402 222Z"
+ fill="#100d15" stroke="url(#glow)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M402 222
+ C459 202 517 200 574 215
+ L550 172
+ C500 158 449 159 402 177Z"
+ fill="#100d15" stroke="url(#glow)" stroke-width="6" stroke-linejoin="round"/>
+<path d="M402 177V222" stroke="url(#glow)" stroke-width="5" stroke-linecap="round"/>
 
-  <path d="M395 100 C406 108 417 112 427 112
-           C439 112 450 108 460 100"
-        fill="none" stroke-width="2.6" opacity=".6"/>
+<!-- صفحات الكتاب -->
+<path d="M250 183 C294 174 338 176 381 188
+ M246 196 C290 187 334 189 377 201
+ M427 188 C470 176 514 174 554 183
+ M427 201 C470 189 514 187 558 196"
+ fill="none" stroke="url(#glow)" stroke-width="4" stroke-linecap="round"/>
 
-  <!-- الذيل: مسار واحد متصل يبدأ من مؤخرة القطة مباشرة ثم يتحول إلى سطر الدفتر -->
-  <path d="M375 139
-           C349 135 322 126 307 111
-           C293 97 296 80 310 71
-           C325 61 345 66 353 80
-           C361 94 355 109 342 115
-           C329 121 313 116 306 105
-           C299 94 303 81 312 74
-           C321 67 333 68 341 75
-           C350 82 351 94 345 103
-           C339 113 326 117 316 114
-           C304 111 295 103 291 93
-           C285 78 291 63 303 54
-           C318 42 340 44 353 57
-           C366 70 367 88 358 101
-           C347 117 329 124 307 126
-           C274 129 237 124 198 121
-           C154 118 113 121 79 129
-           C54 135 34 143 18 151"
-        fill="none" stroke-width="7"/>
-</g>
+<!-- الذيل يلتف من القطة حول جانب الكتاب، كما في المرجع -->
+<path d="M452 154
+ C493 140 535 129 568 137
+ C600 145 619 172 611 199
+ C606 216 593 227 578 232"
+ fill="none" stroke="url(#glow)" stroke-width="13" stroke-linecap="round"/>
 
-<!-- الاسم فوق سطر الذيل -->
-<text x="286" y="93"
-      direction="rtl" unicode-bidi="plaintext" text-anchor="middle"
-      font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
-      font-size="58" font-weight="850"
-      fill="url(#accent)">روايات خيالية</text>
+<!-- الاسم -->
+<text x="402" y="92" text-anchor="middle"
+ direction="rtl" unicode-bidi="plaintext"
+ font-family="Noto Sans Arabic,Noto Naskh Arabic,Amiri,sans-serif"
+ font-size="57" font-weight="850" fill="url(#g)">روايات خيالية</text>
+
+<!-- سطر زخرفي صغير تحت الاسم -->
+<path d="M250 112 C315 99 365 105 414 112 C465 119 515 116 552 105"
+ fill="none" stroke="url(#glow)" stroke-width="7" stroke-linecap="round"/>
 </svg>
