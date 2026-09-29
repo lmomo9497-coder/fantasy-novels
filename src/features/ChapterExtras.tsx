@@ -13,19 +13,6 @@ type Ad = {
 
 type Reaction = { id:string; name:string; icon_path:string|null; enabled:boolean; sort_order:number };
 
-type FilePickerWindow = Window & {
-  showOpenFilePicker?: (options?: {
-    multiple?: boolean;
-    excludeAcceptAllOption?: boolean;
-    id?: string;
-    startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
-    types?: Array<{
-      description?: string;
-      accept: Record<string, string[]>;
-    }>;
-  }) => Promise<Array<{ getFile: () => Promise<File> }>>;
-};
-
 function mediaUrl(path:string|null) {
   return path ? supabase.storage.from("ad-media").getPublicUrl(path).data.publicUrl : "";
 }
@@ -41,6 +28,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [message,setMessage]=useState("");
   const [reactionName,setReactionName]=useState("");
   const [reactionFile,setReactionFile]=useState<File|null>(null);
+  const reactionFileInputRef=useRef<HTMLInputElement|null>(null);
   const [favoriteReactionIds,setFavoriteReactionIds]=useState<string[]>([]);
   const [selectedReactionIds,setSelectedReactionIds]=useState<string[]>([]);
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
@@ -147,25 +135,15 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
-  async function pickReactionFile() {
-    try {
-      const pickerWindow = window as FilePickerWindow;
-      if (pickerWindow.showOpenFilePicker) {
-        const handles = await pickerWindow.showOpenFilePicker({
-          multiple: false,
-          excludeAcceptAllOption: false,
-          id: "fantasy-novels-sticker-files",
-          startIn: "documents",
-        });
-        const file = await handles[0]?.getFile();
-        if (file) setReactionFile(file);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-        setMessage("تعذر فتح مدير الملفات في هذا المتصفح. افتحي الموقع من Chrome أو Samsung Internet الحديث.");
-      }
-    }
+  function pickReactionFile() {
+    reactionFileInputRef.current?.click();
+  }
+
+  function handleReactionFileChange(event:React.ChangeEvent<HTMLInputElement>) {
+    const file=event.target.files?.[0]||null;
+    setReactionFile(file);
+    event.target.value="";
+    if(file)setMessage("");
   }
 
   async function addReactionType(){
@@ -280,7 +258,14 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
         <strong>إدارة الرياكشنات والستيكرات</strong><small className="form-hint">ارفعي رياكشناتك من الواتساب كصور أو GIF متحرك. الحد الأقصى 5MB للملف حتى يبقى الموقع خفيفًا، وسيظهر للقُرّاء زر ♥ لحفظ أي رياكشن في مفضلاتهم.</small>
         <div className="reaction-admin-row">
           <input value={reactionName} onChange={e=>setReactionName(e.target.value)} placeholder="اسم التفاعل" />
-          <button type="button" className="secondary-button" onClick={()=>void pickReactionFile()}>
+          <input
+            ref={reactionFileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            hidden
+            onChange={handleReactionFileChange}
+          />
+          <button type="button" className="secondary-button" onClick={pickReactionFile}>
             {reactionFile ? "تم اختيار الركشان" : "اختيار الركشان من الملفات"}
           </button>
           <button className="secondary-button" onClick={()=>void addReactionType()}>إضافة</button>
