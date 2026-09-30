@@ -137,7 +137,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [open,setOpen]=useState(false);
   const [comments,setComments]=useState<any[]>([]);
   const [reactions,setReactions]=useState<Reaction[]>([]);
-  const [ads,setAds]=useState<Ad[]>([]);
   const [draft,setDraft]=useState("");
   const [user,setUser]=useState<any>(null);
   const [busy,setBusy]=useState(false);
