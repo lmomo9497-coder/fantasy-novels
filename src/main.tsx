@@ -1498,6 +1498,8 @@ function App() {
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [savingNovel, setSavingNovel] = useState(false);
   const [editingNovelId, setEditingNovelId] = useState<string | null>(null);
+  // Stable client id for a new novel so its cover has the same novel folder before saving.
+  const [novelDraftId, setNovelDraftId] = useState(() => crypto.randomUUID());
 
   const [novelTitle, setNovelTitle] = useState("");
   const [novelDescription, setNovelDescription] = useState("");
@@ -2960,7 +2962,8 @@ function App() {
       const extension =
         file.name.split(".").pop()?.toLowerCase() || "jpg";
 
-      const path = `covers/${makeStorageId()}.${extension}`;
+      const novelFolderId = editingNovelId || novelDraftId;
+      const path = `novels/${novelFolderId}/cover/${makeStorageId()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("covers")
@@ -2987,6 +2990,7 @@ function App() {
 
   function resetNovelForm() {
     setEditingNovelId(null);
+    setNovelDraftId(crypto.randomUUID());
     setNovelRightsOwnerId(user?.id ?? "");
     setNovelRightsCode("");
     setNovelTitle("");
@@ -3163,7 +3167,7 @@ function App() {
       } else {
         const { data, error } = await supabase
           .from("novels")
-          .insert(payload)
+          .insert({ ...payload, id: novelDraftId })
           .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
           .single();
 
@@ -3790,7 +3794,9 @@ function App() {
 
       const extension =
         file.name.split(".").pop()?.toLowerCase() || "bin";
-      const path = `${newBlockType === "text" ? "text-background" : newBlockType}/${makeStorageId()}.${extension}`;
+      const chapterFolder = `novels/${selectedChapter.novel_id}/chapters/${selectedChapter.id}`;
+      const mediaFolder = newBlockType === "text" ? "text-background" : newBlockType;
+      const path = `${chapterFolder}/${mediaFolder}/${makeStorageId()}.${extension}`;
       const contentType =
         newBlockType === "gif"
           ? "image/gif"
@@ -3984,7 +3990,7 @@ function App() {
         const effectExtension =
           newBlockEffectAudioFile.name.split(".").pop()?.toLowerCase() || "mp3";
         const effectPath =
-          "text-effects/" + savedBlock.id + "-" + makeStorageId() + "." + effectExtension;
+          `novels/${selectedChapter.novel_id}/chapters/${selectedChapter.id}/text-effects/${savedBlock.id}-${makeStorageId()}.${effectExtension}`;
 
         const { error: effectUploadError } = await supabase.storage
           .from("audio")
@@ -4758,7 +4764,7 @@ function App() {
 
       const extension =
         file.name.split(".").pop()?.toLowerCase() || "mp3";
-      const path = "text-effects/" + block.id + "-" + makeStorageId() + "." + extension;
+      const path = `novels/${selectedChapter.novel_id}/chapters/${selectedChapter.id}/text-effects/${block.id}-${makeStorageId()}.${extension}`;
 
       const { error } = await supabase.storage
         .from("audio")
