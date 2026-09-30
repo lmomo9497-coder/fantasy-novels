@@ -5572,7 +5572,7 @@ function App() {
             </span>
 
             <span className="novel-chapter-count">
-              📚 {novel.chapter_count ?? 0} فصول
+              {novel.chapter_count ?? 0} فصول
             </span>
           </div>
         </div>
