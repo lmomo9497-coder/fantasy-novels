@@ -40,6 +40,7 @@ type Novel = {
   categories?: Category | null;
   novel_categories?: { category: Category }[];
   reader_count?: number;
+  rights_owner?: { display_name: string | null; avatar_url: string | null } | null;
 };
 
 type Chapter = {
@@ -2169,6 +2170,35 @@ function App() {
     }));
   }
 
+  async function attachNovelRights(novelsList: Novel[]) {
+    if (novelsList.length === 0) return novelsList;
+
+    const ownerIds = Array.from(
+      new Set(novelsList.map((novel) => novel.created_by).filter(Boolean) as string[])
+    );
+
+    if (ownerIds.length === 0) return novelsList;
+
+    const { data, error } = await supabase
+      .from("novel_rights")
+      .select("id, display_name, avatar_url")
+      .in("id", ownerIds);
+
+    if (error) {
+      console.error("Novel rights error:", error);
+      return novelsList;
+    }
+
+    const owners = new Map(
+      (data ?? []).map((item) => [item.id, item])
+    );
+
+    return novelsList.map((novel) => ({
+      ...novel,
+      rights_owner: novel.created_by ? owners.get(novel.created_by) ?? null : null,
+    }));
+  }
+
   async function loadSiteLogo() {
     const { data, error } = await supabase
       .from("site_settings")
@@ -2286,7 +2316,8 @@ function App() {
     const novelsWithReaderCounts = await attachNovelReaderCounts(
       novelsWithActivity
     );
-    setPublishedNovels(novelsWithReaderCounts);
+    const novelsWithRights = await attachNovelRights(novelsWithReaderCounts);
+    setPublishedNovels(novelsWithRights);
   }
 
   async function loadAdminData() {
@@ -2303,7 +2334,8 @@ function App() {
     const novelsWithReaderCounts = await attachNovelReaderCounts(
       (data ?? []) as Novel[]
     );
-    setNovels(novelsWithReaderCounts);
+    const novelsWithRights = await attachNovelRights(novelsWithReaderCounts);
+    setNovels(novelsWithRights);
   }
 
   async function loadStaffMembers() {
@@ -5111,6 +5143,12 @@ function App() {
             </div>
           )}
 
+          {novel.rights_owner?.display_name && (
+            <div className="novel-rights" dir="rtl">
+              © {novel.rights_owner.display_name} — جميع الحقوق محفوظة
+            </div>
+          )}
+
           <div className="novel-meta">
             <span>
               {novel.status === "ongoing"
@@ -6739,6 +6777,12 @@ function App() {
               <p className="novel-description">
                 {selectedNovel.description}
               </p>
+            )}
+
+            {selectedNovel.rights_owner?.display_name && (
+              <div className="novel-rights novel-rights-large" dir="rtl">
+                © {selectedNovel.rights_owner.display_name} — جميع الحقوق محفوظة
+              </div>
             )}
 
             <div className="novel-meta large-meta">
