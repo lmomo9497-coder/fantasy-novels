@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
-import { AdsAdmin, ChapterExtras, CommentsAdmin, ReactionAdmin } from "./features/ChapterExtras";
+import { AdsAdmin, ChapterAd, ChapterExtras, CommentsAdmin, ReactionAdmin } from "./features/ChapterExtras";
 
 type Role = "owner" | "staff" | "reader";
 
@@ -7020,24 +7020,46 @@ function App() {
         </article>
 
         {!selectedNovelAdminView && selectedChapter && (
-          <ChapterExtras chapterId={selectedChapter.id} isOwner={isOwner} />
-        )}
+          <>
+            <ChapterAd
+              chapterId={selectedChapter.id}
+              placement="chapter_after_content"
+            />
 
-        {!selectedNovelAdminView && (
-          <div className="chapter-navigation">
-            <button
-              disabled={!previousChapter}
-              onClick={() => previousChapter && openChapter(previousChapter)}
-            >
-              ← {previousChapter ? `الفصل ${previousChapter.chapter_number}` : "لا يوجد فصل سابق"}
-            </button>
-            <button
-              disabled={!nextChapter}
-              onClick={() => nextChapter && openChapter(nextChapter)}
-            >
-              {nextChapter ? `الفصل ${nextChapter.chapter_number}` : "آخر فصل"} →
-            </button>
-          </div>
+            <ChapterAd
+              chapterId={selectedChapter.id}
+              placement="chapter_before_navigation"
+            />
+
+            <div className="chapter-ad-navigation-gap" aria-hidden="true" />
+
+            <div className="chapter-navigation">
+              <button
+                disabled={!previousChapter}
+                onClick={() => previousChapter && openChapter(previousChapter)}
+              >
+                ← {previousChapter ? `الفصل ${previousChapter.chapter_number}` : "لا يوجد فصل سابق"}
+              </button>
+              <button
+                disabled={!nextChapter}
+                onClick={() => nextChapter && openChapter(nextChapter)}
+              >
+                {nextChapter ? `الفصل ${nextChapter.chapter_number}` : "آخر فصل"} →
+              </button>
+            </div>
+
+            <ChapterAd
+              chapterId={selectedChapter.id}
+              placement="chapter_after_navigation"
+            />
+
+            <ChapterExtras chapterId={selectedChapter.id} isOwner={isOwner} />
+
+            <ChapterAd
+              chapterId={selectedChapter.id}
+              placement="chapter_after_comments"
+            />
+          </>
         )}
 
         {selectedNovelAdminView &&
