@@ -149,7 +149,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [replyTo,setReplyTo]=useState<string|null>(null);
 
   async function loadComments(userId?:string|null) {
-    const {data:cs}=await supabase.from("chapter_comments").select("id,content,author_name,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false});
+    const {data:cs}=await supabase.from("chapter_comments").select("id,content,author_name,user_id,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false});
     const commentIds=(cs||[]).map((item:any)=>item.id);
     const [{data:rs},{data:crs},{data:fs}] = await Promise.all([
       supabase.from("reaction_types").select("id,name,icon_path,enabled,sort_order").order("sort_order"),
@@ -222,10 +222,20 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
 
+  const commenterCount = useMemo(() => {
+    const uniqueCommenters = new Set(
+      comments.map((comment:any) => comment.user_id || "name:" + String(comment.author_name || "").trim()).filter(Boolean)
+    );
+    return uniqueCommenters.size;
+  }, [comments]);
+
   return <div className="chapter-extras">
 
     <button className="comments-toggle" onClick={()=>void openComments()} aria-expanded={open}>
-      <span>التعليقات ({comments.length})</span><span>{open?"▲":"▼"}</span>
+      <span>
+        التعليقات ({comments.length}) · {commenterCount} معلّق
+        {commenterCount === 1 ? "" : "ين"}
+      </span><span>{open?"▲":"▼"}</span>
     </button>
 
     {open && <section className="comments-panel">
