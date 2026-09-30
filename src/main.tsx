@@ -93,7 +93,8 @@ type AccountSection =
   | "profile"
   | "favorites"
   | "history"
-  | "notifications";
+  | "notifications"
+  | "site-ownership";
 
 function generateRightsCode() {
   const values = new Uint32Array(16);
@@ -1545,6 +1546,13 @@ function App() {
   const [rightsPromptCode, setRightsPromptCode] = useState("");
   const [rightsPromptSaving, setRightsPromptSaving] = useState(false);
 
+  const [siteRightsConfigured, setSiteRightsConfigured] = useState<boolean | null>(null);
+  const [siteRightsIsOwner, setSiteRightsIsOwner] = useState(false);
+  const [siteRightsDraft, setSiteRightsDraft] = useState("");
+  const [siteRightsSaving, setSiteRightsSaving] = useState(false);
+  const [siteOwnershipCode, setSiteOwnershipCode] = useState("");
+  const [siteOwnershipClaiming, setSiteOwnershipClaiming] = useState(false);
+
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [availableStaffUsers, setAvailableStaffUsers] = useState<any[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(false);
@@ -2104,8 +2112,12 @@ function App() {
   useEffect(() => {
     if (user) {
       loadAccountData();
+      void loadSiteRightsStatus();
+    } else {
+      setSiteRightsConfigured(null);
+      setSiteRightsIsOwner(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -2208,6 +2220,81 @@ function App() {
 
     setRightsHolders((data ?? []) as Array<{ id: string; display_name: string | null; role: Role }>);
   }
+
+  async function loadSiteRightsStatus() {
+    if (!user) return;
+
+    const { data, error } = await supabase.rpc("get_site_rights_status");
+    if (error) {
+      console.error("Site rights status error:", error);
+      return;
+    }
+
+    setSiteRightsConfigured(Boolean(data?.configured));
+    setSiteRightsIsOwner(Boolean(data?.is_owner));
+  }
+
+  async function saveSiteRightsCode() {
+    if (!isOwner) return;
+
+    const code = siteRightsDraft.replace(/[^0-9]/g, "");
+    if (!/^\d{16,64}$/.test(code)) {
+      setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا. نوصي برمز عشوائي طويل وقوي.");
+      return;
+    }
+
+    setSiteRightsSaving(true);
+    try {
+      const { error } = await supabase.rpc("set_site_rights_code", {
+        p_code: code,
+      });
+
+      if (error) {
+        setSiteMessage(error.message || "تعذر حفظ رمز حقوق الموقع.");
+        return;
+      }
+
+      setSiteRightsConfigured(true);
+      setSiteRightsIsOwner(true);
+      setSiteRightsDraft("");
+      setSiteMessage("تم حفظ رمز حقوق الموقع. احتفظي به خارج الحساب؛ فهو مفتاح استرداد ملكية الموقع.");
+    } finally {
+      setSiteRightsSaving(false);
+    }
+  }
+
+  async function claimSiteOwnership() {
+    if (!user) return;
+
+    const code = siteOwnershipCode.replace(/[^0-9]/g, "");
+    if (!/^\d{16,64}$/.test(code)) {
+      setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا.");
+      return;
+    }
+
+    setSiteOwnershipClaiming(true);
+    try {
+      const { data, error } = await supabase.rpc("claim_site_ownership", {
+        p_code: code,
+      });
+
+      if (error || !data) {
+        setSiteMessage("تعذر استرداد ملكية الموقع. تأكدي من الرمز أو حاولي لاحقًا.");
+        return;
+      }
+
+      await loadProfile(user.id);
+      await loadOwnerProfile();
+      await loadTeamProfiles();
+      await loadSiteRightsStatus();
+
+      setSiteOwnershipCode("");
+      setSiteMessage("تم استرداد ملكية الموقع لهذا الحساب. حقوق الروايات لا تنتقل تلقائيًا؛ تبقى مرتبطة بأصحابها.");
+    } finally {
+      setSiteOwnershipClaiming(false);
+    }
+  }
+
 
   async function saveRightsCode() {
     if (!canManage) return;
@@ -7464,6 +7551,70 @@ function App() {
         {isOwner && (
           <details className="admin-collapse">
             <summary className="admin-collapse-summary">
+              <span>حقوق الموقع</span>
+            </summary>
+            <div className="admin-collapse-content">
+              <div className="rights-code-admin">
+                <div>
+                  <strong>رمز حقوق الموقع</strong>
+                  <p>
+                    هذا رمز مستقل عن حساب Google أو البريد. استخدميه لاسترداد ملكية الموقع من حساب جديد إذا تعطل حساب المالك الحالي.
+                  </p>
+                </div>
+
+                <div className="rights-code-status">
+                  {siteRightsConfigured === null
+                    ? "جارٍ التحقق..."
+                    : siteRightsConfigured
+                      ? "✓ تم تعيين رمز حقوق الموقع"
+                      : "لم يتم تعيين رمز الموقع بعد"}
+                </div>
+
+                <div className="rights-code-form">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={64}
+                    value={siteRightsDraft}
+                    onChange={(event) =>
+                      setSiteRightsDraft(
+                        event.target.value.replace(/[^0-9]/g, "").slice(0, 64)
+                      )
+                    }
+                    placeholder="16-64 رقمًا"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      const generated = generateRightsCode() + generateRightsCode().slice(0, 8);
+                      setSiteRightsDraft(generated.slice(0, 24));
+                    }}
+                  >
+                    توليد رمز قوي
+                  </button>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={siteRightsSaving || siteRightsDraft.length < 16}
+                    onClick={() => void saveSiteRightsCode()}
+                  >
+                    {siteRightsSaving ? "جارٍ الحفظ..." : "حفظ رمز الموقع"}
+                  </button>
+                </div>
+
+                <small className="form-hint">
+                  احتفظي بالرمز خارج الموقع وفي مكان آمن. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز عشوائي طويل وقوي.
+                </small>
+              </div>
+            </div>
+          </details>
+        )}
+
+        {isOwner && (
+          <details className="admin-collapse">
+            <summary className="admin-collapse-summary">
               <span>شعار الموقع</span>
             </summary>
             <div className="admin-collapse-content">
@@ -7808,6 +7959,17 @@ function App() {
                 </span>
               )}
             </button>
+
+            <button
+              className={
+                activeSection === "site-ownership"
+                  ? "account-nav active"
+                  : "account-nav"
+              }
+              onClick={() => setActiveSection("site-ownership")}
+            >
+              ملكية الموقع
+            </button>
           </aside>
 
           <div className="account-content">
@@ -7989,6 +8151,57 @@ function App() {
                       }
                     )}
                   </div>
+                )}
+              </div>
+            ) : activeSection ===
+              "site-ownership" ? (
+              <div className="account-card">
+                <div className="section-heading">
+                  <div>
+                    <span className="eyebrow">حماية الملكية</span>
+                    <h2>ملكية الموقع</h2>
+                  </div>
+                </div>
+
+                {siteRightsIsOwner ? (
+                  <div className="message-box">
+                    أنتِ المالك الحالي للموقع. رمز حقوق الموقع محفوظ كقيمة مجزأة على الخادم.
+                  </div>
+                ) : (
+                  <>
+                    <p>
+                      هذا رمز مستقل عن Google والبريد الإلكتروني. عند تعطل الحساب القديم، سجّلي الدخول بحساب جديد وأدخلي رمز حقوق الموقع لاسترداد ملكية الموقع.
+                    </p>
+
+                    <div className="rights-code-form">
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={64}
+                        value={siteOwnershipCode}
+                        onChange={(event) =>
+                          setSiteOwnershipCode(
+                            event.target.value.replace(/[^0-9]/g, "").slice(0, 64)
+                          )
+                        }
+                        placeholder="رمز حقوق الموقع"
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={siteOwnershipClaiming || siteOwnershipCode.length < 16}
+                        onClick={() => void claimSiteOwnership()}
+                      >
+                        {siteOwnershipClaiming ? "جارٍ الاسترداد..." : "استرداد ملكية الموقع"}
+                      </button>
+                    </div>
+
+                    <small className="form-hint">
+                      الرمز لا ينقل حقوق الروايات للأشخاص الآخرين؛ حقوق كل رواية تبقى مرتبطة بصاحب حقوقها.
+                      توجد حماية من المحاولات المتكررة.
+                    </small>
+                  </>
                 )}
               </div>
             ) : (
