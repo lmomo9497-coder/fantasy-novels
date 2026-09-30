@@ -5690,7 +5690,8 @@ select:focus-visible {
    الإعلانات والتعليقات
 ========================= */
 .chapter-extras{width:min(980px,100%);margin:22px auto 0}
-.chapter-ad-slot{position:relative;margin:0 0 14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.chapter-ad-navigation-gap{height:18px}
+.chapter-ad-slot{position:relative;margin:0 0 18px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
 .chapter-ad-slot>a{display:block;color:inherit;text-decoration:none}
 .chapter-ad-slot img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover}
 .ad-label{position:absolute;z-index:2;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.65);font-size:11px;color:#fff}
