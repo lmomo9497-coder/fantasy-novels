@@ -781,10 +781,10 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   async function remove(a:Ad){await supabase.from("ads").delete().eq("id",a.id);await load()}
   function edit(a:Ad){
     setEditingAd(a.id);
-    setForm({internal_name:a.internal_name,ad_type:a.ad_type,status:a.status,destination_url:a.destination_url||"",alt_text:a.alt_text||"",title:a.title||"",cta_text:a.cta_text||"",device_target:a.device_target,priority:a.priority,frequency_cap:a.frequency_cap,start_at:a.start_at?new Date(a.start_at).toISOString().slice(0,16):"",end_at:a.end_at?new Date(a.end_at).toISOString().slice(0,16):""});
+    setForm({internal_name:a.internal_name,ad_type:a.ad_type,status:a.status,destination_url:a.destination_url||"",alt_text:a.alt_text||"",title:a.title||"",cta_text:a.cta_text||"",device_target:a.device_target,placement:a.placement||"chapter_after_navigation",priority:a.priority,frequency_cap:a.frequency_cap,start_at:a.start_at?new Date(a.start_at).toISOString().slice(0,16):"",end_at:a.end_at?new Date(a.end_at).toISOString().slice(0,16):""});
   }
   return <section className="admin-card ads-admin">
-    <div className="section-heading"><div><span className="eyebrow">الإعلانات</span><h2>إدارة الإعلانات</h2><p>إعلان واحد كحد أقصى في موضع الفصل، بدون نوافذ منبثقة أو تدوير سريع.</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">الإعلانات</span><h2>إدارة الإعلانات</h2><p>اختاري مكان الإعلان من القائمة. لا توجد نوافذ منبثقة أو إعلانات تغطي الشاشة.</p></div></div>
     {message&&<div className="message-box">{message}</div>}
     <div className="ad-form-grid">
       <input placeholder="اسم الإعلان الداخلي" value={form.internal_name} onChange={e=>setForm({...form,internal_name:e.target.value})}/>
