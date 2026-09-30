@@ -7469,6 +7469,92 @@ function App() {
     );
   }
 
+  async function downloadNovelBackup(novel: Novel) {
+    if (!canManage) return;
+
+    setSiteMessage("");
+    try {
+      setSiteMessage("جارٍ تجهيز النسخة الاحتياطية...");
+
+      const { data: chapterData, error: chaptersError } = await supabase
+        .from("chapters")
+        .select("*")
+        .eq("novel_id", novel.id)
+        .order("chapter_number", { ascending: true });
+
+      if (chaptersError) throw chaptersError;
+
+      const chapterRows = (chapterData || []) as Chapter[];
+      const chapterIds = chapterRows.map((chapter) => chapter.id);
+
+      let blockRows: ChapterBlock[] = [];
+      if (chapterIds.length > 0) {
+        const { data: blocksData, error: blocksError } = await supabase
+          .from("chapter_blocks")
+          .select("*")
+          .in("chapter_id", chapterIds)
+          .order("block_order", { ascending: true });
+
+        if (blocksError) throw blocksError;
+        blockRows = (blocksData || []) as ChapterBlock[];
+      }
+
+      const chapters = chapterRows.map((chapter) => ({
+        ...chapter,
+        blocks: blockRows
+          .filter((block) => block.chapter_id === chapter.id)
+          .map((block) => ({
+            ...block,
+            media_url: getPublicMediaUrl(
+              block.block_type === "audio" ? "audio" : "chapter-media",
+              block.media_path
+            ) || null,
+            effect_audio_url: block.effect_audio_path
+              ? getPublicMediaUrl("audio", block.effect_audio_path)
+              : null,
+          })),
+      }));
+
+      const backup = {
+        backup_version: 1,
+        backup_type: "fantasy-novels-novel",
+        exported_at: new Date().toISOString(),
+        source: window.location.origin,
+        novel: {
+          ...novel,
+          cover_url: novel.cover_path
+            ? getPublicMediaUrl("covers", novel.cover_path)
+            : null,
+        },
+        chapters,
+        note:
+          "هذه النسخة تحتوي على بيانات الرواية والفصول والنصوص ومسارات وروابط الملفات المرفوعة. الملفات الأصلية تبقى محفوظة في Supabase ولا يتم حذفها أو نقلها أثناء النسخ.",
+      };
+
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const safeTitle =
+        novel.title.trim().replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, "-") ||
+        "novel";
+      link.href = url;
+      link.download = `${safeTitle}-backup-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      setSiteMessage("تم تنزيل النسخة الاحتياطية للرواية بنجاح.");
+    } catch (error: any) {
+      setSiteMessage(
+        error?.message || "تعذر إنشاء النسخة الاحتياطية للرواية."
+      );
+    }
+  }
+
   function renderAdminPage() {
     if (!canManage) return null;
 
