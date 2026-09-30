@@ -751,7 +751,7 @@ export function CommentsAdmin({canManage}:{canManage:boolean}) {
 
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
-  const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",priority:0,frequency_cap:0,start_at:"",end_at:""});
+  const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",placement:"chapter_after_navigation" as Ad["placement"],priority:0,frequency_cap:0,start_at:"",end_at:""});
   const [image,setImage]=useState<File|null>(null);
   const [mobile,setMobile]=useState<File|null>(null);
   const [message,setMessage]=useState("");
