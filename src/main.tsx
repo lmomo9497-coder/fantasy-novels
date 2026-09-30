@@ -8227,9 +8227,9 @@ function App() {
         </div>
       )}
 
-      <footer className="site-footer">
+      <footer className="site-footer" dir="rtl">
         <p>
-          روايات خيالية © 2026
+          روايات خيالية © 2026 — جميع حقوق الموقع محفوظة لمالك الموقع
         </p>
       </footer>
     </div>
