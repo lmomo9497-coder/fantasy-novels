@@ -5484,18 +5484,61 @@ select:focus-visible {
 }
 
 .new-releases-grid > .novel-card {
-  flex: 0 0 min(420px, calc(100% - 56px));
+  flex: 0 0 min(330px, calc(100% - 72px));
+  grid-template-columns: 115px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
   scroll-snap-align: start;
+}
+
+.new-releases-grid > .novel-card .novel-card-top h2 {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.new-releases-grid > .novel-card .novel-category {
+  margin: 7px 0 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.new-releases-grid > .novel-card .novel-card-body > p {
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.65;
+  -webkit-line-clamp: 2;
+}
+
+.new-releases-grid > .novel-card .novel-meta {
+  gap: 4px;
+}
+
+.new-releases-grid > .novel-card .novel-meta span {
+  padding: 4px 7px;
+  font-size: 9px;
 }
 
 @media (max-width: 700px) {
   .new-releases-grid {
-    gap: 12px;
+    gap: 10px;
     padding-inline: 1px;
   }
 
   .new-releases-grid > .novel-card {
-    flex-basis: min(88vw, 360px);
+    flex-basis: min(78vw, 300px);
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .new-releases-grid > .novel-card .novel-card-top h2 {
+    font-size: 15px;
+  }
+
+  .new-releases-grid > .novel-card .favorite-button {
+    width: 31px;
+    height: 31px;
+    font-size: 15px;
   }
 }
 
