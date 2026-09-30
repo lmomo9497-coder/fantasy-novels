@@ -561,6 +561,23 @@ img {
     0 20px 55px rgba(0, 0, 0, 0.34);
 }
 
+/* بطاقات المكتبة: الغلاف يمين والمعلومات يسار */
+.novels-grid > .novel-card {
+  direction: rtl;
+  grid-template-columns:
+    minmax(0, 1fr) 170px;
+}
+
+.novels-grid > .novel-card .novel-cover-column {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.novels-grid > .novel-card .novel-card-body {
+  grid-column: 1;
+  grid-row: 1;
+}
+
 /* =========================
    غلاف الرواية
 ========================= */
