@@ -2555,14 +2555,13 @@ select:focus-visible {
     gap: 13px;
   }
 
-  .novel-card {
+  .novels-grid > .novel-card {
+    width: min(72vw, 260px);
+    justify-self: end;
     grid-template-columns:
-      105px minmax(0, 1fr);
-
-    gap: 13px;
-
-    padding: 11px;
-
+      82px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
     border-radius: 15px;
   }
 
