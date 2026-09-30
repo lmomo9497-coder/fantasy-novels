@@ -9,6 +9,7 @@ type Ad = {
   alt_text: string|null; title: string|null; cta_text: string|null;
   start_at: string|null; end_at: string|null; device_target: string;
   priority: number; frequency_cap: number; enabled: boolean;
+  placement: "chapter_after_content" | "chapter_before_navigation" | "chapter_after_navigation" | "chapter_after_comments";
 };
 
 type Reaction = { id:string; name:string; icon_path:string|null; enabled:boolean; sort_order:number };
