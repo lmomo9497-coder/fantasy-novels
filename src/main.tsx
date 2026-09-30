@@ -8162,11 +8162,10 @@ function App() {
                       <input
                         type="password"
                         inputMode="text"
-                        maxLength={64}
                         value={siteOwnershipCode}
                         onChange={(event) =>
                           setSiteOwnershipCode(
-                            event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 64)
+                            event.target.value.replace(/\D/g, "")
                           )
                         }
                         placeholder="رمز حقوق الموقع"
@@ -8175,7 +8174,7 @@ function App() {
                       <button
                         type="button"
                         className="primary-button"
-                        disabled={siteOwnershipClaiming || siteOwnershipCode.length < 16}
+                        disabled={siteOwnershipClaiming || siteOwnershipCode.length === 0}
                         onClick={() => void claimSiteOwnership()}
                       >
                         {siteOwnershipClaiming ? "جارٍ الاسترداد..." : "استرداد ملكية الموقع"}
