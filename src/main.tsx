@@ -7379,7 +7379,7 @@ function App() {
                     <button
                       type="button"
                       className="primary-button"
-                      disabled={rightsCodeSaving || rightsCodeDraft.length !== 12}
+                      disabled={rightsCodeSaving || rightsCodeDraft.length < 8}
                       onClick={() => void saveRightsCode()}
                     >
                       {rightsCodeSaving ? "جارٍ الحفظ..." : "حفظ الرمز"}
@@ -7443,7 +7443,7 @@ function App() {
                         <button
                           type="button"
                           className="primary-button"
-                          disabled={rightsCodeSaving || rightsEmailCode.length !== 6 || rightsNewCode.length !== 12}
+                          disabled={rightsCodeSaving || rightsEmailCode.length !== 6 || rightsNewCode.length < 8}
                           onClick={() => void verifyRightsEmailAndChangeCode()}
                         >
                           {rightsCodeSaving ? "جارٍ التحقق والتغيير..." : "تأكيد وتغيير الرمز"}
@@ -8181,7 +8181,7 @@ function App() {
               <button
                 type="button"
                 className="confirm-delete-button"
-                disabled={rightsPromptSaving || rightsPromptCode.length !== 12}
+                disabled={rightsPromptSaving || rightsPromptCode.length < 8}
                 onClick={() => void publishNovelFromRightsPrompt()}
               >
                 {rightsPromptSaving ? "جارٍ التحقق..." : "تحقق وانشر"}
