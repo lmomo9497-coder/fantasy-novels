@@ -563,7 +563,7 @@ img {
 
 /* بطاقات المكتبة: الغلاف يمين والمعلومات يسار */
 .novels-grid > .novel-card {
-  direction: rtl;
+  direction: ltr;
   grid-template-columns:
     minmax(0, 1fr) 170px;
 }
@@ -576,6 +576,8 @@ img {
 .novels-grid > .novel-card .novel-card-body {
   grid-column: 1;
   grid-row: 1;
+  direction: rtl;
+  text-align: right;
 }
 
 /* =========================
@@ -2575,7 +2577,7 @@ select:focus-visible {
   .novels-grid > .novel-card {
     width: 100%;
     justify-self: stretch;
-    direction: rtl;
+    direction: ltr;
     grid-template-columns:
       minmax(0, 1fr) 90px;
     gap: 10px;
