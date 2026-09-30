@@ -5949,7 +5949,8 @@ select:focus-visible {
   min-width: 0;
 }
 
-.new-releases-grid > .novel-card .novel-rights-under-cover {
+.new-releases-grid > .novel-card .novel-rights-under-cover,
+.novel-card .novel-rights-under-cover-library {
   margin: 5px 2px 0;
   font-size: 0.42rem;
   line-height: 1.25;
@@ -5959,7 +5960,8 @@ select:focus-visible {
 }
 
 @media (max-width: 700px) {
-  .new-releases-grid > .novel-card .novel-rights-under-cover {
+  .new-releases-grid > .novel-card .novel-rights-under-cover,
+  .novel-card .novel-rights-under-cover-library {
     margin-top: 4px;
     font-size: 0.38rem;
   }
