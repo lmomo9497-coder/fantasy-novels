@@ -7551,38 +7551,50 @@ function App() {
                       : "لم يتم تعيين رمز الموقع بعد"}
                 </div>
 
-                <div className="rights-code-form">
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    value={siteRightsDraft}
-                    onChange={(event) =>
-                      setSiteRightsDraft(
-                        event.target.value.replace(/\D/g, "")
-                      )
-                    }
-                    placeholder="رمز حقوق بالأرقام بأي طول"
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => {
-                      const generated = generateRightsCode();
-                      setSiteRightsDraft(generated);
-                    }}
-                  >
-                    توليد رمز قوي
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-button"
-                    disabled={siteRightsSaving || siteRightsDraft.length === 0}
-                    onClick={() => void saveSiteRightsCode()}
-                  >
-                    {siteRightsSaving ? "جارٍ الحفظ..." : "حفظ رمز الموقع"}
-                  </button>
-                </div>
+{siteRightsConfigured ? (
+                  <div className="rights-code-form">
+                    <strong>✓ تم تعيين رمز حقوق الموقع</strong>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        setSiteRightsDraft("");
+                        setSiteRightsConfigured(false);
+                        setSiteMessage("اكتبي رمزًا جديدًا لاستبدال رمز حقوق الموقع الحالي.");
+                      }}
+                    >
+                      إضافة رمز جديد
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rights-code-form">
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      value={siteRightsDraft}
+                      onChange={(event) =>
+                        setSiteRightsDraft(event.target.value.replace(/\D/g, ""))
+                      }
+                      placeholder="رمز حقوق بالأرقام بأي طول"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setSiteRightsDraft(generateRightsCode())}
+                    >
+                      توليد رمز قوي
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={siteRightsSaving || siteRightsDraft.length === 0}
+                      onClick={() => void saveSiteRightsCode()}
+                    >
+                      {siteRightsSaving ? "جارٍ الحفظ..." : "حفظ رمز الموقع"}
+                    </button>
+                  </div>
+                )}
 
                 <small className="form-hint">
                   احتفظي بالرمز خارج الموقع وفي مكان آمن. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز عشوائي طويل وقوي.
