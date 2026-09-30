@@ -1544,6 +1544,11 @@ function App() {
   const [rightsCodeDraft, setRightsCodeDraft] = useState("");
   const [showRightsCodeDraft, setShowRightsCodeDraft] = useState(false);
   const [rightsCodeSaving, setRightsCodeSaving] = useState(false);
+  const [rightsChangeMode, setRightsChangeMode] = useState(false);
+  const [rightsEmailCode, setRightsEmailCode] = useState("");
+  const [rightsNewCode, setRightsNewCode] = useState("");
+  const [rightsEmailSent, setRightsEmailSent] = useState(false);
+  const [rightsEmailVerifying, setRightsEmailVerifying] = useState(false);
   const [rightsHolders, setRightsHolders] = useState<Array<{ id: string; display_name: string | null; role: Role }>>([]);
   const [rightsPrompt, setRightsPrompt] = useState<Novel | null>(null);
   const [rightsPromptCode, setRightsPromptCode] = useState("");
@@ -2217,8 +2222,13 @@ function App() {
     if (!canManage) return;
 
     const code = rightsCodeDraft.replace(/[^0-9]/g, "");
-    if (!/^\\d{12}$/.test(code)) {
+    if (!/^\d{12}$/.test(code)) {
       setSiteMessage("رمز الحقوق يجب أن يكون 12 رقمًا بالضبط.");
+      return;
+    }
+
+    if (rightsCodeSet) {
+      setSiteMessage("لأن لديك رمز حقوق سابقًا، استخدمي "تغيير/نسيت رمز الحقوق" ثم تحققي من بريدك الإلكتروني أولًا.");
       return;
     }
 
@@ -2236,7 +2246,81 @@ function App() {
       setRightsCodeSet(true);
       setRightsCodeDraft("");
       setShowRightsCodeDraft(false);
-      setSiteMessage("تم حفظ رمز الحقوق. لن يظهر الرمز القديم مرة أخرى.");
+      setSiteMessage("تم حفظ رمز الحقوق. احفظيه في مكان آمن؛ لن نعرضه لك لاحقًا.");
+    } finally {
+      setRightsCodeSaving(false);
+    }
+  }
+
+  async function requestRightsCodeEmailVerification() {
+    if (!canManage || !user?.email) return;
+
+    setRightsEmailVerifying(true);
+    setSiteMessage("");
+
+    try {
+      const { error } = await supabase.auth.reauthenticate();
+
+      if (error) {
+        setSiteMessage(error.message || "تعذر إرسال رمز التحقق إلى بريدك.");
+        return;
+      }
+
+      setRightsChangeMode(true);
+      setRightsEmailSent(true);
+      setRightsEmailCode("");
+      setRightsNewCode("");
+      setSiteMessage("أرسلنا رمز تحقق إلى بريد حسابك. أدخليه ثم اختاري رمز حقوق جديدًا.");
+    } finally {
+      setRightsEmailVerifying(false);
+    }
+  }
+
+  async function verifyRightsEmailAndChangeCode() {
+    if (!canManage || !user?.email) return;
+
+    const emailCode = rightsEmailCode.replace(/[^0-9]/g, "");
+    const newCode = rightsNewCode.replace(/[^0-9]/g, "");
+
+    if (!/^\d{6}$/.test(emailCode)) {
+      setSiteMessage("رمز البريد يجب أن يكون 6 أرقام.");
+      return;
+    }
+
+    if (!/^\d{12}$/.test(newCode)) {
+      setSiteMessage("رمز الحقوق الجديد يجب أن يكون 12 رقمًا.");
+      return;
+    }
+
+    setRightsCodeSaving(true);
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: user.email,
+        token: emailCode,
+        type: "reauthentication",
+      });
+
+      if (verifyError) {
+        setSiteMessage(verifyError.message || "رمز البريد غير صحيح أو منتهي.");
+        return;
+      }
+
+      const { error: saveError } = await supabase.rpc("set_my_rights_code", {
+        p_code: newCode,
+      });
+
+      if (saveError) {
+        setSiteMessage(saveError.message || "تعذر تغيير رمز الحقوق.");
+        return;
+      }
+
+      setRightsCodeSet(true);
+      setRightsChangeMode(false);
+      setRightsEmailSent(false);
+      setRightsEmailCode("");
+      setRightsNewCode("");
+      setShowRightsCodeDraft(false);
+      setSiteMessage("تم تغيير رمز الحقوق. جميع روايات هذا الحساب السابقة تستخدم الرمز الجديد تلقائيًا.");
     } finally {
       setRightsCodeSaving(false);
     }
@@ -2248,7 +2332,7 @@ function App() {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
     }
-    if (!/^\\d{12}$/.test(normalized)) {
+    if (!/^\d{12}$/.test(normalized)) {
       setNovelMessage("رمز الحقوق يجب أن يكون 12 رقمًا.");
       return false;
     }
@@ -7259,52 +7343,129 @@ function App() {
               <div>
                 <strong>رمز الحقوق الخاص بحسابك</strong>
                 <p>
-                  هذا الرمز يثبت أنك مخوّل بنشر أعمال صاحب الحقوق. لا نعطي أي مشرف صلاحية نقل ملكية الرواية؛ الرمز وحده يثبت إذن النشر.
+                  هذا الرمز يثبت أنك مخوّل بنشر أعمال صاحب الحقوق. لا نعطي أي مشرف صلاحية نقل ملكية الرواية؛ الرمز يثبت إذن النشر.
                 </p>
               </div>
+
               <div className="rights-code-status">
-                {rightsCodeSet === null ? "جارٍ التحقق..." : rightsCodeSet ? "✓ تم تعيين رمز" : "لم يتم تعيين رمز بعد"}
+                {rightsCodeSet === null
+                  ? "جارٍ التحقق..."
+                  : rightsCodeSet
+                    ? "✓ تم تعيين رمز حقوق"
+                    : "لم يتم تعيين رمز بعد"}
               </div>
-              <div className="rights-code-form">
-                <input
-                  type={showRightsCodeDraft ? "text" : "password"}
-                  inputMode="numeric"
-                  maxLength={12}
-                  value={rightsCodeDraft}
-                  onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
-                  placeholder="12 رقمًا"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setShowRightsCodeDraft((value) => !value)}
-                >
-                  {showRightsCodeDraft ? "إخفاء" : "إظهار"}
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    const generated = generateRightsCode();
-                    setRightsCodeDraft(generated);
-                    setShowRightsCodeDraft(true);
-                  }}
-                >
-                  توليد رمز قوي
-                </button>
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={rightsCodeSaving || rightsCodeDraft.length !== 12}
-                  onClick={() => void saveRightsCode()}
-                >
-                  {rightsCodeSaving ? "جارٍ الحفظ..." : "حفظ الرمز"}
-                </button>
-              </div>
-              <small className="form-hint">
-                الرمز 12 رقمًا ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. عند نسيانه أنشئي رمزًا جديدًا.
-              </small>
+
+              {!rightsCodeSet ? (
+                <>
+                  <div className="rights-code-form">
+                    <input
+                      type={showRightsCodeDraft ? "text" : "password"}
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={rightsCodeDraft}
+                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
+                      placeholder="12 رقمًا"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setShowRightsCodeDraft((value) => !value)}
+                    >
+                      {showRightsCodeDraft ? "إخفاء" : "إظهار"}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        const generated = generateRightsCode();
+                        setRightsCodeDraft(generated);
+                        setShowRightsCodeDraft(true);
+                      }}
+                    >
+                      توليد رمز قوي
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={rightsCodeSaving || rightsCodeDraft.length !== 12}
+                      onClick={() => void saveRightsCode()}
+                    >
+                      {rightsCodeSaving ? "جارٍ الحفظ..." : "حفظ الرمز"}
+                    </button>
+                  </div>
+                  <small className="form-hint">
+                    الرمز 12 رقمًا ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف.
+                  </small>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={rightsEmailVerifying || rightsCodeSaving}
+                    onClick={() => void requestRightsCodeEmailVerification()}
+                  >
+                    {rightsEmailVerifying
+                      ? "جارٍ إرسال رمز البريد..."
+                      : "تغيير / نسيت رمز الحقوق"}
+                  </button>
+
+                  {rightsChangeMode && (
+                    <div className="rights-code-change-box">
+                      <p>
+                        أرسلنا رمز تحقق إلى <strong dir="ltr">{user?.email}</strong>.
+                        أدخلِيه هنا ثم حددي رمز الحقوق الجديد.
+                      </p>
+
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={rightsEmailCode}
+                        onChange={(event) => setRightsEmailCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                        placeholder="رمز البريد: 6 أرقام"
+                        autoComplete="one-time-code"
+                      />
+
+                      <div className="rights-code-form">
+                        <input
+                          type={showRightsCodeDraft ? "text" : "password"}
+                          inputMode="numeric"
+                          maxLength={12}
+                          value={rightsNewCode}
+                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
+                          placeholder="رمز الحقوق الجديد: 12 رقمًا"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => {
+                            const generated = generateRightsCode();
+                            setRightsNewCode(generated);
+                            setShowRightsCodeDraft(true);
+                          }}
+                        >
+                          توليد رمز قوي
+                        </button>
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={rightsCodeSaving || rightsEmailCode.length !== 6 || rightsNewCode.length !== 12}
+                          onClick={() => void verifyRightsEmailAndChangeCode()}
+                        >
+                          {rightsCodeSaving ? "جارٍ التحقق والتغيير..." : "تأكيد وتغيير الرمز"}
+                        </button>
+                      </div>
+
+                      <small className="form-hint">
+                        بعد تغيير الرمز يصبح الرمز الجديد هو المعتمد تلقائيًا لجميع روايات هذا الحساب السابقة والجديدة.
+                      </small>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </details>
