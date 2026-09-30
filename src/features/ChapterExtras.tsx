@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = { chapterId: string; isOwner: boolean };
+type Props = { chapterId: string; canManage?: boolean; isOwner: boolean };
 
 type Ad = {
   id: string; internal_name: string; ad_type: "image"|"native"; status: string;
@@ -15,6 +15,122 @@ type Reaction = { id:string; name:string; icon_path:string|null; enabled:boolean
 
 function mediaUrl(path:string|null) {
   return path ? supabase.storage.from("ad-media").getPublicUrl(path).data.publicUrl : "";
+}
+
+
+
+let chapterAdsCacheKey = "";
+let chapterAdsCache: Ad[] | null = null;
+let chapterAdsLoading: Promise<Ad[]> | null = null;
+
+async function loadChapterAdsOnce(chapterId: string) {
+  if (chapterAdsCacheKey === chapterId && chapterAdsCache) return chapterAdsCache;
+  if (chapterAdsCacheKey === chapterId && chapterAdsLoading) return chapterAdsLoading;
+
+  chapterAdsCacheKey = chapterId;
+  chapterAdsCache = null;
+  chapterAdsLoading = supabase
+    .from("ads")
+    .select("*")
+    .eq("enabled", true)
+    .in("status", ["active", "scheduled"])
+    .order("priority", { ascending: false })
+    .limit(20)
+    .then(({ data }) => {
+      const result = (data || []) as Ad[];
+      chapterAdsCache = result;
+      chapterAdsLoading = null;
+      return result;
+    });
+
+  return chapterAdsLoading;
+}
+
+export function ChapterAd({
+  chapterId,
+  placement,
+}: {
+  chapterId: string;
+  placement: Ad["placement"];
+}) {
+  const [ads, setAds] = useState<Ad[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadChapterAdsOnce(chapterId).then((data) => {
+      if (!cancelled) setAds(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [chapterId]);
+
+  const ad = useMemo(() => {
+    const mobile = window.matchMedia?.("(max-width: 700px)").matches ?? false;
+    const now = Date.now();
+
+    return ads.find((item) => {
+      if (item.placement !== placement) return false;
+      if (item.device_target === "mobile" && !mobile) return false;
+      if (item.device_target === "desktop" && mobile) return false;
+      if (item.start_at && new Date(item.start_at).getTime() > now) return false;
+      if (item.end_at && new Date(item.end_at).getTime() < now) return false;
+      if (item.frequency_cap > 0) {
+        const key = "fantasy-ad-" + item.id;
+        const count = Number(sessionStorage.getItem(key) || "0");
+        if (count >= item.frequency_cap) return false;
+      }
+      return true;
+    }) || null;
+  }, [ads, placement]);
+
+  useEffect(() => {
+    if (!ad) return;
+    const key = "fantasy-ad-" + ad.id;
+    sessionStorage.setItem(
+      key,
+      String(Number(sessionStorage.getItem(key) || "0") + 1)
+    );
+  }, [ad?.id]);
+
+  if (!ad) return null;
+
+  return (
+    <div className="chapter-ad-slot" aria-label="إعلان">
+      <span className="ad-label">إعلان</span>
+      <a
+        href={ad.destination_url || "#"}
+        target={ad.destination_url ? "_blank" : undefined}
+        rel="noopener noreferrer nofollow sponsored"
+        onClick={(event) => {
+          if (!ad.destination_url) event.preventDefault();
+        }}
+      >
+        <picture>
+          {ad.mobile_image_path && (
+            <source
+              media="(max-width: 700px)"
+              srcSet={mediaUrl(ad.mobile_image_path)}
+            />
+          )}
+          {ad.image_path && (
+            <img
+              src={mediaUrl(ad.image_path)}
+              alt={ad.alt_text || ad.internal_name}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+        </picture>
+        {ad.ad_type === "native" && (
+          <div className="ad-native-copy">
+            <strong>{ad.title || ad.internal_name}</strong>
+            {ad.cta_text && <span>{ad.cta_text}</span>}
+          </div>
+        )}
+      </a>
+    </div>
+  );
 }
 
 export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
@@ -32,10 +148,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
   const [replyTo,setReplyTo]=useState<string|null>(null);
 
-  async function loadAds() {
-    const {data}=await supabase.from("ads").select("*").eq("enabled",true).in("status",["active","scheduled"]).order("priority",{ascending:false}).limit(20);
-    setAds(data||[]);
-  }
   async function loadComments(userId?:string|null) {
     const {data:cs}=await supabase.from("chapter_comments").select("id,content,author_name,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false});
     const commentIds=(cs||[]).map((item:any)=>item.id);
@@ -58,30 +170,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     setUser(current);
     await loadComments(current?.id ?? null);
   }
-  useEffect(()=>{void loadAds()},[chapterId]);
-
-  const ad = useMemo(()=>{
-    const mobile=window.matchMedia?.("(max-width: 700px)").matches ?? false;
-    const now=Date.now();
-    return ads.find(a=>{
-      if(a.device_target==="mobile"&&!mobile) return false;
-      if(a.device_target==="desktop"&&mobile) return false;
-      if(a.start_at&&new Date(a.start_at).getTime()>now) return false;
-      if(a.end_at&&new Date(a.end_at).getTime()<now) return false;
-      if(a.frequency_cap>0){
-        const key="fantasy-ad-"+a.id;
-        const count=Number(sessionStorage.getItem(key)||"0");
-        if(count>=a.frequency_cap) return false;
-      }
-      return true;
-    })||null;
-  },[ads]);
-
-  useEffect(()=>{
-    if(!ad)return;
-    const key="fantasy-ad-"+ad.id;
-    sessionStorage.setItem(key,String(Number(sessionStorage.getItem(key)||"0")+1));
-  },[ad?.id]);
 
   async function addComment(){
     const text=draft.trim();
@@ -135,15 +223,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   }
 
   return <div className="chapter-extras">
-    {ad && <div className="chapter-ad-slot" aria-label="إعلان">
-      <span className="ad-label">إعلان</span>
-      <a href={ad.destination_url||"#"} target={ad.destination_url?"_blank":undefined} rel="noopener noreferrer nofollow sponsored" onClick={e=>{if(!ad.destination_url)e.preventDefault()}}>
-        <picture>{ad.mobile_image_path&&<source media="(max-width: 700px)" srcSet={mediaUrl(ad.mobile_image_path)}/>}
-          {ad.image_path&&<img src={mediaUrl(ad.image_path)} alt={ad.alt_text||ad.internal_name} loading="lazy" decoding="async" />}
-        </picture>
-        {ad.ad_type==="native"&&<div className="ad-native-copy"><strong>{ad.title||ad.internal_name}</strong>{ad.cta_text&&<span>{ad.cta_text}</span>}</div>}
-      </a>
-    </div>}
 
     <button className="comments-toggle" onClick={()=>void openComments()} aria-expanded={open}>
       <span>التعليقات ({comments.length})</span><span>{open?"▲":"▼"}</span>
