@@ -8412,42 +8412,18 @@ function App() {
                     لا يوجد سجل قراءة بعد.
                   </div>
                 ) : (
-                  <div className="account-novel-list">
-                    {history.map(
-                      (item) => {
-                        const novel =
-                          publishedNovels.find(
-                            (novelItem) =>
-                              novelItem.id ===
-                              item.novel_id
-                          );
+                  <div className="novels-grid">
+                    {history.map((item) => {
+                      const novel = publishedNovels.find(
+                        (novelItem) => novelItem.id === item.novel_id
+                      );
 
-                        if (!novel) {
-                          return null;
-                        }
-
-                        return (
-                          <button
-                            className="account-novel-item"
-                            key={item.id}
-                            onClick={() =>
-                              openNovel(
-                                novel,
-                                false
-                              )
-                            }
-                          >
-                            <span>
-                              {novel.title}
-                            </span>
-
-                            <span>
-                              متابعة القراءة →
-                            </span>
-                          </button>
-                        );
+                      if (!novel) {
+                        return null;
                       }
-                    )}
+
+                      return renderNovelCard(novel);
+                    })}
                   </div>
                 )}
               </div>
