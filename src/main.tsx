@@ -5464,7 +5464,7 @@ function App() {
     );
   }
 
-  function renderNovelCard(novel: Novel) {
+  function renderNovelCard(novel: Novel, activityLabel?: string) {
     const favorite = isFavorite(novel.id);
     const image = coverUrl(novel);
 
@@ -5480,7 +5480,7 @@ function App() {
           <span className="novel-new-badge">{activityLabel}</span>
         )}
 
-        <div className="novel-cover">
+        <div className={activityLabel ? "novel-cover-column" : undefined}>
           <div className="novel-cover">
             {image ? (
               <img
@@ -5497,6 +5497,12 @@ function App() {
               </div>
             )}
           </div>
+
+          {activityLabel && novel.rights_name && (
+            <div className="novel-rights novel-rights-under-cover" dir="rtl">
+              © {novel.rights_name} — جميع الحقوق محفوظة
+            </div>
+          )}
         </div>
 
         <div className="novel-card-body">
@@ -5505,18 +5511,12 @@ function App() {
 
             {user && (
               <button
-                className={`favorite-button ${
-                  favorite ? "is-favorite" : ""
-                }`}
+                className={`favorite-button ${favorite ? "is-favorite" : ""}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleFavorite(novel);
                 }}
-                title={
-                  favorite
-                    ? "إزالة من المفضلة"
-                    : "إضافة للمفضلة"
-                }
+                title={favorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
               >
                 {favorite ? "♥" : "♡"}
               </button>
@@ -5541,7 +5541,7 @@ function App() {
             </div>
           )}
 
-          {novel.rights_name && (
+          {novel.rights_name && !activityLabel && (
             <div className="novel-rights" dir="rtl">
               © {novel.rights_name} — جميع الحقوق محفوظة
             </div>
@@ -5549,123 +5549,9 @@ function App() {
 
           <div className="novel-meta">
             <span>
-              {novel.status === "ongoing"
-                ? "مستمرة"
-                : "مكتملة"}
+              {novel.status === "ongoing" ? "مستمرة" : "مكتملة"}
             </span>
-
             <span>{novel.language}</span>
-
-            <span className="novel-reader-count">
-              👥 {novel.reader_count ?? 0} قرّاء
-            </span>
-          </div>
-        </div>
-      </article>
-    );
-  }
-
-  function renderNewReleaseCard(novel: Novel, activityLabel?: string) {
-    const favorite = isFavorite(novel.id);
-    const image = coverUrl(novel);
-
-    return (
-      <article
-        key={novel.id}
-        className={
-          "novel-card" + (activityLabel ? " novel-card-new-release" : "")
-        }
-        onClick={() => openNovel(novel, false)}
-      >
-        {activityLabel && (
-          <span className="novel-new-badge">{activityLabel}</span>
-        )}
-
-        <div className="novel-cover-column">
-          <div className="novel-cover">
-            {image ? (
-              <img
-                src={image}
-                alt={novel.title}
-                style={{
-                  objectPosition: novel.cover_position || "50% 50%",
-                }}
-              />
-            ) : (
-              <div className="cover-placeholder">
-                <span>✦</span>
-                <small>رواية</small>
-              </div>
-            )}
-          </div>
-
-          {novel.rights_name && (
-            <div
-              className={
-                activityLabel
-                  ? "novel-rights novel-rights-under-cover"
-                  : "novel-rights novel-rights-under-cover novel-rights-under-cover-library"
-              }
-              dir="rtl"
-            >
-              © {novel.rights_name} — جميع الحقوق محفوظة
-            </div>
-          )}
-        </div>
-
-        <div className="novel-card-body">
-          <div className="novel-card-top">
-            <h2>{novel.title}</h2>
-
-            {user && (
-              <button
-                className={`favorite-button ${
-                  favorite ? "is-favorite" : ""
-                }`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleFavorite(novel);
-                }}
-                title={
-                  favorite
-                    ? "إزالة من المفضلة"
-                    : "إضافة للمفضلة"
-                }
-              >
-                {favorite ? "♥" : "♡"}
-              </button>
-            )}
-          </div>
-
-          {(novel.novel_categories?.length || novel.categories?.name) && (
-            <div className="novel-category">
-              {(novel.novel_categories?.length
-                ? novel.novel_categories.map((item) => item.category.name)
-                : novel.categories?.name
-                  ? [novel.categories.name]
-                  : []
-              ).join(" · ")}
-            </div>
-          )}
-
-          {novel.description && (
-            <div className="novel-card-description">
-              <span>وصف</span>
-              <p>{novel.description}</p>
-            </div>
-          )}
-
-
-
-          <div className="novel-meta">
-            <span>
-              {novel.status === "ongoing"
-                ? "مستمرة"
-                : "مكتملة"}
-            </span>
-
-            <span>{novel.language}</span>
-
             <span className="novel-reader-count">
               👥 {novel.reader_count ?? 0} قرّاء
             </span>
@@ -5729,7 +5615,7 @@ function App() {
 
             <div className="new-releases-grid">
               {newReleaseNovels.map(({ novel, activityLabel }) =>
-                renderNewReleaseCard(novel, activityLabel)
+                renderNovelCard(novel, activityLabel)
               )}
             </div>
           </section>
