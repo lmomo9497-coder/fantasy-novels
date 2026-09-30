@@ -97,17 +97,13 @@ type AccountSection =
   | "site-ownership";
 
 function generateRightsCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
   const values = new Uint32Array(24);
   crypto.getRandomValues(values);
 
   let code = "";
   for (const value of values) {
-    code += alphabet[value % alphabet.length];
+    code += String(value % 10);
   }
-
-  const allSame = code.split("").every((character) => character === code[0]);
-  if (allSame) return generateRightsCode();
 
   return code;
 }
@@ -7558,23 +7554,22 @@ function App() {
                 <div className="rights-code-form">
                   <input
                     type="password"
-                    inputMode="text"
-                    maxLength={64}
+                    inputMode="numeric"
                     value={siteRightsDraft}
                     onChange={(event) =>
                       setSiteRightsDraft(
-                        event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 64)
+                        event.target.value.replace(/\D/g, "")
                       )
                     }
-                    placeholder="16-64 خانة"
+                    placeholder="رمز حقوق بالأرقام بأي طول"
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
                     className="secondary-button"
                     onClick={() => {
-                      const generated = generateRightsCode() + generateRightsCode().slice(0, 8);
-                      setSiteRightsDraft(generated.slice(0, 24));
+                      const generated = generateRightsCode();
+                      setSiteRightsDraft(generated);
                     }}
                   >
                     توليد رمز قوي
@@ -7582,7 +7577,7 @@ function App() {
                   <button
                     type="button"
                     className="primary-button"
-                    disabled={siteRightsSaving || siteRightsDraft.length < 16}
+                    disabled={siteRightsSaving || siteRightsDraft.length === 0}
                     onClick={() => void saveSiteRightsCode()}
                   >
                     {siteRightsSaving ? "جارٍ الحفظ..." : "حفظ رمز الموقع"}
