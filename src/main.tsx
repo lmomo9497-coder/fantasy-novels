@@ -5511,12 +5511,18 @@ function App() {
 
             {user && (
               <button
-                className={`favorite-button ${favorite ? "is-favorite" : ""}`}
+                className={`favorite-button ${
+                  favorite ? "is-favorite" : ""
+                }`}
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleFavorite(novel);
                 }}
-                title={favorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                title={
+                  favorite
+                    ? "إزالة من المفضلة"
+                    : "إضافة للمفضلة"
+                }
               >
                 {favorite ? "♥" : "♡"}
               </button>
@@ -5549,9 +5555,13 @@ function App() {
 
           <div className="novel-meta">
             <span>
-              {novel.status === "ongoing" ? "مستمرة" : "مكتملة"}
+              {novel.status === "ongoing"
+                ? "مستمرة"
+                : "مكتملة"}
             </span>
+
             <span>{novel.language}</span>
+
             <span className="novel-reader-count">
               👥 {novel.reader_count ?? 0} قرّاء
             </span>
