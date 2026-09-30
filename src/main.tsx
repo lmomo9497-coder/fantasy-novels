@@ -2224,8 +2224,8 @@ function App() {
     if (!isOwner) return;
 
     const code = siteRightsDraft.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-    if (!/^.{16,64}$/.test(code)) {
-      setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا. نوصي برمز عشوائي طويل وقوي.");
+    if (!/^\d+$/.test(code)) {
+      setSiteMessage("رمز حقوق الموقع يجب أن يحتوي على أرقام فقط، ويمكن أن يكون بأي طول.");
       return;
     }
 
