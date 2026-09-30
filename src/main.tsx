@@ -109,6 +109,106 @@ function generateRightsCode() {
   return code;
 }
 
+const NOVEL_BACKUP_DB = "fantasy-novels-backups";
+const NOVEL_BACKUP_STORE = "files";
+
+function openNovelBackupDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(NOVEL_BACKUP_DB, 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(NOVEL_BACKUP_STORE)) {
+        db.createObjectStore(NOVEL_BACKUP_STORE);
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("تعذر فتح مساحة النسخ الاحتياطي المحلية."));
+  });
+}
+
+async function getStoredNovelBackupHandle(novelId: string): Promise<any | null> {
+  try {
+    const db = await openNovelBackupDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(NOVEL_BACKUP_STORE, "readonly");
+      const request = tx.objectStore(NOVEL_BACKUP_STORE).get(novelId);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function storeNovelBackupHandle(novelId: string, handle: any) {
+  const db = await openNovelBackupDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(NOVEL_BACKUP_STORE, "readwrite");
+    tx.objectStore(NOVEL_BACKUP_STORE).put(handle, novelId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error("تعذر حفظ رابط ملف النسخة الاحتياطية."));
+    tx.onabort = () => reject(tx.error || new Error("تعذر حفظ رابط ملف النسخة الاحتياطية."));
+  });
+}
+
+async function ensureNovelBackupHandle(
+  novel: Novel,
+  suggestedName: string
+): Promise<any | null> {
+  const windowWithPicker = window as Window & {
+    showSaveFilePicker?: (options?: any) => Promise<any>;
+  };
+
+  if (!windowWithPicker.showSaveFilePicker) {
+    return null;
+  }
+
+  let handle = await getStoredNovelBackupHandle(novel.id);
+
+  if (handle) {
+    try {
+      const permission =
+        typeof handle.queryPermission === "function"
+          ? await handle.queryPermission({ mode: "readwrite" })
+          : "granted";
+
+      if (permission !== "granted") {
+        const requested =
+          typeof handle.requestPermission === "function"
+            ? await handle.requestPermission({ mode: "readwrite" })
+            : "denied";
+        if (requested !== "granted") {
+          handle = null;
+        }
+      }
+    } catch {
+      handle = null;
+    }
+  }
+
+  if (!handle) {
+    handle = await windowWithPicker.showSaveFilePicker({
+      id: "fantasy-novels-novel-backup",
+      startIn: "downloads",
+      suggestedName,
+      types: [
+        {
+          description: "نسخة احتياطية لروايات خيالية",
+          accept: {
+            "application/json": [".json"],
+          },
+        },
+      ],
+    });
+
+    await storeNovelBackupHandle(novel.id, handle);
+  }
+
+  return handle;
+}
+
 function makeSlug(value: string) {
   return value
     .trim()
@@ -7592,8 +7692,25 @@ function App() {
     if (!canManage) return;
 
     setSiteMessage("");
+
+    const safeTitle =
+      novel.title.trim().replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, "-") ||
+      "novel";
+    const suggestedName =
+      `نسخة-احتياطية-روايات-خيالية-${safeTitle}.json`;
+
     try {
-      setSiteMessage("جارٍ تجهيز النسخة الاحتياطية...");
+      setSiteMessage("جارٍ تحديث النسخة الاحتياطية...");
+
+      const { data: currentNovelData, error: novelError } = await supabase
+        .from("novels")
+        .select("*")
+        .eq("id", novel.id)
+        .maybeSingle();
+
+      if (novelError) throw novelError;
+
+      const currentNovel = (currentNovelData || novel) as Novel;
 
       const { data: chapterData, error: chaptersError } = await supabase
         .from("chapters")
@@ -7603,73 +7720,162 @@ function App() {
 
       if (chaptersError) throw chaptersError;
 
-      const chapterRows = (chapterData || []) as Chapter[];
-      const chapterIds = chapterRows.map((chapter) => chapter.id);
+      const currentChapters = (chapterData || []) as Chapter[];
+      const currentChapterIds = new Set(
+        currentChapters.map((chapter) => chapter.id)
+      );
 
-      let blockRows: ChapterBlock[] = [];
-      if (chapterIds.length > 0) {
+      let handle = await ensureNovelBackupHandle(
+        currentNovel,
+        suggestedName
+      );
+
+      let previousBackup: any = null;
+
+      if (handle) {
+        try {
+          const existingFile = await handle.getFile();
+          const existingText = await existingFile.text();
+          const parsed = JSON.parse(existingText);
+          if (
+            parsed?.backup_type === "fantasy-novels-novel" &&
+            parsed?.novel?.id === novel.id &&
+            Array.isArray(parsed?.chapters)
+          ) {
+            previousBackup = parsed;
+          }
+        } catch {
+          previousBackup = null;
+        }
+      }
+
+      const previousChapters = Array.isArray(previousBackup?.chapters)
+        ? previousBackup.chapters
+        : [];
+      const previousById = new Map(
+        previousChapters.map((chapter: any) => [chapter.id, chapter])
+      );
+
+      const changedChapterIds = currentChapters
+        .filter((chapter) => {
+          const previous = previousById.get(chapter.id);
+          if (!previous) return true;
+          return String(previous.updated_at || "") !== String(chapter.updated_at || "");
+        })
+        .map((chapter) => chapter.id);
+
+      let changedBlocks: ChapterBlock[] = [];
+
+      if (changedChapterIds.length > 0) {
         const { data: blocksData, error: blocksError } = await supabase
           .from("chapter_blocks")
           .select("*")
-          .in("chapter_id", chapterIds)
+          .in("chapter_id", changedChapterIds)
           .order("block_order", { ascending: true });
 
         if (blocksError) throw blocksError;
-        blockRows = (blocksData || []) as ChapterBlock[];
+        changedBlocks = (blocksData || []) as ChapterBlock[];
       }
 
-      const chapters = chapterRows.map((chapter) => ({
-        ...chapter,
-        blocks: blockRows
-          .filter((block) => block.chapter_id === chapter.id)
-          .map((block) => ({
-            ...block,
-            media_url: getPublicMediaUrl(
-              block.block_type === "audio" ? "audio" : "chapter-media",
-              block.media_path
-            ) || null,
-            effect_audio_url: block.effect_audio_path
-              ? getPublicMediaUrl("audio", block.effect_audio_path)
-              : null,
-          })),
-      }));
+      const currentById = new Map(
+        currentChapters.map((chapter) => [chapter.id, chapter])
+      );
+
+      const mergedChapters = currentChapters.map((chapter) => {
+        const previous = previousById.get(chapter.id);
+
+        if (!previous || changedChapterIds.includes(chapter.id)) {
+          return {
+            ...chapter,
+            blocks: changedBlocks
+              .filter((block) => block.chapter_id === chapter.id)
+              .map((block) => ({
+                ...block,
+                media_url:
+                  getPublicMediaUrl(
+                    block.block_type === "audio"
+                      ? "audio"
+                      : "chapter-media",
+                    block.media_path
+                  ) || null,
+                effect_audio_url: block.effect_audio_path
+                  ? getPublicMediaUrl("audio", block.effect_audio_path)
+                  : null,
+              })),
+          };
+        }
+
+        return previous;
+      });
 
       const backup = {
-        backup_version: 1,
+        backup_version: 2,
         backup_type: "fantasy-novels-novel",
+        backup_mode: "cumulative-single-file",
         exported_at: new Date().toISOString(),
         source: window.location.origin,
         novel: {
-          ...novel,
-          cover_url: novel.cover_path
-            ? getPublicMediaUrl("covers", novel.cover_path)
+          ...currentNovel,
+          cover_url: currentNovel.cover_path
+            ? getPublicMediaUrl("covers", currentNovel.cover_path)
             : null,
         },
-        chapters,
+        chapters: mergedChapters
+          .filter((chapter: any) => currentById.has(chapter.id))
+          .sort(
+            (a: any, b: any) =>
+              Number(a.chapter_number) - Number(b.chapter_number)
+          ),
         note:
-          "هذه النسخة تحتوي على بيانات الرواية والفصول والنصوص ومسارات وروابط الملفات المرفوعة. الملفات الأصلية تبقى محفوظة في Supabase ولا يتم حذفها أو نقلها أثناء النسخ.",
+          "ملف تراكمي واحد للرواية: يحافظ على الفصول السابقة ويضيف أو يحدّث الفصول الجديدة فقط عند التحديث. لا يتم إنشاء ملف جديد للرواية عند كل فصل في المتصفحات الداعمة لحفظ الملف نفسه.",
+        update_summary: {
+          changed_or_new_chapters: changedChapterIds.length,
+          total_chapters: currentChapters.length,
+        },
       };
 
       const json = JSON.stringify(backup, null, 2);
-      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const blob = new Blob([json], {
+        type: "application/json;charset=utf-8",
+      });
+
+      if (handle) {
+        try {
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+
+          setSiteMessage(
+            changedChapterIds.length > 0
+              ? `تم تحديث نفس ملف النسخة وإضافة/تحديث ${changedChapterIds.length} فصل. إجمالي الفصول: ${currentChapters.length}.`
+              : `النسخة الاحتياطية محدثة بالفعل. إجمالي الفصول: ${currentChapters.length}.`
+          );
+          return;
+        } catch {
+          handle = null;
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const safeTitle =
-        novel.title.trim().replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, "-") ||
-        "novel";
       link.href = url;
-      link.download = `نسخة-احتياطية-روايات-خيالية-${safeTitle}-${new Date()
-        .toISOString()
-        .slice(0, 10)}.json`;
+      link.download = suggestedName;
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
 
-      setSiteMessage("تم تنزيل النسخة الاحتياطية للرواية بنجاح.");
-    } catch (error: any) {
       setSiteMessage(
-        error?.message || "تعذر إنشاء النسخة الاحتياطية للرواية."
+        "تم تنزيل النسخة الاحتياطية. متصفحك لا يدعم تحديث الملف نفسه مباشرة، لذلك قد ينشئ تنزيلًا جديدًا."
+      );
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        setSiteMessage("تم إلغاء اختيار ملف النسخة الاحتياطية.");
+        return;
+      }
+
+      setSiteMessage(
+        error?.message || "تعذر تحديث النسخة الاحتياطية للرواية."
       );
     }
   }
@@ -8021,7 +8227,7 @@ function App() {
                       className="secondary-button"
                       onClick={() => void downloadNovelBackup(novel)}
                     >
-                      نسخ احتياطي
+                      نسخ / تحديث النسخة
                     </button>
                     <button className="secondary-button" onClick={() => editNovel(novel)}>تعديل</button>
                     <button className="secondary-button" onClick={() => toggleNovelPublished(novel)}>
