@@ -7898,6 +7898,12 @@ function App() {
 
                   <div className="admin-row-actions">
                     <button className="secondary-button" onClick={() => openNovel(novel, true)}>الفصول</button>
+                    <button
+                      className="secondary-button"
+                      onClick={() => void downloadNovelBackup(novel)}
+                    >
+                      نسخ احتياطي
+                    </button>
                     <button className="secondary-button" onClick={() => editNovel(novel)}>تعديل</button>
                     <button className="secondary-button" onClick={() => toggleNovelPublished(novel)}>
                       {novel.published ? "إلغاء النشر" : "نشر"}
