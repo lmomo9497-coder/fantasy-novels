@@ -1811,6 +1811,92 @@ function App() {
     currentRouteKeyRef.current = currentRouteKey;
   }, [currentRouteKey]);
 
+  useEffect(() => {
+    const route = currentRoute;
+    const publicPath = getPublicPathForRoute(route);
+    const origin = window.location.origin;
+    const canonicalUrl = origin + publicPath;
+
+    let title = "روايات خيالية | قراءة الروايات والقصص الخيالية";
+    let description =
+      "روايات خيالية — موقع لقراءة الروايات والقصص الخيالية العربية في أجواء مميزة وتجربة قراءة مريحة.";
+    let robots = "index, follow";
+    let ogType = "website";
+
+    if (route?.type === "novel" && selectedNovel) {
+      title = selectedNovel.title + " | روايات خيالية";
+      description =
+        String(selectedNovel.description || "").trim() ||
+        "اقرأ هذه الرواية على موقع روايات خيالية.";
+    } else if (route?.type === "chapter" && selectedNovel && selectedChapter) {
+      const chapterLabel =
+        selectedChapter.chapter_number != null
+          ? "الفصل " + selectedChapter.chapter_number
+          : "فصل";
+      const chapterTitle = String(selectedChapter.title || "").trim();
+      title =
+        chapterLabel +
+        (chapterTitle ? ": " + chapterTitle : "") +
+        " | " +
+        selectedNovel.title +
+        " | روايات خيالية";
+      description =
+        chapterTitle
+          ? chapterLabel + ": " + chapterTitle + " من رواية " + selectedNovel.title + "."
+          : chapterLabel + " من رواية " + selectedNovel.title + ".";
+      ogType = "article";
+    } else if (route?.type === "account" || route?.type === "admin") {
+      robots = "noindex, nofollow";
+    }
+
+    document.title = title;
+
+    const setMeta = (selector: string, content: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!element) {
+        element = document.createElement("meta");
+        if (selector.includes("property=")) {
+          const match = selector.match(/property="([^"]+)"/);
+          if (match) element.setAttribute("property", match[1]);
+        } else {
+          const match = selector.match(/name="([^"]+)"/);
+          if (match) element.setAttribute("name", match[1]);
+        }
+        document.head.appendChild(element);
+      }
+      element.setAttribute("content", content);
+    };
+
+    setMeta('meta[name="description"]', description);
+    setMeta('meta[name="robots"]', robots);
+    setMeta('meta[property="og:title"]', title);
+    setMeta('meta[property="og:description"]', description);
+    setMeta('meta[property="og:type"]', ogType);
+    setMeta('meta[property="og:url"]', canonicalUrl);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>(
+      'link[rel="canonical"]'
+    );
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    return () => {
+      // Keep the document metadata synchronized with the next SPA route.
+    };
+  }, [
+    currentRouteKey,
+    selectedNovel?.id,
+    selectedChapter?.id,
+    selectedChapter?.title,
+    selectedChapter?.chapter_number,
+    selectedNovel?.title,
+    selectedNovel?.description,
+  ]);
+
   const deepLinkHandledRef = useRef(false);
 
   useEffect(() => {
