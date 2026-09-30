@@ -96,7 +96,7 @@ type AccountSection =
   | "notifications";
 
 function generateRightsCode() {
-  const values = new Uint32Array(12);
+  const values = new Uint32Array(16);
   crypto.getRandomValues(values);
 
   let code = "";
@@ -106,25 +106,16 @@ function generateRightsCode() {
 
   const allSame = code.split("").every((digit) => digit === code[0]);
   const predictableCodes = [
-    "012345678901",
-    "123456789012",
-    "234567890123",
-    "345678901234",
-    "456789012345",
-    "567890123456",
-    "678901234567",
-    "789012345678",
-    "890123456789",
-    "901234567890",
-    "987654321098",
-    "876543210987",
-    "765432109876",
-    "654321098765",
-    "543210987654",
-    "432109876543",
-    "321098765432",
-    "210987654321",
-    "109876543210",
+    "0123456789012345",
+    "1234567890123456",
+    "2345678901234567",
+    "3456789012345678",
+    "4567890123456789",
+    "9876543210987654",
+    "8765432109876543",
+    "7654321098765432",
+    "6543210987654321",
+    "5432109876543210",
   ];
 
   if (allSame || predictableCodes.includes(code)) {
@@ -2222,8 +2213,8 @@ function App() {
     if (!canManage) return;
 
     const code = rightsCodeDraft.replace(/[^0-9]/g, "");
-    if (!/^\d{12}$/.test(code)) {
-      setSiteMessage("رمز الحقوق يجب أن يكون 12 رقمًا بالضبط.");
+    if (!/^\d{8,32}$/.test(code)) {
+      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
       return;
     }
 
@@ -2246,7 +2237,7 @@ function App() {
       setRightsCodeSet(true);
       setRightsCodeDraft("");
       setShowRightsCodeDraft(false);
-      setSiteMessage("تم حفظ رمز الحقوق. احفظيه في مكان آمن؛ لن نعرضه لك لاحقًا.");
+      setSiteMessage("تم حفظ رمز الحقوق. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.");
     } finally {
       setRightsCodeSaving(false);
     }
@@ -2287,8 +2278,8 @@ function App() {
       return;
     }
 
-    if (!/^\d{12}$/.test(newCode)) {
-      setSiteMessage("رمز الحقوق الجديد يجب أن يكون 12 رقمًا.");
+    if (!/^\d{8,32}$/.test(newCode)) {
+      setSiteMessage("رمز الحقوق الجديد يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
       return;
     }
 
@@ -2332,8 +2323,8 @@ function App() {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
     }
-    if (!/^\d{12}$/.test(normalized)) {
-      setNovelMessage("رمز الحقوق يجب أن يكون 12 رقمًا.");
+    if (!/^\d{8,32}$/.test(normalized)) {
+      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
       return false;
     }
 
@@ -5644,10 +5635,10 @@ function App() {
             <input
               type="password"
               inputMode="numeric"
-              maxLength={12}
+              maxLength={32}
               value={novelRightsCode}
-              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
-              placeholder="12 رقمًا"
+              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
+              placeholder="8-32 رقمًا"
               autoComplete="off"
             />
             <small className="form-hint">
@@ -7361,10 +7352,10 @@ function App() {
                     <input
                       type={showRightsCodeDraft ? "text" : "password"}
                       inputMode="numeric"
-                      maxLength={12}
+                      maxLength={32}
                       value={rightsCodeDraft}
-                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
-                      placeholder="12 رقمًا"
+                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
+                      placeholder="8-32 رقمًا"
                       autoComplete="new-password"
                     />
                     <button
@@ -7395,7 +7386,7 @@ function App() {
                     </button>
                   </div>
                   <small className="form-hint">
-                    الرمز 12 رقمًا ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف.
+                    الرمز مرن الطول (8-32 رقمًا) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
                   </small>
                 </>
               ) : (
@@ -7432,10 +7423,10 @@ function App() {
                         <input
                           type={showRightsCodeDraft ? "text" : "password"}
                           inputMode="numeric"
-                          maxLength={12}
+                          maxLength={32}
                           value={rightsNewCode}
-                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
-                          placeholder="رمز الحقوق الجديد: 12 رقمًا"
+                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
+                          placeholder="رمز الحقوق الجديد: 8-32 رقمًا"
                           autoComplete="new-password"
                         />
                         <button
@@ -7460,7 +7451,7 @@ function App() {
                       </div>
 
                       <small className="form-hint">
-                        بعد تغيير الرمز يصبح الرمز الجديد هو المعتمد تلقائيًا لجميع روايات هذا الحساب السابقة والجديدة.
+                        بعد تغيير الرمز يصبح الرمز الجديد هو المعتمد تلقائيًا لجميع روايات هذا الحساب السابقة والجديدة. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
                       </small>
                     </div>
                   )}
@@ -8177,10 +8168,10 @@ function App() {
             <input
               type="password"
               inputMode="numeric"
-              maxLength={12}
+              maxLength={32}
               value={rightsPromptCode}
-              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
-              placeholder="12 رقمًا"
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
+              placeholder="8-32 رقمًا"
               autoComplete="off"
             />
             <small className="form-hint">
