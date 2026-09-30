@@ -5950,3 +5950,23 @@ select:focus-visible {
     width: 100%;
   }
 }
+
+
+.rights-code-change-box {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,.03);
+}
+
+.rights-code-change-box input {
+  width: 100%;
+  box-sizing: border-box;
+  direction: ltr;
+  text-align: center;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
