@@ -2223,8 +2223,8 @@ function App() {
   async function saveSiteRightsCode() {
     if (!isOwner) return;
 
-    const code = siteRightsDraft.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^[A-Za-z0-9]{16,64}$/.test(code)) {
+    const code = siteRightsDraft.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+    if (!/^.{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا. نوصي برمز عشوائي طويل وقوي.");
       return;
     }
@@ -2252,8 +2252,8 @@ function App() {
   async function claimSiteOwnership() {
     if (!user) return;
 
-    const code = siteOwnershipCode.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^[A-Za-z0-9]{16,64}$/.test(code)) {
+    const code = siteOwnershipCode.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+    if (!/^.{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا.");
       return;
     }
@@ -2285,9 +2285,9 @@ function App() {
   async function saveRightsCode() {
     if (!canManage) return;
 
-    const code = rightsCodeDraft.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^[A-Za-z0-9]{8,32}$/.test(code)) {
-      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
+    const code = rightsCodeDraft.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+    if (!/^.{8,32}$/.test(code)) {
+      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 خانة. يمكن استخدام أي حروف أو أرقام أو رموز.");
       return;
     }
 
@@ -2344,15 +2344,15 @@ function App() {
     if (!canManage || !user?.email) return;
 
     const emailCode = rightsEmailCode.replace(/[^0-9]/g, "");
-    const newCode = rightsNewCode.replace(/[^A-Za-z0-9]/g, "");
+    const newCode = rightsNewCode.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
 
     if (!/^\d{6}$/.test(emailCode)) {
       setSiteMessage("رمز البريد يجب أن يكون 6 أرقام.");
       return;
     }
 
-    if (!/^[A-Za-z0-9]{8,32}$/.test(newCode)) {
-      setSiteMessage("رمز الحقوق الجديد يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
+    if (!/^.{8,32}$/.test(newCode)) {
+      setSiteMessage("رمز الحقوق الجديد يجب أن يكون من 8 إلى 32 خانة. يمكن استخدام أي حروف أو أرقام أو رموز.");
       return;
     }
 
@@ -2391,13 +2391,13 @@ function App() {
   }
 
   async function verifyNovelRights(ownerId: string, code: string) {
-    const normalized = code.replace(/[^A-Za-z0-9]/g, "");
+    const normalized = code.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
     if (!ownerId) {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
     }
-    if (!/^[A-Za-z0-9]{8,32}$/.test(normalized)) {
-      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
+    if (!/^.{8,32}$/.test(normalized)) {
+      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 خانة. يمكن استخدام أي حروف أو أرقام أو رموز.");
       return false;
     }
 
@@ -5710,8 +5710,8 @@ function App() {
               inputMode="text"
               maxLength={32}
               value={novelRightsCode}
-              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
-              placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
+              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
+              placeholder="8-32 خانة"
               autoComplete="off"
             />
             <small className="form-hint">
@@ -7427,8 +7427,8 @@ function App() {
                       inputMode="text"
                       maxLength={32}
                       value={rightsCodeDraft}
-                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
-                      placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
+                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
+                      placeholder="8-32 خانة"
                       autoComplete="new-password"
                     />
                     <button
@@ -7459,7 +7459,7 @@ function App() {
                     </button>
                   </div>
                   <small className="form-hint">
-                    الرمز مرن الطول (8-32 حرفًا إنجليزيًا أو رقمًا) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
+                    الرمز مرن الطول (8-32 خانة) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
                   </small>
                 </>
               ) : (
@@ -7498,8 +7498,8 @@ function App() {
                           inputMode="text"
                           maxLength={32}
                           value={rightsNewCode}
-                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
-                          placeholder="رمز الحقوق الجديد: 8-32 حرفًا إنجليزيًا أو رقمًا"
+                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
+                          placeholder="رمز الحقوق الجديد: 8-32 خانة"
                           autoComplete="new-password"
                         />
                         <button
@@ -7564,10 +7564,10 @@ function App() {
                     value={siteRightsDraft}
                     onChange={(event) =>
                       setSiteRightsDraft(
-                        event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 64)
+                        event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 64)
                       )
                     }
-                    placeholder="16-64 حرفًا إنجليزيًا أو رقمًا"
+                    placeholder="16-64 خانة"
                     autoComplete="new-password"
                   />
                   <button
@@ -8167,7 +8167,7 @@ function App() {
                         value={siteOwnershipCode}
                         onChange={(event) =>
                           setSiteOwnershipCode(
-                            event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 64)
+                            event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 64)
                           )
                         }
                         placeholder="رمز حقوق الموقع"
@@ -8369,8 +8369,8 @@ function App() {
               inputMode="text"
               maxLength={32}
               value={rightsPromptCode}
-              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
-              placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
+              placeholder="8-32 خانة"
               autoComplete="off"
             />
             <small className="form-hint">
