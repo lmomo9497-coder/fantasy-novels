@@ -97,31 +97,17 @@ type AccountSection =
   | "site-ownership";
 
 function generateRightsCode() {
-  const values = new Uint32Array(16);
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const values = new Uint32Array(24);
   crypto.getRandomValues(values);
 
   let code = "";
   for (const value of values) {
-    code += String(value % 10);
+    code += alphabet[value % alphabet.length];
   }
 
-  const allSame = code.split("").every((digit) => digit === code[0]);
-  const predictableCodes = [
-    "0123456789012345",
-    "1234567890123456",
-    "2345678901234567",
-    "3456789012345678",
-    "4567890123456789",
-    "9876543210987654",
-    "8765432109876543",
-    "7654321098765432",
-    "6543210987654321",
-    "5432109876543210",
-  ];
-
-  if (allSame || predictableCodes.includes(code)) {
-    return generateRightsCode();
-  }
+  const allSame = code.split("").every((character) => character === code[0]);
+  if (allSame) return generateRightsCode();
 
   return code;
 }
@@ -2237,7 +2223,7 @@ function App() {
   async function saveSiteRightsCode() {
     if (!isOwner) return;
 
-    const code = siteRightsDraft.replace(/[^0-9]/g, "");
+    const code = siteRightsDraft.replace(/[^A-Za-z0-9]/g, "");
     if (!/^\d{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا. نوصي برمز عشوائي طويل وقوي.");
       return;
@@ -2266,7 +2252,7 @@ function App() {
   async function claimSiteOwnership() {
     if (!user) return;
 
-    const code = siteOwnershipCode.replace(/[^0-9]/g, "");
+    const code = siteOwnershipCode.replace(/[^A-Za-z0-9]/g, "");
     if (!/^\d{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا.");
       return;
@@ -2299,7 +2285,7 @@ function App() {
   async function saveRightsCode() {
     if (!canManage) return;
 
-    const code = rightsCodeDraft.replace(/[^0-9]/g, "");
+    const code = rightsCodeDraft.replace(/[^A-Za-z0-9]/g, "");
     if (!/^\d{8,32}$/.test(code)) {
       setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
       return;
@@ -2357,8 +2343,8 @@ function App() {
   async function verifyRightsEmailAndChangeCode() {
     if (!canManage || !user?.email) return;
 
-    const emailCode = rightsEmailCode.replace(/[^0-9]/g, "");
-    const newCode = rightsNewCode.replace(/[^0-9]/g, "");
+    const emailCode = rightsEmailCode.replace(/[^A-Za-z0-9]/g, "");
+    const newCode = rightsNewCode.replace(/[^A-Za-z0-9]/g, "");
 
     if (!/^\d{6}$/.test(emailCode)) {
       setSiteMessage("رمز البريد يجب أن يكون 6 أرقام.");
@@ -2405,7 +2391,7 @@ function App() {
   }
 
   async function verifyNovelRights(ownerId: string, code: string) {
-    const normalized = code.replace(/[^0-9]/g, "");
+    const normalized = code.replace(/[^A-Za-z0-9]/g, "");
     if (!ownerId) {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
@@ -5721,11 +5707,11 @@ function App() {
             <label>رمز حقوق صاحب الرواية</label>
             <input
               type="password"
-              inputMode="numeric"
+              inputMode="text"
               maxLength={32}
               value={novelRightsCode}
-              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
-              placeholder="8-32 رقمًا"
+              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
+              placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
               autoComplete="off"
             />
             <small className="form-hint">
@@ -7438,11 +7424,11 @@ function App() {
                   <div className="rights-code-form">
                     <input
                       type={showRightsCodeDraft ? "text" : "password"}
-                      inputMode="numeric"
+                      inputMode="text"
                       maxLength={32}
                       value={rightsCodeDraft}
-                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
-                      placeholder="8-32 رقمًا"
+                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
+                      placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
                       autoComplete="new-password"
                     />
                     <button
@@ -7473,7 +7459,7 @@ function App() {
                     </button>
                   </div>
                   <small className="form-hint">
-                    الرمز مرن الطول (8-32 رقمًا) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
+                    الرمز مرن الطول (8-32 حرفًا إنجليزيًا أو رقمًا) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
                   </small>
                 </>
               ) : (
@@ -7498,10 +7484,10 @@ function App() {
 
                       <input
                         type="text"
-                        inputMode="numeric"
+                        inputMode="text"
                         maxLength={6}
                         value={rightsEmailCode}
-                        onChange={(event) => setRightsEmailCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                        onChange={(event) => setRightsEmailCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 6))}
                         placeholder="رمز البريد: 6 أرقام"
                         autoComplete="one-time-code"
                       />
@@ -7509,11 +7495,11 @@ function App() {
                       <div className="rights-code-form">
                         <input
                           type={showRightsCodeDraft ? "text" : "password"}
-                          inputMode="numeric"
+                          inputMode="text"
                           maxLength={32}
                           value={rightsNewCode}
-                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
-                          placeholder="رمز الحقوق الجديد: 8-32 رقمًا"
+                          onChange={(event) => setRightsNewCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
+                          placeholder="رمز الحقوق الجديد: 8-32 حرفًا إنجليزيًا أو رقمًا"
                           autoComplete="new-password"
                         />
                         <button
@@ -7573,15 +7559,15 @@ function App() {
                 <div className="rights-code-form">
                   <input
                     type="password"
-                    inputMode="numeric"
+                    inputMode="text"
                     maxLength={64}
                     value={siteRightsDraft}
                     onChange={(event) =>
                       setSiteRightsDraft(
-                        event.target.value.replace(/[^0-9]/g, "").slice(0, 64)
+                        event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 64)
                       )
                     }
-                    placeholder="16-64 رقمًا"
+                    placeholder="16-64 حرفًا إنجليزيًا أو رقمًا"
                     autoComplete="new-password"
                   />
                   <button
@@ -8176,12 +8162,12 @@ function App() {
                     <div className="rights-code-form">
                       <input
                         type="password"
-                        inputMode="numeric"
+                        inputMode="text"
                         maxLength={64}
                         value={siteOwnershipCode}
                         onChange={(event) =>
                           setSiteOwnershipCode(
-                            event.target.value.replace(/[^0-9]/g, "").slice(0, 64)
+                            event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 64)
                           )
                         }
                         placeholder="رمز حقوق الموقع"
@@ -8380,11 +8366,11 @@ function App() {
             </p>
             <input
               type="password"
-              inputMode="numeric"
+              inputMode="text"
               maxLength={32}
               value={rightsPromptCode}
-              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 32))}
-              placeholder="8-32 رقمًا"
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 32))}
+              placeholder="8-32 حرفًا إنجليزيًا أو رقمًا"
               autoComplete="off"
             />
             <small className="form-hint">
