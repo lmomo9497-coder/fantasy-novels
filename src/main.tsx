@@ -5472,22 +5472,16 @@ function App() {
     );
   }
 
-  function renderNovelCard(novel: Novel, activityLabel?: string) {
+  function renderNovelCard(novel: Novel) {
     const favorite = isFavorite(novel.id);
     const image = coverUrl(novel);
 
     return (
       <article
         key={novel.id}
-        className={
-          "novel-card" + (activityLabel ? " novel-card-new-release" : "")
-        }
+        className="novel-card"
         onClick={() => openNovel(novel, false)}
       >
-        {activityLabel && (
-          <span className="novel-new-badge">{activityLabel}</span>
-        )}
-
         <div className="novel-cover-column">
           <div className="novel-cover">
             {image ? (
@@ -5833,7 +5827,7 @@ function App() {
           </div>
         ) : (
           <div className="novels-grid">
-            {filteredNovels.map(renderNovelCard)}
+            {filteredNovels.map((novel) => renderNovelCard(novel))}
           </div>
         )}
       </section>
