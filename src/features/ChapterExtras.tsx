@@ -791,6 +791,12 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
       <select value={form.ad_type} onChange={e=>setForm({...form,ad_type:e.target.value})}><option value="image">صورة</option><option value="native">بطاقة داخلية</option></select>
       <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="draft">مسودة</option><option value="scheduled">مجدول</option><option value="active">نشط</option><option value="paused">متوقف</option></select>
       <select value={form.device_target} onChange={e=>setForm({...form,device_target:e.target.value})}><option value="all">كل الأجهزة</option><option value="mobile">جوال</option><option value="desktop">سطح المكتب</option></select>
+      <select value={form.placement} onChange={e=>setForm({...form,placement:e.target.value as Ad["placement"]})}>
+        <option value="chapter_after_content">بعد محتوى الفصل</option>
+        <option value="chapter_before_navigation">قبل أزرار السابق/التالي</option>
+        <option value="chapter_after_navigation">بعد أزرار السابق/التالي</option>
+        <option value="chapter_after_comments">بعد التعليقات</option>
+      </select>
       <input placeholder="رابط الوجهة (اختياري)" value={form.destination_url} onChange={e=>setForm({...form,destination_url:e.target.value})}/>
       <input placeholder="النص البديل" value={form.alt_text} onChange={e=>setForm({...form,alt_text:e.target.value})}/>
       <input placeholder="العنوان للبطاقة" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/>
