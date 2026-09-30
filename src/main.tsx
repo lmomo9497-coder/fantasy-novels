@@ -2396,8 +2396,8 @@ function App() {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
     }
-    if (!/^.{8,32}$/.test(normalized)) {
-      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 خانة. يمكن استخدام أي حروف أو أرقام أو رموز.");
+    if (!/^\d+$/.test(normalized)) {
+      setNovelMessage("رمز الحقوق يجب أن يحتوي على أرقام فقط، ويمكن أن يكون بأي طول.");
       return false;
     }
 
