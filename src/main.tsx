@@ -40,6 +40,7 @@ type Novel = {
   categories?: Category | null;
   novel_categories?: { category: Category }[];
   reader_count?: number;
+  chapter_count?: number;
   rights_name?: string | null;
 };
 
@@ -2618,6 +2619,7 @@ function App() {
     const publishedNovelRows = (data ?? []) as Novel[];
     const novelIds = publishedNovelRows.map((novel) => novel.id);
     const latestChapterByNovel = new Map<string, string | null>();
+    const chapterCountByNovel = new Map<string, number>();
 
     if (novelIds.length > 0) {
       const { data: chapterData, error: chapterError } = await supabase
@@ -2629,6 +2631,11 @@ function App() {
 
       if (!chapterError) {
         (chapterData ?? []).forEach((chapter) => {
+          chapterCountByNovel.set(
+            chapter.novel_id,
+            (chapterCountByNovel.get(chapter.novel_id) ?? 0) + 1
+          );
+
           if (!latestChapterByNovel.has(chapter.novel_id)) {
             latestChapterByNovel.set(
               chapter.novel_id,
@@ -2643,6 +2650,7 @@ function App() {
       ...novel,
       latest_chapter_published_at:
         latestChapterByNovel.get(novel.id) ?? null,
+      chapter_count: chapterCountByNovel.get(novel.id) ?? 0,
     }));
 
     const novelsWithReaderCounts = await attachNovelReaderCounts(
@@ -5561,6 +5569,10 @@ function App() {
 
             <span className="novel-reader-count">
               👥 {novel.reader_count ?? 0} قرّاء
+            </span>
+
+            <span className="novel-chapter-count">
+              📚 {novel.chapter_count ?? 0} فصول
             </span>
           </div>
         </div>
