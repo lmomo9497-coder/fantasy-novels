@@ -8163,7 +8163,7 @@ function App() {
                   </div>
                 </div>
 
-                {siteRightsIsOwner ? (
+                {isOwner || siteRightsIsOwner ? (
                   <div className="message-box">
                     أنتِ المالك الحالي للموقع. رمز حقوق الموقع محفوظ كقيمة مجزأة على الخادم.
                   </div>
