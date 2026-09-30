@@ -5484,7 +5484,7 @@ select:focus-visible {
 }
 
 .new-releases-grid > .novel-card {
-  flex: 0 0 min(330px, calc(100% - 72px));
+  flex: 0 0 min(285px, calc(100% - 96px));
   grid-template-columns: 115px minmax(0, 1fr);
   gap: 12px;
   padding: 12px;
@@ -5525,8 +5525,8 @@ select:focus-visible {
   }
 
   .new-releases-grid > .novel-card {
-    flex-basis: min(78vw, 300px);
-    grid-template-columns: 92px minmax(0, 1fr);
+    flex-basis: min(72vw, 260px);
+    grid-template-columns: 82px minmax(0, 1fr);
     gap: 10px;
     padding: 10px;
   }
