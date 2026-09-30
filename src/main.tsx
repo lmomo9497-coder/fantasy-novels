@@ -104,7 +104,30 @@ function generateRightsCode() {
     code += String(value % 10);
   }
 
-  if (/^(\\d)\\1{11}$/.test(code) || /^(012345678901|123456789012|234567890123|345678901234|456789012345|567890123456|678901234567|789012345678|890123456789|901234567890|987654321098|876543210987|765432109876|654321098765|543210987654|432109876543|321098765432|210987654321|109876543210)$/.test(code)) {
+  const allSame = code.split("").every((digit) => digit === code[0]);
+  const predictableCodes = [
+    "012345678901",
+    "123456789012",
+    "234567890123",
+    "345678901234",
+    "456789012345",
+    "567890123456",
+    "678901234567",
+    "789012345678",
+    "890123456789",
+    "901234567890",
+    "987654321098",
+    "876543210987",
+    "765432109876",
+    "654321098765",
+    "543210987654",
+    "432109876543",
+    "321098765432",
+    "210987654321",
+    "109876543210",
+  ];
+
+  if (allSame || predictableCodes.includes(code)) {
     return generateRightsCode();
   }
 
@@ -2193,7 +2216,7 @@ function App() {
   async function saveRightsCode() {
     if (!canManage) return;
 
-    const code = rightsCodeDraft.replace(/\\s+/g, "");
+    const code = rightsCodeDraft.replace(/[^0-9]/g, "");
     if (!/^\\d{12}$/.test(code)) {
       setSiteMessage("رمز الحقوق يجب أن يكون 12 رقمًا بالضبط.");
       return;
@@ -2220,7 +2243,7 @@ function App() {
   }
 
   async function verifyNovelRights(ownerId: string, code: string) {
-    const normalized = code.replace(/\\s+/g, "");
+    const normalized = code.replace(/[^0-9]/g, "");
     if (!ownerId) {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
@@ -5539,7 +5562,7 @@ function App() {
               inputMode="numeric"
               maxLength={12}
               value={novelRightsCode}
-              onChange={(event) => setNovelRightsCode(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+              onChange={(event) => setNovelRightsCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
               placeholder="12 رقمًا"
               autoComplete="off"
             />
@@ -7248,7 +7271,7 @@ function App() {
                   inputMode="numeric"
                   maxLength={12}
                   value={rightsCodeDraft}
-                  onChange={(event) => setRightsCodeDraft(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+                  onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
                   placeholder="12 رقمًا"
                   autoComplete="new-password"
                 />
@@ -7995,7 +8018,7 @@ function App() {
               inputMode="numeric"
               maxLength={12}
               value={rightsPromptCode}
-              onChange={(event) => setRightsPromptCode(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 12))}
               placeholder="12 رقمًا"
               autoComplete="off"
             />
