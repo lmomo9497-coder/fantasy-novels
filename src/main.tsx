@@ -2343,7 +2343,7 @@ function App() {
   async function verifyRightsEmailAndChangeCode() {
     if (!canManage || !user?.email) return;
 
-    const emailCode = rightsEmailCode.replace(/[^A-Za-z0-9]/g, "");
+    const emailCode = rightsEmailCode.replace(/[^0-9]/g, "");
     const newCode = rightsNewCode.replace(/[^A-Za-z0-9]/g, "");
 
     if (!/^\d{6}$/.test(emailCode)) {
@@ -7487,7 +7487,7 @@ function App() {
                         inputMode="text"
                         maxLength={6}
                         value={rightsEmailCode}
-                        onChange={(event) => setRightsEmailCode(event.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 6))}
+                        onChange={(event) => setRightsEmailCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
                         placeholder="رمز البريد: 6 أرقام"
                         autoComplete="one-time-code"
                       />
