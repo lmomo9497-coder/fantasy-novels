@@ -2253,8 +2253,8 @@ function App() {
     if (!user) return;
 
     const code = siteOwnershipCode.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-    if (!/^.{16,64}$/.test(code)) {
-      setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا.");
+    if (!/^\d+$/.test(code)) {
+      setSiteMessage("رمز حقوق الموقع يجب أن يحتوي على أرقام فقط، ويمكن أن يكون بأي طول.");
       return;
     }
 
@@ -2286,8 +2286,8 @@ function App() {
     if (!canManage) return;
 
     const code = rightsCodeDraft.replace(/[\s\u200B-\u200D\uFEFF]/g, "");
-    if (!/^.{8,32}$/.test(code)) {
-      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 خانة. يمكن استخدام أي حروف أو أرقام أو رموز.");
+    if (!/^\d+$/.test(code)) {
+      setSiteMessage("رمز الحقوق يجب أن يحتوي على أرقام فقط، ويمكن أن يكون بأي طول.");
       return;
     }
 
@@ -7425,10 +7425,9 @@ function App() {
                     <input
                       type={showRightsCodeDraft ? "text" : "password"}
                       inputMode="text"
-                      maxLength={32}
                       value={rightsCodeDraft}
-                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
-                      placeholder="8-32 خانة"
+                      onChange={(event) => setRightsCodeDraft(event.target.value.replace(/\D/g, ""))}
+                      placeholder="رمز حقوق بالأرقام بأي طول"
                       autoComplete="new-password"
                     />
                     <button
@@ -7452,14 +7451,14 @@ function App() {
                     <button
                       type="button"
                       className="primary-button"
-                      disabled={rightsCodeSaving || rightsCodeDraft.length < 8}
+                      disabled={rightsCodeSaving || rightsCodeDraft.length === 0}
                       onClick={() => void saveRightsCode()}
                     >
                       {rightsCodeSaving ? "جارٍ الحفظ..." : "حفظ الرمز"}
                     </button>
                   </div>
                   <small className="form-hint">
-                    الرمز مرن الطول (8-32 خانة) ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
+                    الرمز يقبل أرقامًا بأي طول ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. نحن غير مسؤولين عن ضعف الرمز الذي تختارينه؛ نوصي برمز قوي وعشوائي.
                   </small>
                 </>
               ) : (
@@ -8367,10 +8366,9 @@ function App() {
             <input
               type="password"
               inputMode="text"
-              maxLength={32}
               value={rightsPromptCode}
-              onChange={(event) => setRightsPromptCode(event.target.value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").slice(0, 32))}
-              placeholder="8-32 خانة"
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/\D/g, ""))}
+              placeholder="اكتبي رمز التحقق بالأرقام"
               autoComplete="off"
             />
             <small className="form-hint">
@@ -8380,7 +8378,7 @@ function App() {
               <button
                 type="button"
                 className="confirm-delete-button"
-                disabled={rightsPromptSaving || rightsPromptCode.length < 8}
+                disabled={rightsPromptSaving || rightsPromptCode.length === 0}
                 onClick={() => void publishNovelFromRightsPrompt()}
               >
                 {rightsPromptSaving ? "جارٍ التحقق..." : "تحقق وانشر"}
