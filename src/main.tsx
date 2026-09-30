@@ -95,6 +95,22 @@ type AccountSection =
   | "history"
   | "notifications";
 
+function generateRightsCode() {
+  const values = new Uint32Array(12);
+  crypto.getRandomValues(values);
+
+  let code = "";
+  for (const value of values) {
+    code += String(value % 10);
+  }
+
+  if (/^(\\d)\\1{11}$/.test(code) || /^(012345678901|123456789012|234567890123|345678901234|456789012345|567890123456|678901234567|789012345678|890123456789|901234567890|987654321098|876543210987|765432109876|654321098765|543210987654|432109876543|321098765432|210987654321|109876543210)$/.test(code)) {
+    return generateRightsCode();
+  }
+
+  return code;
+}
+
 function makeSlug(value: string) {
   return value
     .trim()
@@ -1499,6 +1515,16 @@ function App() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [novelMessage, setNovelMessage] = useState("");
   const [showFullCover, setShowFullCover] = useState(false);
+  const [novelRightsOwnerId, setNovelRightsOwnerId] = useState("");
+  const [novelRightsCode, setNovelRightsCode] = useState("");
+  const [rightsCodeSet, setRightsCodeSet] = useState<boolean | null>(null);
+  const [rightsCodeDraft, setRightsCodeDraft] = useState("");
+  const [showRightsCodeDraft, setShowRightsCodeDraft] = useState(false);
+  const [rightsCodeSaving, setRightsCodeSaving] = useState(false);
+  const [rightsHolders, setRightsHolders] = useState<Array<{ id: string; display_name: string | null; role: Role }>>([]);
+  const [rightsPrompt, setRightsPrompt] = useState<Novel | null>(null);
+  const [rightsPromptCode, setRightsPromptCode] = useState("");
+  const [rightsPromptSaving, setRightsPromptSaving] = useState(false);
 
   const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [availableStaffUsers, setAvailableStaffUsers] = useState<any[]>([]);
@@ -2050,6 +2076,8 @@ function App() {
     if (canManage) {
       loadAdminData();
       loadStaffMembers();
+      void loadRightsCodeStatus();
+      void loadRightsHolders();
       if (isOwner) loadAvailableStaffUsers();
     }
   }, [canManage]);
@@ -2136,6 +2164,84 @@ function App() {
     }
 
     setCategories((data ?? []) as Category[]);
+  }
+
+  async function loadRightsCodeStatus() {
+    if (!canManage) return;
+
+    const { data, error } = await supabase.rpc("get_my_rights_code_status");
+    if (error) {
+      console.error("Rights code status error:", error);
+      return;
+    }
+
+    setRightsCodeSet(Boolean(data));
+  }
+
+  async function loadRightsHolders() {
+    if (!canManage) return;
+
+    const { data, error } = await supabase.rpc("list_rights_holders");
+    if (error) {
+      console.error("Rights holders error:", error);
+      return;
+    }
+
+    setRightsHolders((data ?? []) as Array<{ id: string; display_name: string | null; role: Role }>);
+  }
+
+  async function saveRightsCode() {
+    if (!canManage) return;
+
+    const code = rightsCodeDraft.replace(/\\s+/g, "");
+    if (!/^\\d{12}$/.test(code)) {
+      setSiteMessage("رمز الحقوق يجب أن يكون 12 رقمًا بالضبط.");
+      return;
+    }
+
+    setRightsCodeSaving(true);
+    try {
+      const { error } = await supabase.rpc("set_my_rights_code", {
+        p_code: code,
+      });
+
+      if (error) {
+        setSiteMessage(error.message || "تعذر حفظ رمز الحقوق.");
+        return;
+      }
+
+      setRightsCodeSet(true);
+      setRightsCodeDraft("");
+      setShowRightsCodeDraft(false);
+      setSiteMessage("تم حفظ رمز الحقوق. لن يظهر الرمز القديم مرة أخرى.");
+    } finally {
+      setRightsCodeSaving(false);
+    }
+  }
+
+  async function verifyNovelRights(ownerId: string, code: string) {
+    const normalized = code.replace(/\\s+/g, "");
+    if (!ownerId) {
+      setNovelMessage("حددي صاحب الحقوق أولًا.");
+      return false;
+    }
+    if (!/^\\d{12}$/.test(normalized)) {
+      setNovelMessage("رمز الحقوق يجب أن يكون 12 رقمًا.");
+      return false;
+    }
+
+    const { data, error } = await supabase.rpc("verify_novel_rights_code", {
+      p_rights_owner_id: ownerId,
+      p_code: normalized,
+    });
+
+    if (error || !data) {
+      setNovelMessage("تعذر التحقق من رمز الحقوق. تأكدي من الرمز أو حاولي لاحقًا.");
+      return false;
+    }
+
+    setNovelRightsCode("");
+    return true;
   }
 
   async function attachNovelReaderCounts(novelsList: Novel[]) {
@@ -2714,6 +2820,8 @@ function App() {
 
   function resetNovelForm() {
     setEditingNovelId(null);
+    setNovelRightsOwnerId(user?.id ?? "");
+    setNovelRightsCode("");
     setNovelTitle("");
     setNovelDescription("");
     setNovelCategories([]);
@@ -2727,6 +2835,8 @@ function App() {
 
   function editNovel(novel: Novel) {
     setEditingNovelId(novel.id);
+    setNovelRightsOwnerId(novel.created_by || user?.id || "");
+    setNovelRightsCode("");
     setNovelTitle(novel.title);
     setNovelDescription(novel.description || "");
     setNovelCategories([...new Set([
@@ -2768,6 +2878,14 @@ function App() {
         ? novels.find((item) => item.id === editingNovelId)
         : null;
 
+      const targetRightsOwnerId = existingNovel?.created_by || novelRightsOwnerId || user?.id || "";
+      const needsRightsVerification = !editingNovelId || publish;
+
+      if (needsRightsVerification) {
+        const verified = await verifyNovelRights(targetRightsOwnerId, novelRightsCode);
+        if (!verified) return;
+      }
+
       const payload = {
         title: novelTitle.trim(),
         slug,
@@ -2784,7 +2902,7 @@ function App() {
             ? existingNovel.published_at
             : new Date().toISOString()
           : null,
-        created_by: user?.id ?? null,
+        created_by: targetRightsOwnerId || null,
       };
 
       if (editingNovelId) {
@@ -2936,6 +3054,12 @@ function App() {
 
     const nextPublished = !novel.published;
 
+    if (nextPublished) {
+      setRightsPrompt(novel);
+      setRightsPromptCode("");
+      return;
+    }
+
     const { data, error } = await supabase
       .from("novels")
       .update({
@@ -2982,6 +3106,50 @@ function App() {
     setSelectedNovel((current) =>
       current?.id === novel.id ? (data as Novel) : current
     );
+  }
+
+  async function publishNovelFromRightsPrompt() {
+    if (!rightsPrompt) return;
+
+    const novel = rightsPrompt;
+    setRightsPromptSaving(true);
+    try {
+      const verified = await verifyNovelRights(novel.created_by || "", rightsPromptCode);
+      if (!verified) return;
+
+      const { data, error } = await supabase
+        .from("novels")
+        .update({
+          published: true,
+          published_at: novel.published_at || new Date().toISOString(),
+        })
+        .eq("id", novel.id)
+        .select("*, categories!novels_category_id_fkey(*), novel_categories(category:categories(*))")
+        .single();
+
+      if (error) {
+        setSiteMessage(error.message);
+        return;
+      }
+
+      setNovels((current) =>
+        current.map((item) => item.id === novel.id ? (data as Novel) : item)
+      );
+      setPublishedNovels((current) => {
+        const exists = current.some((item) => item.id === novel.id);
+        return exists
+          ? current.map((item) => item.id === novel.id ? (data as Novel) : item)
+          : [data as Novel, ...current];
+      });
+      setSelectedNovel((current) =>
+        current?.id === novel.id ? (data as Novel) : current
+      );
+      setRightsPrompt(null);
+      setRightsPromptCode("");
+      setSiteMessage("تم نشر الرواية بعد التحقق من حقوقها.");
+    } finally {
+      setRightsPromptSaving(false);
+    }
   }
 
   async function deleteNovel(novel: Novel) {
@@ -5340,6 +5508,47 @@ function App() {
 
         <div className="form-grid">
           <div className="form-group">
+            <label>صاحب الحقوق</label>
+            <select
+              value={novelRightsOwnerId}
+              disabled={Boolean(editingNovelId)}
+              onChange={(event) => {
+                setNovelRightsOwnerId(event.target.value);
+                setNovelRightsCode("");
+              }}
+            >
+              {rightsHolders.length === 0 ? (
+                <option value={user?.id || ""}>حسابي</option>
+              ) : (
+                rightsHolders.map((holder) => (
+                  <option key={holder.id} value={holder.id}>
+                    {(holder.display_name || "بدون اسم") + (holder.role === "owner" ? " — المالك" : " — مشرف")}
+                  </option>
+                ))
+              )}
+            </select>
+            <small className="form-hint">
+              المشرف يستطيع رفع رواية شخص آخر فقط إذا كان يملك رمز حقوق ذلك الحساب.
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label>رمز حقوق صاحب الرواية</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={12}
+              value={novelRightsCode}
+              onChange={(event) => setNovelRightsCode(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+              placeholder="12 رقمًا"
+              autoComplete="off"
+            />
+            <small className="form-hint">
+              مطلوب عند إضافة الرواية أو نشرها. لا يظهر الرمز المخزن على الموقع.
+            </small>
+          </div>
+
+          <div className="form-group">
             <label>اسم الرواية</label>
             <input
               value={novelTitle}
@@ -7018,6 +7227,65 @@ function App() {
 
         {renderNovelForm()}
 
+        <details className="admin-collapse">
+          <summary className="admin-collapse-summary">
+            <span>رمز الحقوق</span>
+          </summary>
+          <div className="admin-collapse-content">
+            <div className="rights-code-admin">
+              <div>
+                <strong>رمز الحقوق الخاص بحسابك</strong>
+                <p>
+                  هذا الرمز يثبت أنك مخوّل بنشر أعمال صاحب الحقوق. لا نعطي أي مشرف صلاحية نقل ملكية الرواية؛ الرمز وحده يثبت إذن النشر.
+                </p>
+              </div>
+              <div className="rights-code-status">
+                {rightsCodeSet === null ? "جارٍ التحقق..." : rightsCodeSet ? "✓ تم تعيين رمز" : "لم يتم تعيين رمز بعد"}
+              </div>
+              <div className="rights-code-form">
+                <input
+                  type={showRightsCodeDraft ? "text" : "password"}
+                  inputMode="numeric"
+                  maxLength={12}
+                  value={rightsCodeDraft}
+                  onChange={(event) => setRightsCodeDraft(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+                  placeholder="12 رقمًا"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowRightsCodeDraft((value) => !value)}
+                >
+                  {showRightsCodeDraft ? "إخفاء" : "إظهار"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => {
+                    const generated = generateRightsCode();
+                    setRightsCodeDraft(generated);
+                    setShowRightsCodeDraft(true);
+                  }}
+                >
+                  توليد رمز قوي
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={rightsCodeSaving || rightsCodeDraft.length !== 12}
+                  onClick={() => void saveRightsCode()}
+                >
+                  {rightsCodeSaving ? "جارٍ الحفظ..." : "حفظ الرمز"}
+                </button>
+              </div>
+              <small className="form-hint">
+                الرمز 12 رقمًا ومخزّن على الخادم كقيمة مجزأة، وليس كنص مكشوف. عند نسيانه أنشئي رمزًا جديدًا.
+              </small>
+            </div>
+          </div>
+        </details>
+
         {isOwner && (
           <details className="admin-collapse">
             <summary className="admin-collapse-summary">
@@ -7698,6 +7966,60 @@ function App() {
               ×
             </button>
             {renderAuthPanel()}
+          </div>
+        </div>
+      )}
+
+      {rightsPrompt && (
+        <div className="confirm-dialog-backdrop" role="presentation">
+          <div className="rights-code-dialog" role="dialog" aria-modal="true">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">تحقق الحقوق</span>
+                <h2>أدخل رمز حقوق صاحب الرواية</h2>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setRightsPrompt(null)}
+                disabled={rightsPromptSaving}
+              >
+                إلغاء
+              </button>
+            </div>
+            <p>
+              الرواية: <strong>{rightsPrompt.title}</strong>
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={12}
+              value={rightsPromptCode}
+              onChange={(event) => setRightsPromptCode(event.target.value.replace(/\\D/g, "").slice(0, 12))}
+              placeholder="12 رقمًا"
+              autoComplete="off"
+            />
+            <small className="form-hint">
+              بعد التحقق يمكن نشر الرواية لمدة 15 دقيقة فقط.
+            </small>
+            <div className="confirm-dialog-actions">
+              <button
+                type="button"
+                className="confirm-delete-button"
+                disabled={rightsPromptSaving || rightsPromptCode.length !== 12}
+                onClick={() => void publishNovelFromRightsPrompt()}
+              >
+                {rightsPromptSaving ? "جارٍ التحقق..." : "تحقق وانشر"}
+              </button>
+              <button
+                type="button"
+                className="confirm-cancel-button"
+                disabled={rightsPromptSaving}
+                onClick={() => setRightsPrompt(null)}
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}
