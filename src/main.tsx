@@ -5480,7 +5480,7 @@ function App() {
           <span className="novel-new-badge">{activityLabel}</span>
         )}
 
-        <div className={activityLabel ? "novel-cover-column" : undefined}>
+        <div className="novel-cover-column">
           <div className="novel-cover">
             {image ? (
               <img
@@ -5498,8 +5498,15 @@ function App() {
             )}
           </div>
 
-          {activityLabel && novel.rights_name && (
-            <div className="novel-rights novel-rights-under-cover" dir="rtl">
+          {novel.rights_name && (
+            <div
+              className={
+                activityLabel
+                  ? "novel-rights novel-rights-under-cover"
+                  : "novel-rights novel-rights-under-cover novel-rights-under-cover-library"
+              }
+              dir="rtl"
+            >
               © {novel.rights_name} — جميع الحقوق محفوظة
             </div>
           )}
@@ -5547,11 +5554,7 @@ function App() {
             </div>
           )}
 
-          {novel.rights_name && !activityLabel && (
-            <div className="novel-rights" dir="rtl">
-              © {novel.rights_name} — جميع الحقوق محفوظة
-            </div>
-          )}
+
 
           <div className="novel-meta">
             <span>
