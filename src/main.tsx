@@ -1702,6 +1702,9 @@ function App() {
   }, [novels, adminNovelSearch]);
 
   const newReleaseNovels = useMemo(() => {
+    const now = Date.now();
+    const newReleaseWindowMs = 48 * 60 * 60 * 1000;
+
     return publishedNovels
       .map((novel) => {
         const novelAt = novel.published_at
@@ -1715,6 +1718,13 @@ function App() {
           Number.isFinite(chapterAt) ? chapterAt : 0
         );
 
+        if (
+          latestAt <= 0 ||
+          now - latestAt >= newReleaseWindowMs
+        ) {
+          return null;
+        }
+
         return {
           novel,
           latestAt,
@@ -1726,6 +1736,15 @@ function App() {
                 : "جديدة",
         };
       })
+      .filter(
+        (
+          item
+        ): item is {
+          novel: Novel;
+          latestAt: number;
+          activityLabel: string;
+        } => item !== null
+      )
       .sort((a, b) => b.latestAt - a.latestAt)
       .slice(0, 6);
   }, [publishedNovels]);
