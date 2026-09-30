@@ -2224,7 +2224,7 @@ function App() {
     if (!isOwner) return;
 
     const code = siteRightsDraft.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^\d{16,64}$/.test(code)) {
+    if (!/^[A-Za-z0-9]{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا. نوصي برمز عشوائي طويل وقوي.");
       return;
     }
@@ -2253,7 +2253,7 @@ function App() {
     if (!user) return;
 
     const code = siteOwnershipCode.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^\d{16,64}$/.test(code)) {
+    if (!/^[A-Za-z0-9]{16,64}$/.test(code)) {
       setSiteMessage("رمز حقوق الموقع يجب أن يكون من 16 إلى 64 رقمًا.");
       return;
     }
@@ -2286,8 +2286,8 @@ function App() {
     if (!canManage) return;
 
     const code = rightsCodeDraft.replace(/[^A-Za-z0-9]/g, "");
-    if (!/^\d{8,32}$/.test(code)) {
-      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
+    if (!/^[A-Za-z0-9]{8,32}$/.test(code)) {
+      setSiteMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
       return;
     }
 
@@ -2351,8 +2351,8 @@ function App() {
       return;
     }
 
-    if (!/^\d{8,32}$/.test(newCode)) {
-      setSiteMessage("رمز الحقوق الجديد يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
+    if (!/^[A-Za-z0-9]{8,32}$/.test(newCode)) {
+      setSiteMessage("رمز الحقوق الجديد يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
       return;
     }
 
@@ -2396,8 +2396,8 @@ function App() {
       setNovelMessage("حددي صاحب الحقوق أولًا.");
       return false;
     }
-    if (!/^\d{8,32}$/.test(normalized)) {
-      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 رقمًا. نوصي برمز عشوائي قوي من 12 رقمًا أو أكثر.");
+    if (!/^[A-Za-z0-9]{8,32}$/.test(normalized)) {
+      setNovelMessage("رمز الحقوق يجب أن يكون من 8 إلى 32 حرفًا إنجليزيًا أو رقمًا. نوصي برمز عشوائي قوي.");
       return false;
     }
 
