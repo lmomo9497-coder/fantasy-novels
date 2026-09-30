@@ -7658,7 +7658,7 @@ function App() {
         novel.title.trim().replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, "-") ||
         "novel";
       link.href = url;
-      link.download = `${safeTitle}-backup-${new Date()
+      link.download = `نسخة-احتياطية-روايات-خيالية-${safeTitle}-${new Date()
         .toISOString()
         .slice(0, 10)}.json`;
       document.body.appendChild(link);
