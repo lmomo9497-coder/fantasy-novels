@@ -2558,11 +2558,22 @@ select:focus-visible {
   .novels-grid > .novel-card {
     width: 100%;
     justify-self: stretch;
+    direction: rtl;
     grid-template-columns:
-      90px minmax(0, 1fr);
+      minmax(0, 1fr) 90px;
     gap: 10px;
     padding: 10px;
     border-radius: 15px;
+  }
+
+  .novels-grid > .novel-card .novel-cover-column {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .novels-grid > .novel-card .novel-card-body {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .novel-cover {
