@@ -5550,6 +5550,12 @@ function App() {
             </div>
           )}
 
+          {novel.rights_name && (
+            <div className="novel-rights" dir="rtl">
+              © {novel.rights_name} — جميع الحقوق محفوظة
+            </div>
+          )}
+
           <div className="novel-meta">
             <span>
               {novel.status === "ongoing"
