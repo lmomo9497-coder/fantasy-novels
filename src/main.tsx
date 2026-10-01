@@ -321,6 +321,48 @@ async function ensureNovelBackupHandle(
   return handle;
 }
 
+async function ensureNovelBackupRootHandle(): Promise<any | null> {
+  const windowWithPicker = window as Window & {
+    showDirectoryPicker?: (options?: any) => Promise<any>;
+  };
+
+  if (!windowWithPicker.showDirectoryPicker) return null;
+
+  let handle = await getStoredNovelBackupHandle("__root__");
+
+  if (handle) {
+    try {
+      const permission =
+        typeof handle.queryPermission === "function"
+          ? await handle.queryPermission({ mode: "readwrite" })
+          : "granted";
+
+      if (permission !== "granted") {
+        const requested =
+          typeof handle.requestPermission === "function"
+            ? await handle.requestPermission({ mode: "readwrite" })
+            : "denied";
+
+        if (requested !== "granted") handle = null;
+      }
+    } catch {
+      handle = null;
+    }
+  }
+
+  if (!handle) {
+    handle = await windowWithPicker.showDirectoryPicker({
+      id: "fantasy-novels-backups-root",
+      mode: "readwrite",
+      startIn: "downloads",
+    });
+
+    await storeNovelBackupHandle("__root__", handle);
+  }
+
+  return handle;
+}
+
 function makeSlug(value: string) {
   return value
     .trim()
@@ -7805,25 +7847,15 @@ function App() {
 
     setSiteMessage("");
 
-    const windowWithPicker = window as Window & {
-      showDirectoryPicker?: (options?: any) => Promise<any>;
-    };
-
-    if (!windowWithPicker.showDirectoryPicker) {
-      setSiteMessage(
-        "متصفحك لا يدعم حفظ النسخة داخل مجلدات مباشرة. افتحي الموقع بمتصفح يدعم اختيار المجلدات مثل Chrome."
-      );
-      return;
-    }
-
     try {
-      setSiteMessage("اختاري مكان حفظ نسخ «روايات خيالية»...");
+      const rootHandle = await ensureNovelBackupRootHandle();
 
-      const rootHandle = await windowWithPicker.showDirectoryPicker({
-        id: "fantasy-novels-backups-root",
-        mode: "readwrite",
-        startIn: "downloads",
-      });
+      if (!rootHandle) {
+        setSiteMessage(
+          "متصفحك لا يدعم حفظ النسخة داخل مجلدات مباشرة. افتحي الموقع بمتصفح يدعم اختيار المجلدات مثل Chrome."
+        );
+        return;
+      }
 
       const backupRoot = await rootHandle.getDirectoryHandle(
         "نسخ-روايات-خيالية",
