@@ -337,30 +337,37 @@ async function ensureNovelBackupRootHandle(): Promise<any | null> {
           ? await handle.queryPermission({ mode: "readwrite" })
           : "granted";
 
-      if (permission !== "granted") {
-        const requested =
-          typeof handle.requestPermission === "function"
-            ? await handle.requestPermission({ mode: "readwrite" })
-            : "denied";
+      if (permission === "granted") {
+        return handle;
+      }
 
-        if (requested !== "granted") handle = null;
+      // Chrome/Android قد يعيد حالة permission كـ "prompt" حتى لو كان
+      // نفس المجلد محفوظًا؛ نطلب الإذن من نفس الـhandle بدل فتح نافذة جديدة.
+      if (typeof handle.requestPermission === "function") {
+        const requested = await handle.requestPermission({ mode: "readwrite" });
+        if (requested === "granted") {
+          await storeNovelBackupHandle("__root__", handle);
+          return handle;
+        }
       }
     } catch {
-      handle = null;
+      // إذا أصبح الـhandle غير صالح، نعيد اختيار المجلد مرة واحدة.
     }
   }
 
-  if (!handle) {
-    handle = await windowWithPicker.showDirectoryPicker({
+  try {
+    const newHandle = await windowWithPicker.showDirectoryPicker({
       id: "fantasy-novels-backups-root",
       mode: "readwrite",
       startIn: "downloads",
     });
 
-    await storeNovelBackupHandle("__root__", handle);
+    await storeNovelBackupHandle("__root__", newHandle);
+    return newHandle;
+  } catch (error: any) {
+    if (error?.name === "AbortError") throw error;
+    return null;
   }
-
-  return handle;
 }
 
 function makeSlug(value: string) {
