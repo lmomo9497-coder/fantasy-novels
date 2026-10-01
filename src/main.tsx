@@ -111,6 +111,7 @@ function generateRightsCode() {
 
 const NOVEL_BACKUP_DB = "fantasy-novels-backups";
 const NOVEL_BACKUP_STORE = "files";
+let activeNovelBackupRootHandle: any | null = null;
 
 function sanitizeBackupName(value: string, fallback = "ملف") {
   return (
@@ -328,6 +329,18 @@ async function ensureNovelBackupRootHandle(): Promise<any | null> {
 
   if (!windowWithPicker.showDirectoryPicker) return null;
 
+  if (activeNovelBackupRootHandle) {
+    try {
+      const permission =
+        typeof activeNovelBackupRootHandle.queryPermission === "function"
+          ? await activeNovelBackupRootHandle.queryPermission({ mode: "readwrite" })
+          : "granted";
+      if (permission === "granted") return activeNovelBackupRootHandle;
+    } catch {
+      activeNovelBackupRootHandle = null;
+    }
+  }
+
   let handle = await getStoredNovelBackupHandle("__root__");
 
   if (handle) {
@@ -346,6 +359,7 @@ async function ensureNovelBackupRootHandle(): Promise<any | null> {
       if (typeof handle.requestPermission === "function") {
         const requested = await handle.requestPermission({ mode: "readwrite" });
         if (requested === "granted") {
+          activeNovelBackupRootHandle = handle;
           await storeNovelBackupHandle("__root__", handle);
           return handle;
         }
@@ -362,6 +376,7 @@ async function ensureNovelBackupRootHandle(): Promise<any | null> {
       startIn: "downloads",
     });
 
+    activeNovelBackupRootHandle = newHandle;
     await storeNovelBackupHandle("__root__", newHandle);
     return newHandle;
   } catch (error: any) {
