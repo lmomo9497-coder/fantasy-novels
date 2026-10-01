@@ -5829,7 +5829,7 @@ function App() {
             )}
           </div>
 
-          {(novel.novel_categories?.length || novel.categories?.name) && (
+          {Boolean(novel.novel_categories?.length || novel.categories?.name) && (
             <div className="novel-category">
               {(novel.novel_categories?.length
                 ? novel.novel_categories.map((item) => item.category.name)
@@ -5926,7 +5926,7 @@ function App() {
             )}
           </div>
 
-          {(novel.novel_categories?.length || novel.categories?.name) && (
+          {Boolean(novel.novel_categories?.length || novel.categories?.name) && (
             <div className="novel-category">
               {(novel.novel_categories?.length
                 ? novel.novel_categories.map((item) => item.category.name)
