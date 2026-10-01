@@ -104,8 +104,8 @@ export function ChapterAd({
       aria-label="إعلان"
       style={{
         maxWidth: ad.display_max_width ? `${ad.display_max_width}px` : undefined,
-        marginLeft: ad.display_alignment === "right" ? 0 : "auto",
-        marginRight: ad.display_alignment === "left" ? 0 : "auto",
+        marginLeft: ad.display_alignment === "left" ? 0 : "auto",
+        marginRight: ad.display_alignment === "right" ? 0 : "auto",
         borderRadius: `${ad.display_radius ?? 16}px`,
       }}
     >
