@@ -112,6 +112,118 @@ function generateRightsCode() {
 const NOVEL_BACKUP_DB = "fantasy-novels-backups";
 const NOVEL_BACKUP_STORE = "files";
 
+function sanitizeBackupName(value: string, fallback = "ملف") {
+  return (
+    String(value || "")
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/^\.+|\.+$/g, "")
+      .slice(0, 120) || fallback
+  );
+}
+
+function getPathExtension(path: string | null | undefined, fallback = "bin") {
+  const match = String(path || "").match(/\.([a-zA-Z0-9]{1,8})(?:\?.*)?$/);
+  return (match?.[1] || fallback).toLowerCase();
+}
+
+async function writeBackupBlob(directory: any, fileName: string, blob: Blob) {
+  const fileHandle = await directory.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+}
+
+async function writeBackupText(directory: any, fileName: string, text: string) {
+  await writeBackupBlob(
+    directory,
+    fileName,
+    new Blob([text], { type: "text/plain;charset=utf-8" })
+  );
+}
+
+async function readBackupText(directory: any, fileName: string) {
+  try {
+    const fileHandle = await directory.getFileHandle(fileName);
+    const file = await fileHandle.getFile();
+    return await file.text();
+  } catch {
+    return null;
+  }
+}
+
+async function clearBackupDirectory(directory: any) {
+  for await (const [name] of directory.entries()) {
+    try {
+      await directory.removeEntry(name, { recursive: true });
+    } catch {
+      // تجاهل ملف قد يكون قيد الاستخدام.
+    }
+  }
+}
+
+async function fetchBackupBlob(url: string | null | undefined) {
+  if (!url) return null;
+  const response = await fetch(url, { mode: "cors", cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(
+      "تعذر تنزيل الملف للنسخة الاحتياطية (" + response.status + ")."
+    );
+  }
+  return await response.blob();
+}
+
+function chapterBackupFingerprint(chapter: Chapter, blocks: ChapterBlock[]) {
+  return JSON.stringify({
+    id: chapter.id,
+    chapter_number: chapter.chapter_number,
+    title: chapter.title,
+    published: chapter.published,
+    access_type: chapter.access_type,
+    published_at: chapter.published_at,
+    updated_at: chapter.updated_at,
+    blocks: blocks.map((block) => ({
+      id: block.id,
+      block_order: block.block_order,
+      block_type: block.block_type,
+      content: block.content,
+      media_path: block.media_path,
+      media_label: block.media_label,
+      effect_audio_path: block.effect_audio_path,
+      width: block.width,
+      height: block.height,
+      align: block.align,
+      object_position: block.object_position,
+      text_overlay_opacity: block.text_overlay_opacity,
+      text_image_scale_percent: block.text_image_scale_percent,
+      background_opacity: block.background_opacity,
+      text_position_x: block.text_position_x,
+      text_position_y: block.text_position_y,
+      text_font_size: block.text_font_size,
+      text_color: block.text_color,
+      text_align: block.text_align,
+      text_width_percent: block.text_width_percent,
+      text_height_percent: block.text_height_percent,
+    })),
+  });
+}
+
+function buildChapterText(blocks: ChapterBlock[]) {
+  return blocks
+    .slice()
+    .sort((a, b) => Number(a.block_order) - Number(b.block_order))
+    .map((block) => {
+      const content = String(block.content || "").trim();
+      if (block.block_type === "heading") return content ? "# " + content : "";
+      if (block.block_type === "quote") return content ? "「" + content + "」" : "";
+      if (block.block_type === "divider") return "────────────────────";
+      return content;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 function openNovelBackupDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(NOVEL_BACKUP_DB, 1);
@@ -7693,16 +7805,40 @@ function App() {
 
     setSiteMessage("");
 
-    const safeTitle =
-      novel.title.trim().replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, "-") ||
-      "novel";
-    const suggestedName =
-      `نسخة-احتياطية-روايات-خيالية-${safeTitle}.json`;
+    const windowWithPicker = window as Window & {
+      showDirectoryPicker?: (options?: any) => Promise<any>;
+    };
+
+    if (!windowWithPicker.showDirectoryPicker) {
+      setSiteMessage(
+        "متصفحك لا يدعم حفظ النسخة داخل مجلدات مباشرة. افتحي الموقع بمتصفح يدعم اختيار المجلدات مثل Chrome."
+      );
+      return;
+    }
 
     try {
-      setSiteMessage("جارٍ تحديث النسخة الاحتياطية...");
+      setSiteMessage("اختاري مكان حفظ نسخ «روايات خيالية»...");
 
-      const { data: currentNovelData, error: novelError } = await supabase
+      const rootHandle = await windowWithPicker.showDirectoryPicker({
+        id: "fantasy-novels-backups-root",
+        mode: "readwrite",
+        startIn: "downloads",
+      });
+
+      const backupRoot = await rootHandle.getDirectoryHandle(
+        "نسخ-روايات-خيالية",
+        { create: true }
+      );
+
+      const novelFolderName = sanitizeBackupName(novel.title, "رواية");
+      const novelDirectory = await backupRoot.getDirectoryHandle(
+        novelFolderName,
+        { create: true }
+      );
+
+      setSiteMessage("جارٍ تحديث ملفات الرواية...");
+
+      const { data: novelData, error: novelError } = await supabase
         .from("novels")
         .select("*")
         .eq("id", novel.id)
@@ -7710,7 +7846,7 @@ function App() {
 
       if (novelError) throw novelError;
 
-      const currentNovel = (currentNovelData || novel) as Novel;
+      const currentNovel = (novelData || novel) as Novel;
 
       const { data: chapterData, error: chaptersError } = await supabase
         .from("chapters")
@@ -7720,162 +7856,278 @@ function App() {
 
       if (chaptersError) throw chaptersError;
 
-      const currentChapters = (chapterData || []) as Chapter[];
-      const currentChapterIds = new Set(
-        currentChapters.map((chapter) => chapter.id)
-      );
+      const chapters = (chapterData || []) as Chapter[];
+      const chapterIds = chapters.map((chapter) => chapter.id);
 
-      let handle = await ensureNovelBackupHandle(
-        currentNovel,
-        suggestedName
-      );
-
-      let previousBackup: any = null;
-
-      if (handle) {
-        try {
-          const existingFile = await handle.getFile();
-          const existingText = await existingFile.text();
-          const parsed = JSON.parse(existingText);
-          if (
-            parsed?.backup_type === "fantasy-novels-novel" &&
-            parsed?.novel?.id === novel.id &&
-            Array.isArray(parsed?.chapters)
-          ) {
-            previousBackup = parsed;
-          }
-        } catch {
-          previousBackup = null;
-        }
-      }
-
-      const previousChapters = Array.isArray(previousBackup?.chapters)
-        ? previousBackup.chapters
-        : [];
-      const previousById = new Map(
-        previousChapters.map((chapter: any) => [chapter.id, chapter])
-      );
-
-      const changedChapterIds = currentChapters
-        .filter((chapter) => {
-          const previous = previousById.get(chapter.id);
-          if (!previous) return true;
-          return String(previous.updated_at || "") !== String(chapter.updated_at || "");
-        })
-        .map((chapter) => chapter.id);
-
-      let changedBlocks: ChapterBlock[] = [];
-
-      if (changedChapterIds.length > 0) {
+      let allBlocks: ChapterBlock[] = [];
+      if (chapterIds.length > 0) {
         const { data: blocksData, error: blocksError } = await supabase
           .from("chapter_blocks")
           .select("*")
-          .in("chapter_id", changedChapterIds)
+          .in("chapter_id", chapterIds)
           .order("block_order", { ascending: true });
 
         if (blocksError) throw blocksError;
-        changedBlocks = (blocksData || []) as ChapterBlock[];
+        allBlocks = (blocksData || []) as ChapterBlock[];
       }
 
-      const currentById = new Map(
-        currentChapters.map((chapter) => [chapter.id, chapter])
+      const blocksByChapter = new Map<string, ChapterBlock[]>();
+      for (const block of allBlocks) {
+        const list = blocksByChapter.get(block.chapter_id) || [];
+        list.push(block);
+        blocksByChapter.set(block.chapter_id, list);
+      }
+
+      const manifestName = ".نسخة-البيانات.json";
+      const oldManifestText = await readBackupText(
+        novelDirectory,
+        manifestName
       );
 
-      const mergedChapters = currentChapters.map((chapter) => {
-        const previous = previousById.get(chapter.id);
+      let oldManifest: any = null;
+      try {
+        oldManifest = oldManifestText ? JSON.parse(oldManifestText) : null;
+      } catch {
+        oldManifest = null;
+      }
 
-        if (!previous || changedChapterIds.includes(chapter.id)) {
-          return {
-            ...chapter,
-            blocks: changedBlocks
-              .filter((block) => block.chapter_id === chapter.id)
-              .map((block) => ({
-                ...block,
-                media_url:
-                  getPublicMediaUrl(
-                    block.block_type === "audio"
-                      ? "audio"
-                      : "chapter-media",
-                    block.media_path
-                  ) || null,
-                effect_audio_url: block.effect_audio_path
-                  ? getPublicMediaUrl("audio", block.effect_audio_path)
-                  : null,
-              })),
-          };
-        }
+      const oldChapterManifest = new Map<string, any>(
+        Array.isArray(oldManifest?.chapters)
+          ? oldManifest.chapters.map((item: any) => [item.id, item])
+          : []
+      );
 
-        return previous;
-      });
+      const coverFolder = await novelDirectory.getDirectoryHandle(
+        "00-الغلاف",
+        { create: true }
+      );
 
-      const backup = {
-        backup_version: 2,
-        backup_type: "fantasy-novels-novel",
-        backup_mode: "cumulative-single-file",
-        exported_at: new Date().toISOString(),
-        source: window.location.origin,
-        novel: {
-          ...currentNovel,
-          cover_url: currentNovel.cover_path
-            ? getPublicMediaUrl("covers", currentNovel.cover_path)
-            : null,
-        },
-        chapters: mergedChapters
-          .filter((chapter: any) => currentById.has(chapter.id))
-          .sort(
-            (a: any, b: any) =>
-              Number(a.chapter_number) - Number(b.chapter_number)
-          ),
-        note:
-          "ملف تراكمي واحد للرواية: يحافظ على الفصول السابقة ويضيف أو يحدّث الفصول الجديدة فقط عند التحديث. لا يتم إنشاء ملف جديد للرواية عند كل فصل في المتصفحات الداعمة لحفظ الملف نفسه.",
-        update_summary: {
-          changed_or_new_chapters: changedChapterIds.length,
-          total_chapters: currentChapters.length,
-        },
-      };
+      const previousCoverPath = String(oldManifest?.cover_path || "");
+      const coverChanged =
+        previousCoverPath !== String(currentNovel.cover_path || "");
 
-      const json = JSON.stringify(backup, null, 2);
-      const blob = new Blob([json], {
-        type: "application/json;charset=utf-8",
-      });
+      if (coverChanged || !(oldManifest?.cover_file)) {
+        await clearBackupDirectory(coverFolder);
 
-      if (handle) {
-        try {
-          const writable = await handle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-
-          setSiteMessage(
-            changedChapterIds.length > 0
-              ? `تم تحديث نفس ملف النسخة وإضافة/تحديث ${changedChapterIds.length} فصل. إجمالي الفصول: ${currentChapters.length}.`
-              : `النسخة الاحتياطية محدثة بالفعل. إجمالي الفصول: ${currentChapters.length}.`
+        if (currentNovel.cover_path) {
+          const coverUrl = getPublicMediaUrl(
+            "covers",
+            currentNovel.cover_path
           );
-          return;
-        } catch {
-          handle = null;
+          const coverBlob = await fetchBackupBlob(coverUrl);
+          if (coverBlob) {
+            const ext = getPathExtension(currentNovel.cover_path, "jpg");
+            const coverName =
+              "غلاف-" +
+              sanitizeBackupName(currentNovel.title, "الرواية") +
+              "." +
+              ext;
+            await writeBackupBlob(coverFolder, coverName, coverBlob);
+            oldManifest = {
+              ...(oldManifest || {}),
+              cover_file: "00-الغلاف/" + coverName,
+            };
+          }
+        } else {
+          oldManifest = {
+            ...(oldManifest || {}),
+            cover_file: null,
+          };
         }
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = suggestedName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      const currentChapterManifest: any[] = [];
+      let addedOrUpdated = 0;
+      let unchanged = 0;
+
+      for (const chapter of chapters) {
+        const blocks = blocksByChapter.get(chapter.id) || [];
+        const fingerprint = chapterBackupFingerprint(chapter, blocks);
+        const previous = oldChapterManifest.get(chapter.id);
+
+        const chapterFolderName =
+          String(chapter.chapter_number).padStart(3, "0") +
+          "-الفصل-" +
+          sanitizeBackupName(
+            chapter.title || "الفصل " + chapter.chapter_number,
+            "الفصل-" + chapter.chapter_number
+          );
+
+        const chapterDirectory = await novelDirectory.getDirectoryHandle(
+          chapterFolderName,
+          { create: true }
+        );
+
+        const changed =
+          !previous || String(previous.fingerprint || "") !== fingerprint;
+
+        if (changed) {
+          await clearBackupDirectory(chapterDirectory);
+
+          const text = buildChapterText(blocks);
+          await writeBackupText(
+            chapterDirectory,
+            "نص-" + String(chapter.chapter_number).padStart(3, "0") + ".txt",
+            text || "لا يوجد نص مكتوب في هذا الفصل."
+          );
+
+          const blockFiles: string[] = [];
+
+          for (const block of blocks) {
+            const order = String(block.block_order).padStart(3, "0");
+
+            if (block.media_path) {
+              const bucket =
+                block.block_type === "audio" ? "audio" : "chapter-media";
+              const mediaUrl = getPublicMediaUrl(bucket, block.media_path);
+              const mediaBlob = await fetchBackupBlob(mediaUrl);
+
+              if (mediaBlob) {
+                const ext = getPathExtension(block.media_path, "bin");
+                const baseLabel =
+                  block.block_type === "audio"
+                    ? "صوت"
+                    : block.block_type === "gif"
+                      ? "GIF"
+                      : "صورة";
+                const label = sanitizeBackupName(
+                  block.media_label || baseLabel,
+                  baseLabel
+                );
+                const fileName =
+                  order + "-" + baseLabel + "-" + label + "." + ext;
+
+                await writeBackupBlob(
+                  chapterDirectory,
+                  fileName,
+                  mediaBlob
+                );
+                blockFiles.push(fileName);
+              }
+            }
+
+            if (block.effect_audio_path) {
+              const effectUrl = getPublicMediaUrl(
+                "audio",
+                block.effect_audio_path
+              );
+              const effectBlob = await fetchBackupBlob(effectUrl);
+
+              if (effectBlob) {
+                const ext = getPathExtension(
+                  block.effect_audio_path,
+                  "mp3"
+                );
+                const fileName = order + "-مؤثر-صوت." + ext;
+
+                await writeBackupBlob(
+                  chapterDirectory,
+                  fileName,
+                  effectBlob
+                );
+                blockFiles.push(fileName);
+              }
+            }
+          }
+
+          await writeBackupText(
+            chapterDirectory,
+            "بيانات-الفصل.json",
+            JSON.stringify(
+              {
+                backup_version: 3,
+                chapter,
+                blocks,
+                media_files: blockFiles,
+                updated_at: new Date().toISOString(),
+              },
+              null,
+              2
+            )
+          );
+
+          addedOrUpdated += 1;
+        } else {
+          unchanged += 1;
+        }
+
+        currentChapterManifest.push({
+          id: chapter.id,
+          chapter_number: chapter.chapter_number,
+          title: chapter.title,
+          folder: chapterFolderName,
+          fingerprint,
+        });
+      }
+
+      const currentChapterIds = new Set(chapters.map((chapter) => chapter.id));
+      if (Array.isArray(oldManifest?.chapters)) {
+        for (const oldChapter of oldManifest.chapters) {
+          if (!currentChapterIds.has(oldChapter.id) && oldChapter.folder) {
+            try {
+              await novelDirectory.removeEntry(oldChapter.folder, {
+                recursive: true,
+              });
+            } catch {}
+          }
+        }
+      }
+
+      await writeBackupText(
+        novelDirectory,
+        "بيانات-الرواية.json",
+        JSON.stringify(
+          {
+            backup_version: 3,
+            backup_type: "fantasy-novels-folder-backup",
+            exported_at: new Date().toISOString(),
+            novel: currentNovel,
+            chapter_count: chapters.length,
+            structure: {
+              cover: "00-الغلاف",
+              chapters: "001-الفصل-... ثم 002-الفصل-... إلخ",
+            },
+          },
+          null,
+          2
+        )
+      );
+
+      const newManifest = {
+        backup_version: 3,
+        novel_id: currentNovel.id,
+        novel_title: currentNovel.title,
+        cover_path: currentNovel.cover_path,
+        cover_file:
+          oldManifest?.cover_file ||
+          (currentNovel.cover_path ? "00-الغلاف/غلاف-الرواية" : null),
+        chapters: currentChapterManifest,
+        updated_at: new Date().toISOString(),
+      };
+
+      await writeBackupText(
+        novelDirectory,
+        manifestName,
+        JSON.stringify(newManifest, null, 2)
+      );
 
       setSiteMessage(
-        "تم تنزيل النسخة الاحتياطية. متصفحك لا يدعم تحديث الملف نفسه مباشرة، لذلك قد ينشئ تنزيلًا جديدًا."
+        "تم تحديث مجلد «" +
+          novelFolderName +
+          "»: " +
+          addedOrUpdated +
+          " فصل جديد/محدّث، و" +
+          unchanged +
+          " فصل محفوظ بدون تكرار. الغلاف محفوظ مرة واحدة فقط."
       );
     } catch (error: any) {
       if (error?.name === "AbortError") {
-        setSiteMessage("تم إلغاء اختيار ملف النسخة الاحتياطية.");
+        setSiteMessage("تم إلغاء اختيار مكان النسخة الاحتياطية.");
         return;
       }
 
       setSiteMessage(
-        error?.message || "تعذر تحديث النسخة الاحتياطية للرواية."
+        error?.message || "تعذر إنشاء النسخة الاحتياطية المنظمة للرواية."
       );
     }
   }
@@ -8227,7 +8479,7 @@ function App() {
                       className="secondary-button"
                       onClick={() => void downloadNovelBackup(novel)}
                     >
-                      نسخ / تحديث النسخة
+                      نسخ / تحديث ملفات الرواية
                     </button>
                     <button className="secondary-button" onClick={() => editNovel(novel)}>تعديل</button>
                     <button className="secondary-button" onClick={() => toggleNovelPublished(novel)}>
