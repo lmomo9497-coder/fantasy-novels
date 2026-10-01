@@ -84,7 +84,7 @@ export default {
       if (response.ok) {
         const headers = new Headers(response.headers);
         headers.set("Content-Type", "application/xml; charset=UTF-8");
-        headers.set("Cache-Control", "public, max-age=3600, s-maxage=21600");
+        headers.set("Cache-Control", "public, max-age=300, s-maxage=600");
 
         const result = new Response(response.body, {
           status: 200,
