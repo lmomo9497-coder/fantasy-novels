@@ -407,6 +407,23 @@ function getPublicPathForRoute(route: any) {
   return "/";
 }
 
+
+async function notifyIndexNow(urls: string[]) {
+  const validUrls = urls.filter(Boolean).filter((value, index, list) => list.indexOf(value) === index);
+  if (validUrls.length === 0) return;
+
+  try {
+    await fetch("/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls: validUrls.slice(0, 10) }),
+      keepalive: true,
+    });
+  } catch {
+    // إشعار IndexNow اختياري؛ لا نسمح بفشله أن يعطل نشر المحتوى.
+  }
+}
+
 function normalizeSearchText(value: string) {
   return value
     .toLocaleLowerCase("ar")
@@ -3433,6 +3450,7 @@ function App() {
 
     try {
       const slug = makeSlug(novelTitle);
+      let savedNovelId = editingNovelId;
 
       const existingNovel = editingNovelId
         ? novels.find((item) => item.id === editingNovelId)
@@ -3513,6 +3531,8 @@ function App() {
             return;
           }
         }
+
+        savedNovelId = (data as Novel).id;
 
         const refreshed = {
           ...(data as Novel),
@@ -3602,6 +3622,11 @@ function App() {
 
       resetNovelForm();
       setShowNovelForm(false);
+
+      if (publish && savedNovelId) {
+        const publishedUrl = window.location.origin + "/novel/" + encodeURIComponent(slug);
+        void notifyIndexNow([publishedUrl, window.location.origin + "/"]);
+      }
     } catch (error: any) {
       setNovelMessage(error?.message || "حدث خطأ أثناء حفظ الرواية.");
     } finally {
@@ -3707,6 +3732,10 @@ function App() {
       setRightsPrompt(null);
       setRightsPromptCode("");
       setSiteMessage("تم نشر الرواية بعد التحقق من حقوقها.");
+      void notifyIndexNow([
+        window.location.origin + "/novel/" + encodeURIComponent(novel.slug),
+        window.location.origin + "/",
+      ]);
     } finally {
       setRightsPromptSaving(false);
     }
@@ -3822,6 +3851,7 @@ function App() {
 
     setSavingChapter(true);
     setChapterMessage("");
+    let savedChapterId = editingChapterId;
 
     try {
       if (editingChapterId) {
@@ -3882,6 +3912,8 @@ function App() {
           return;
         }
 
+        savedChapterId = (data as Chapter).id;
+
         setChapters((current) =>
           [...current, data as Chapter].sort(
             (a, b) => a.chapter_number - b.chapter_number
@@ -3896,6 +3928,13 @@ function App() {
           ? "تم حفظ الفصل ونشره."
           : "تم حفظ الفصل كمسودة."
       );
+
+      if (publish && savedChapterId && selectedNovel) {
+        void notifyIndexNow([
+          window.location.origin + "/novel/" + encodeURIComponent(selectedNovel.slug) + "/chapter/" + encodeURIComponent(savedChapterId),
+          window.location.origin + "/novel/" + encodeURIComponent(selectedNovel.slug),
+        ]);
+      }
     } finally {
       setSavingChapter(false);
     }
