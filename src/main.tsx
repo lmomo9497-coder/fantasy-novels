@@ -7953,6 +7953,14 @@ function App() {
             "الفصل-" + chapter.chapter_number
           );
 
+        if (previous?.folder && previous.folder !== chapterFolderName) {
+          try {
+            await novelDirectory.removeEntry(previous.folder, {
+              recursive: true,
+            });
+          } catch {}
+        }
+
         const chapterDirectory = await novelDirectory.getDirectoryHandle(
           chapterFolderName,
           { create: true }
