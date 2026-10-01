@@ -10,6 +10,8 @@ type Ad = {
   start_at: string|null; end_at: string|null; device_target: string;
   priority: number; frequency_cap: number; enabled: boolean;
   placement: "chapter_after_content" | "chapter_before_navigation" | "chapter_after_navigation" | "chapter_after_comments";
+  display_width: number | null; display_height: number | null; display_max_width: number | null;
+  display_radius: number; display_fit: "contain"|"cover"; display_alignment: "right"|"center"|"left";
 };
 
 type Reaction = { id:string; name:string; icon_path:string|null; enabled:boolean; sort_order:number };
@@ -97,7 +99,16 @@ export function ChapterAd({
   if (!ad) return null;
 
   return (
-    <div className="chapter-ad-slot" aria-label="إعلان">
+    <div
+      className="chapter-ad-slot"
+      aria-label="إعلان"
+      style={{
+        maxWidth: ad.display_max_width ? `${ad.display_max_width}px` : undefined,
+        marginLeft: ad.display_alignment === "right" ? 0 : "auto",
+        marginRight: ad.display_alignment === "left" ? 0 : "auto",
+        borderRadius: `${ad.display_radius ?? 16}px`,
+      }}
+    >
       <span className="ad-label">إعلان</span>
       <a
         href={ad.destination_url || "#"}
@@ -120,6 +131,12 @@ export function ChapterAd({
               alt={ad.alt_text || ad.internal_name}
               loading="lazy"
               decoding="async"
+              style={{
+                width: ad.display_width ? `${ad.display_width}px` : "100%",
+                height: ad.display_height ? `${ad.display_height}px` : "auto",
+                maxWidth: "100%",
+                objectFit: ad.display_fit || "contain",
+              }}
             />
           )}
         </picture>
@@ -761,7 +778,7 @@ export function CommentsAdmin({canManage}:{canManage:boolean}) {
 
 export function AdsAdmin({isOwner}:{isOwner:boolean}) {
   const [ads,setAds]=useState<Ad[]>([]);
-  const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",placement:"chapter_after_navigation" as Ad["placement"],priority:0,frequency_cap:0,start_at:"",end_at:""});
+  const [form,setForm]=useState({internal_name:"",ad_type:"image",status:"draft",destination_url:"",alt_text:"",title:"",cta_text:"",device_target:"all",placement:"chapter_after_navigation" as Ad["placement"],priority:0,frequency_cap:0,start_at:"",end_at:"",display_width:"",display_height:"",display_max_width:"",display_radius:"16",display_fit:"contain" as Ad["display_fit"],display_alignment:"center" as Ad["display_alignment"]});
   const [image,setImage]=useState<File|null>(null);
   const [mobile,setMobile]=useState<File|null>(null);
   const [message,setMessage]=useState("");
@@ -781,17 +798,17 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
       if(error){setMessage(error.message);setBusy(false);return}
       if(file===image)image_path=path; else mobile_image_path=path;
     }
-    const payload={...form,priority:Number(form.priority)||0,frequency_cap:Number(form.frequency_cap)||0,start_at:form.start_at||null,end_at:form.end_at||null};
+    const payload={...form,priority:Number(form.priority)||0,frequency_cap:Number(form.frequency_cap)||0,start_at:form.start_at||null,end_at:form.end_at||null,display_width:form.display_width?Number(form.display_width):null,display_height:form.display_height?Number(form.display_height):null,display_max_width:form.display_max_width?Number(form.display_max_width):null,display_radius:Math.max(0,Math.min(60,Number(form.display_radius)||16))};
     const {error}=editingAd
       ? await supabase.from("ads").update({...payload,...(image_path?{image_path}:{ }),...(mobile_image_path?{mobile_image_path}:{ })}).eq("id",editingAd)
       : await supabase.from("ads").insert({...payload,image_path,mobile_image_path,created_by:(await supabase.auth.getUser()).data.user?.id});
-    setBusy(false); if(error)setMessage(error.message); else {setForm({...form,internal_name:"",destination_url:"",alt_text:"",title:"",cta_text:"",start_at:"",end_at:""});setImage(null);setMobile(null);setEditingAd(null);setMessage("تم حفظ الإعلان.");await load()}
+    setBusy(false); if(error)setMessage(error.message); else {setForm({...form,internal_name:"",destination_url:"",alt_text:"",title:"",cta_text:"",start_at:"",end_at:"",display_width:"",display_height:"",display_max_width:"",display_radius:"16"});setImage(null);setMobile(null);setEditingAd(null);setMessage("تم حفظ الإعلان.");await load()}
   }
   async function toggle(a:Ad){await supabase.from("ads").update({enabled:!a.enabled,status:a.enabled?"paused":"active"}).eq("id",a.id);await load()}
   async function remove(a:Ad){await supabase.from("ads").delete().eq("id",a.id);await load()}
   function edit(a:Ad){
     setEditingAd(a.id);
-    setForm({internal_name:a.internal_name,ad_type:a.ad_type,status:a.status,destination_url:a.destination_url||"",alt_text:a.alt_text||"",title:a.title||"",cta_text:a.cta_text||"",device_target:a.device_target,placement:a.placement||"chapter_after_navigation",priority:a.priority,frequency_cap:a.frequency_cap,start_at:a.start_at?new Date(a.start_at).toISOString().slice(0,16):"",end_at:a.end_at?new Date(a.end_at).toISOString().slice(0,16):""});
+    setForm({internal_name:a.internal_name,ad_type:a.ad_type,status:a.status,destination_url:a.destination_url||"",alt_text:a.alt_text||"",title:a.title||"",cta_text:a.cta_text||"",device_target:a.device_target,placement:a.placement||"chapter_after_navigation",priority:a.priority,frequency_cap:a.frequency_cap,start_at:a.start_at?new Date(a.start_at).toISOString().slice(0,16):"",end_at:a.end_at?new Date(a.end_at).toISOString().slice(0,16):"",display_width:a.display_width?String(a.display_width):"",display_height:a.display_height?String(a.display_height):"",display_max_width:a.display_max_width?String(a.display_max_width):"",display_radius:String(a.display_radius??16),display_fit:a.display_fit||"contain",display_alignment:a.display_alignment||"center"});
   }
   return <section className="admin-card ads-admin">
     <div className="section-heading"><div><span className="eyebrow">الإعلانات</span><h2>إدارة الإعلانات</h2><p>اختاري مكان الإعلان من القائمة. لا توجد نوافذ منبثقة أو إعلانات تغطي الشاشة.</p></div></div>
@@ -813,6 +830,12 @@ export function AdsAdmin({isOwner}:{isOwner:boolean}) {
       <input placeholder="نص الزر" value={form.cta_text} onChange={e=>setForm({...form,cta_text:e.target.value})}/>
       <label>صورة الإعلان <input type="file" accept="image/*" onChange={e=>setImage(e.target.files?.[0]||null)}/></label>
       <label>صورة الجوال <input type="file" accept="image/*" onChange={e=>setMobile(e.target.files?.[0]||null)}/></label>
+      <label>العرض (px) <input type="number" min="80" max="1200" placeholder="تلقائي" value={form.display_width} onChange={e=>setForm({...form,display_width:e.target.value})}/></label>
+      <label>الطول (px) <input type="number" min="40" max="800" placeholder="تلقائي" value={form.display_height} onChange={e=>setForm({...form,display_height:e.target.value})}/></label>
+      <label>أقصى عرض (px) <input type="number" min="80" max="1200" placeholder="حسب الحاوية" value={form.display_max_width} onChange={e=>setForm({...form,display_max_width:e.target.value})}/></label>
+      <select value={form.display_fit} onChange={e=>setForm({...form,display_fit:e.target.value as Ad["display_fit"]})}><option value="contain">يظهر كاملًا</option><option value="cover">يمتلئ الإطار</option></select>
+      <select value={form.display_alignment} onChange={e=>setForm({...form,display_alignment:e.target.value as Ad["display_alignment"]})}><option value="center">وسط</option><option value="right">يمين</option><option value="left">يسار</option></select>
+      <label>استدارة الحواف (px) <input type="number" min="0" max="60" value={form.display_radius} onChange={e=>setForm({...form,display_radius:e.target.value})}/></label>
       <label>الأولوية <input type="number" min="0" value={form.priority} onChange={e=>setForm({...form,priority:Number(e.target.value)})}/></label>
       <label>حد الظهور للجلسة <input type="number" min="0" value={form.frequency_cap} onChange={e=>setForm({...form,frequency_cap:Number(e.target.value)})}/></label>
       <label>بداية <input type="datetime-local" value={form.start_at} onChange={e=>setForm({...form,start_at:e.target.value})}/></label>
