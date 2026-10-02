@@ -194,7 +194,8 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     if(!text)return;
     setBusy(true); setMessage("");
     const {data:{user:current}}=await supabase.auth.getUser();
-    const name=(current?.user_metadata?.display_name||current?.email?.split("@")[0]||"قارئ").slice(0,80);
+    const {data:profileData}=await supabase.from("profiles").select("username").eq("id",current!.id).maybeSingle();
+    const name=(profileData?.username||current?.user_metadata?.display_name||current?.email?.split("@")[0]||"قارئ").slice(0,80);
     const {data:created,error}=await supabase.from("chapter_comments").insert({chapter_id:chapterId,user_id:current!.id,author_name:name,content:text,parent_comment_id:replyTo}).select("id").single();
     if(error||!created){
       setBusy(false);
