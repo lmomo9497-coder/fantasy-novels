@@ -165,12 +165,13 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
   const [replyTo,setReplyTo]=useState<string|null>(null);
   const [commenterCount,setCommenterCount]=useState(0);
+  const [commentCount,setCommentCount]=useState(0);
 
   useEffect(()=>{
     let cancelled=false;
     void supabase
       .from("chapter_comments")
-      .select("user_id,author_name")
+      .select("id,user_id,author_name")
       .eq("chapter_id",chapterId)
       .then(({data})=>{
         if(cancelled)return;
@@ -180,6 +181,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
             .filter(Boolean)
         );
         setCommenterCount(unique.size);
+        setCommentCount((data||[]).length);
       });
     return ()=>{cancelled=true};
   },[chapterId]);
@@ -197,7 +199,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
       if(!grouped[item.comment_id]) grouped[item.comment_id]=[];
       if(!grouped[item.comment_id].includes(item.reaction_type_id)) grouped[item.comment_id].push(item.reaction_type_id);
     });
-    setComments(cs||[]); setReactions(rs||[]); setFavoriteReactionIds((fs||[]).map((item:any)=>item.reaction_type_id)); setCommentReactionMap(grouped);
+    setComments(cs||[]); setCommentCount((cs||[]).length); setReactions(rs||[]); setFavoriteReactionIds((fs||[]).map((item:any)=>item.reaction_type_id)); setCommentReactionMap(grouped);
   }
   async function openComments() {
     if(open){setOpen(false);return}
@@ -262,7 +264,7 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
 
     <button className="comments-toggle" onClick={()=>void openComments()} aria-expanded={open}>
       <span>
-        التعليقات ({comments.length}) · {commenterCount} معلّق
+        التعليقات ({commentCount}) · {commenterCount} معلّق
         {commenterCount === 1 ? "" : "ين"}
       </span><span>{open?"▲":"▼"}</span>
     </button>
