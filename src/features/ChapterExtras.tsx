@@ -164,6 +164,25 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
   const [reactionPickerOpen,setReactionPickerOpen]=useState(false);
   const [commentReactionMap,setCommentReactionMap]=useState<Record<string,string[]>>({});
   const [replyTo,setReplyTo]=useState<string|null>(null);
+  const [commenterCount,setCommenterCount]=useState(0);
+
+  useEffect(()=>{
+    let cancelled=false;
+    void supabase
+      .from("chapter_comments")
+      .select("user_id,author_name")
+      .eq("chapter_id",chapterId)
+      .then(({data})=>{
+        if(cancelled)return;
+        const unique=new Set(
+          (data||[])
+            .map((comment:any)=>comment.user_id || "name:"+String(comment.author_name || "").trim())
+            .filter(Boolean)
+        );
+        setCommenterCount(unique.size);
+      });
+    return ()=>{cancelled=true};
+  },[chapterId]);
 
   async function loadComments(userId?:string|null) {
     const {data:cs}=await supabase.from("chapter_comments").select("id,content,author_name,user_id,created_at,parent_comment_id").eq("chapter_id",chapterId).order("created_at",{ascending:false});
@@ -238,13 +257,6 @@ export function ChapterExtras({chapterId, canManage, isOwner}:Props) {
     if(error){setMessage(error.message);return}
     setFavoriteReactionIds(prev=>isFavorite?prev.filter(id=>id!==reactionId):[...prev,reactionId]);
   }
-
-  const commenterCount = useMemo(() => {
-    const uniqueCommenters = new Set(
-      comments.map((comment:any) => comment.user_id || "name:" + String(comment.author_name || "").trim()).filter(Boolean)
-    );
-    return uniqueCommenters.size;
-  }, [comments]);
 
   return <div className="chapter-extras">
 
