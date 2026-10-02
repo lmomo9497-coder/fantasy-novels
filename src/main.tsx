@@ -9,6 +9,7 @@ type Role = "owner" | "staff" | "reader";
 type Profile = {
   id: string;
   display_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   bio: string | null;
   role: Role;
@@ -1892,11 +1893,14 @@ function App() {
   const [authMode, setAuthMode] =
     useState<"login" | "register">("login");
   const [authEmail, setAuthEmail] = useState("");
+  const [authUsername, setAuthUsername] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
   const [siteMessage, setSiteMessage] = useState("");
+  const [usernameSaveMessage, setUsernameSaveMessage] = useState("");
+  const [usernameSaving, setUsernameSaving] = useState(false);
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [loginToast, setLoginToast] = useState("");
@@ -3169,6 +3173,40 @@ function App() {
     }
   }
 
+  async function saveUsername() {
+    if (!user) return;
+
+    const username = profile?.username?.trim() || "";
+    if (username.length < 2 || username.length > 30) {
+      setUsernameSaveMessage("اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا.");
+      return;
+    }
+
+    setUsernameSaving(true);
+    setUsernameSaveMessage("جارٍ الحفظ...");
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ username })
+      .eq("id", user.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setUsernameSaveMessage(
+        error.code === "23505"
+          ? "اسم المستخدم مستخدم بالفعل."
+          : "تعذر حفظ اسم المستخدم."
+      );
+      setUsernameSaving(false);
+      return;
+    }
+
+    setProfile(data as Profile);
+    setUsernameSaveMessage("تم حفظ اسم المستخدم.");
+    setUsernameSaving(false);
+  }
+
   async function uploadProfileAvatar(file: File) {
     if (!user) return;
 
@@ -3253,9 +3291,14 @@ function App() {
 
   async function handleEmailAuth() {
     const email = authEmail.trim();
+    const username = authUsername.trim();
 
-    if (!email || !authPassword) {
-      setAuthMessage("اكتبي البريد الإلكتروني وكلمة المرور.");
+    if (!email || !authPassword || (authMode === "register" && !username)) {
+      setAuthMessage(
+        authMode === "register"
+          ? "اكتبي البريد الإلكتروني واسم المستخدم وكلمة المرور."
+          : "اكتبي البريد الإلكتروني وكلمة المرور."
+      );
       return;
     }
 
@@ -3275,6 +3318,7 @@ function App() {
           setLoginToast("تم تسجيل الدخول بنجاح.");
           window.setTimeout(() => setLoginToast(""), 3500);
           setAuthEmail("");
+          setAuthUsername("");
           setAuthPassword("");
           setShowAccount(false);
           setShowAdmin(false);
@@ -3289,11 +3333,13 @@ function App() {
         const { error } = await supabase.auth.signUp({
           email,
           password: authPassword,
+          options: { data: { username } },
         });
 
         if (error) {
           setAuthMessage(error.message);
         } else {
+          setAuthUsername("");
           setAuthMessage(
             "تم إنشاء الحساب. إذا ظهر طلب تأكيد البريد، افتحي بريدك الإلكتروني."
           );
@@ -5485,6 +5531,20 @@ function App() {
             />
           </div>
 
+          {authMode === "register" && (
+            <div className="form-group">
+              <label>اسم المستخدم</label>
+              <input
+                type="text"
+                value={authUsername}
+                onChange={(event) => setAuthUsername(event.target.value)}
+                placeholder="مثال: لولو"
+                maxLength={30}
+                autoComplete="username"
+              />
+            </div>
+          )}
+
           <div className="form-group">
             <label>كلمة المرور</label>
             <input
@@ -5656,7 +5716,7 @@ function App() {
                       </span>
                     )}
                     <span>
-                      <strong>{profile?.display_name || "حسابي"}</strong>
+                      <strong>{profile?.username || profile?.display_name || "حسابي"}</strong>
                       <small>الملف الشخصي</small>
                     </span>
                   </button>
@@ -8762,7 +8822,8 @@ function App() {
             </span>
 
             <h1>
-              {profile?.display_name ||
+              {profile?.username ||
+                profile?.display_name ||
                 user.email ||
                 "القارئ"}
             </h1>
@@ -8894,6 +8955,35 @@ function App() {
                 </div>
 
                 <div className="profile-info">
+                  <div>
+                    <span>اسم المستخدم</span>
+                    <input
+                      type="text"
+                      value={profile?.username || ""}
+                      onChange={(event) =>
+                        setProfile((current) =>
+                          current
+                            ? { ...current, username: event.target.value }
+                            : current
+                        )
+                      }
+                      maxLength={30}
+                      autoComplete="username"
+                      placeholder="اسم المستخدم"
+                    />
+                    <button
+                      type="button"
+                      className="primary-button small-button"
+                      disabled={usernameSaving}
+                      onClick={() => void saveUsername()}
+                    >
+                      {usernameSaving ? "جارٍ الحفظ..." : "حفظ اسم المستخدم"}
+                    </button>
+                    {usernameSaveMessage && (
+                      <small className="form-hint">{usernameSaveMessage}</small>
+                    )}
+                  </div>
+
                   <div>
                     <span>البريد</span>
                     <strong dir="ltr">
