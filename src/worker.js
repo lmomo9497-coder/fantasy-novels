@@ -68,17 +68,7 @@ export default {
     }
 
     if (url.pathname !== "/sitemap.xml") {
-      return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`,
-      {
-        status: 503,
-        headers: {
-          "Content-Type": "application/xml; charset=UTF-8",
-          "Cache-Control": "no-store",
-          "Retry-After": "300",
-        },
-      }
-    );
+      return env.ASSETS.fetch(request);
     }
 
     // Use a versioned internal cache key so an old fallback sitemap can never be reused.
@@ -111,6 +101,16 @@ export default {
       // استخدم النسخة الثابتة كخطة احتياطية حتى لا يتعطل الـSitemap.
     }
 
-    return env.ASSETS.fetch(request);
+    return new Response(
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`,
+      {
+        status: 503,
+        headers: {
+          "Content-Type": "application/xml; charset=UTF-8",
+          "Cache-Control": "no-store",
+          "Retry-After": "300",
+        },
+      }
+    );
   },
 };
