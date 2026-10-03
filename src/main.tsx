@@ -1744,6 +1744,8 @@ function TextSceneReader({
 function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [displayNameDraft, setDisplayNameDraft] = useState("");
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
   const [ownerProfile, setOwnerProfile] = useState<Profile | null>(null);
   const [staffProfiles, setStaffProfiles] = useState<Profile[]>([]);
 
@@ -2564,6 +2566,7 @@ function App() {
     }
 
     setProfile(data as Profile | null);
+    setDisplayNameDraft(data?.display_name || "");
   }
 
   async function loadCategories() {
@@ -3166,6 +3169,46 @@ function App() {
 
     if (error) {
       console.error("Chapter read tracking error:", error);
+    }
+  }
+
+  async function saveDisplayName() {
+    if (!user || savingDisplayName) return;
+
+    const displayName = displayNameDraft.trim().replace(/\s+/g, " ");
+    if (!displayName) {
+      setSiteMessage("اكتبي اسم العرض أولًا.");
+      return;
+    }
+
+    if (displayName.length > 40) {
+      setSiteMessage("اسم العرض يجب ألا يتجاوز 40 حرفًا.");
+      return;
+    }
+
+    setSavingDisplayName(true);
+    setSiteMessage("");
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ display_name: displayName })
+        .eq("id", user.id)
+        .select("*")
+        .single();
+
+      if (error) {
+        setSiteMessage(error.message);
+        return;
+      }
+
+      setProfile(data as Profile);
+      setDisplayNameDraft(data?.display_name || "");
+      setSiteMessage("تم تحديث اسم العرض.");
+    } catch (error: any) {
+      setSiteMessage(error?.message || "تعذر تحديث اسم العرض.");
+    } finally {
+      setSavingDisplayName(false);
     }
   }
 
@@ -8891,6 +8934,29 @@ function App() {
                       />
                     </label>
                   </div>
+                </div>
+
+                <div className="profile-display-name-editor">
+                  <label htmlFor="profile-display-name">اسم العرض</label>
+                  <div className="profile-display-name-row">
+                    <input
+                      id="profile-display-name"
+                      type="text"
+                      value={displayNameDraft}
+                      maxLength={40}
+                      placeholder="الاسم الذي سيظهر للناس"
+                      onChange={(event) => setDisplayNameDraft(event.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => void saveDisplayName()}
+                      disabled={savingDisplayName || !displayNameDraft.trim()}
+                    >
+                      {savingDisplayName ? "جارٍ الحفظ..." : "حفظ"}
+                    </button>
+                  </div>
+                  <p>يمكنك اختيار اسم مختلف عن اسم حسابك، وسيظهر هذا الاسم في التعليقات والملف الشخصي.</p>
                 </div>
 
                 <div className="profile-info">
