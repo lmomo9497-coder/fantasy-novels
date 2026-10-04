@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { supabase } from "./lib/supabase";
+import { validateNewPassword } from "./lib/passwordSecurity";
 import { AdsAdmin, ChapterAd, ChapterExtras, CommentsAdmin, ReactionAdmin } from "./features/ChapterExtras";
 
 type Role = "owner" | "staff" | "reader";
@@ -3324,8 +3325,9 @@ function App() {
           setShowNovels(true);
         }
       } else {
-        if (authPassword.length < 12) {
-          setAuthMessage("كلمة المرور يجب أن تكون 12 حرفًا أو أكثر.");
+        const passwordError = validateNewPassword(authPassword);
+        if (passwordError) {
+          setAuthMessage(passwordError);
           return;
         }
 
