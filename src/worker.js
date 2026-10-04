@@ -101,16 +101,36 @@ export default {
       // استخدم النسخة الثابتة كخطة احتياطية حتى لا يتعطل الـSitemap.
     }
 
-    return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`,
-      {
-        status: 503,
-        headers: {
-          "Content-Type": "application/xml; charset=UTF-8",
-          "Cache-Control": "no-store",
-          "Retry-After": "300",
-        },
+    // Fallback: serve the repository's static sitemap instead of returning an empty 503 response.
+    try {
+      const fallback = await env.ASSETS.fetch(
+        new Request(new URL("/sitemap.xml", request.url))
+      );
+
+      if (fallback.ok) {
+        const headers = new Headers(fallback.headers);
+        headers.set("Content-Type", "application/xml; charset=UTF-8");
+        headers.set("Cache-Control", "public, max-age=300, s-maxage=600");
+
+        const result = new Response(fallback.body, {
+          status: 200,
+          headers,
+        });
+
+        ctx.waitUntil(caches.default.put(cacheKey, result.clone()));
+        return result;
       }
-    );
+    } catch {
+      // إذا تعذر حتى الملف الثابت، نرجع خطأ واضح بدل XML فارغ.
+    }
+
+    return new Response("Sitemap unavailable", {
+      status: 503,
+      headers: {
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Cache-Control": "no-store",
+        "Retry-After": "300",
+      },
+    });
   },
 };
