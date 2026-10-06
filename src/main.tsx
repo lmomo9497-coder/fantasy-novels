@@ -2247,25 +2247,31 @@ function App() {
 
     if (parts[2] === "chapter" && parts[3]) {
       void (async () => {
-        const { data: chapter } = await supabase
+        setLoadingChapters(true);
+        const { data: chapterList } = await supabase
           .from("chapters")
           .select("*")
-          .eq("id", parts[3])
           .eq("novel_id", novel.id)
           .eq("published", true)
-          .maybeSingle();
+          .order("chapter_number", { ascending: true });
+
+        const chapterRows = (chapterList ?? []) as Chapter[];
+        setChapters(chapterRows);
+        setLoadingChapters(false);
+
+        const chapter = chapterRows.find((item) => item.id === parts[3]);
 
         if (!chapter) {
           window.history.replaceState(
             { fantasyNovelsRoute: { type: "novel", novelId: novel.id, novelSlug: novel.slug || makeSlug(novel.title) } },
             "",
-            `/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`
+            "/novel/" + encodeURIComponent(novel.slug || makeSlug(novel.title))
           );
           setSelectedChapter(null);
           return;
         }
 
-        setSelectedChapter(chapter as Chapter);
+        setSelectedChapter(chapter);
         setLoadingChapterBlocks(true);
         const { data: blocks } = await supabase
           .from("chapter_blocks")
