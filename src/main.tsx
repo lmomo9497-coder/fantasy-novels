@@ -2275,6 +2275,8 @@ function App() {
         setChapterBlocks((blocks ?? []) as ChapterBlock[]);
         setLoadingChapterBlocks(false);
       })();
+    } else {
+      void loadChapters(novel.id, false);
     }
   }, [publishedNovels]);
 
@@ -7876,11 +7878,14 @@ function App() {
                   }
                   key={chapter.id}
                 >
-                  <button
+                  <a
                     className="chapter-main-button"
-                    onClick={() =>
-                      openChapter(chapter)
-                    }
+                    href={"/novel/" + encodeURIComponent(selectedNovel.slug || makeSlug(selectedNovel.title)) + "/chapter/" + encodeURIComponent(chapter.id)}
+                    style={{ color: "inherit", textDecoration: "none" }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void openChapter(chapter);
+                    }}
                   >
                     <span className="chapter-number">
                       الفصل{" "}
@@ -7900,7 +7905,7 @@ function App() {
                         <span className="chapter-read-badge">شاهدت هذا الفصل</span>
                       )}
                     </span>
-                  </button>
+                  </a>
 
                   {selectedNovelAdminView &&
                     canManage && (
