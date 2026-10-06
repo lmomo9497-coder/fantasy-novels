@@ -5891,7 +5891,15 @@ function App() {
 
         <div className="novel-card-body">
           <div className="novel-card-top">
-            <h2>{novel.title}</h2>
+            <a
+              href={`/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`}
+              style={{ color: "inherit", textDecoration: "none" }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <h2>{novel.title}</h2>
+            </a>
 
             {user && (
               <button
@@ -5994,7 +6002,15 @@ function App() {
 
         <div className="novel-card-body">
           <div className="novel-card-top">
-            <h2>{novel.title}</h2>
+            <a
+              href={`/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`}
+              style={{ color: "inherit", textDecoration: "none" }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <h2>{novel.title}</h2>
+            </a>
 
             {user && (
               <button
