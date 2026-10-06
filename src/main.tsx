@@ -5901,7 +5901,7 @@ function App() {
           <div className="novel-card-top">
             <a
               href={`/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`}
-              style={{ color: "inherit", textDecoration: "none" }}
+              style={{ flex: 1, minWidth: 0, color: "inherit", textDecoration: "none" }}
               onClick={(event) => {
                 event.stopPropagation();
               }}
@@ -6012,7 +6012,7 @@ function App() {
           <div className="novel-card-top">
             <a
               href={`/novel/${encodeURIComponent(novel.slug || makeSlug(novel.title))}`}
-              style={{ color: "inherit", textDecoration: "none" }}
+              style={{ flex: 1, minWidth: 0, color: "inherit", textDecoration: "none" }}
               onClick={(event) => {
                 event.stopPropagation();
               }}
